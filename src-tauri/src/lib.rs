@@ -1,4 +1,9 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+mod importers {
+    pub(crate) mod bank_of_america;
+    pub(crate) mod types;
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
