@@ -10,10 +10,5 @@ Date        Description                                                         
 10/20/2025  MTA*NYCT PAYGO 10/17 MOBILE PURCHASE NEW YORK NY                               -2.90      2,889.13
 10/20/2025  MTA*NYCT PAYGO 10/17 MOBILE PURCHASE NEW YORK NY                               -2.90      2,886.23
 10/20/2025  PAYPAL *NJ TRANSIT 10/17 PURCHASE 123-456-7890 NJ                              -5.30      2,880.93
-10/20/2025  Zelle payment to SPORTS CLUB Conf#                          -127.07      2,753.86
-10/21/2025  WELLS FARGO CARD DES:BILTCRDCRD ID:XXXXXXXXXX INDN:John Doe CO ID:XXXXX WEB     -756.19      1,997.67
 10/22/2025  VENMO DES:PAYMENT ID:XXXXX INDN:John Doe CO ID:XXXXX WEB      -15.00      1,982.67
-10/29/2025  WELLS FARGO CARD DES:BILTCRDCRD ID:XXXXXXXXXX INDN:John Doe CO ID:XXXXX WEB     -344.73      1,740.45
-10/30/2025  SimpleBills Prod DES:WEB PMTS ID:XXXX INDN:John Doe CO ID:XXXXX WEB      -38.56      1,701.89
 11/03/2025  Online Recurring transfer from CHK 1111 Confirmation# xxxxxxx; DOE, JANE    1,000.00      2,376.89
-11/05/2025  BILTPYMTS DES:RENT PMT ID:XXXXXXXXXX INDN:John Doe CO ID:XXXXX WEB     -939.00      1,437.89

@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Transaction {
     pub date: String,
     pub description: String,
@@ -8,6 +9,6 @@ pub struct Transaction {
 
 impl fmt::Display for Transaction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}, {}, {}", self.date, self.description, self.amount)
+        write!(f, "Transaction: {}, {}, {}", self.date, self.description, self.amount)
     }
 }
