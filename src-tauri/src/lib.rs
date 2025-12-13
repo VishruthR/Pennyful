@@ -15,13 +15,13 @@ fn greet(name: &str) -> String {
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            let data_dir = app
+            let app_data_dir = app
                 .path()
-                .data_dir()
+                .app_data_dir()
                 .expect("Could not find applications data directory");
 
             tauri::async_runtime::block_on(async move {
-                let database = db::Database::new(&data_dir)
+                let database = db::Database::new(&app_data_dir)
                 .await
                 .expect("Failed to initialize database");
 

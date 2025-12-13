@@ -12,10 +12,7 @@ impl Database {
 
         let db_path = app_dir.join("tally.db");
 
-        println!("-----------------------------------------------");
         println!("Initializing database at: {:?}", db_path);
-        println!("-----------------------------------------------");
-
 
         let connection_options = sqlx::sqlite::SqliteConnectOptions::new()
             .filename(&db_path)
