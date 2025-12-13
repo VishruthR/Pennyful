@@ -8,10 +8,9 @@ pub struct Database {
 
 impl Database {
     pub async fn new(app_dir: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        // Ensure the app directory exists
         fs::create_dir_all(&app_dir)?;
 
-        let db_path = app_dir.join("data.db");
+        let db_path = app_dir.join("tally.db");
 
         println!("-----------------------------------------------");
         println!("Initializing database at: {:?}", db_path);
@@ -23,7 +22,6 @@ impl Database {
             .create_if_missing(true)
             .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal);
 
-        // Create and initialize the database pool
         let pool = SqlitePool::connect_with(connection_options).await?;
 
         // Run migrations regardless of whether the database is new
