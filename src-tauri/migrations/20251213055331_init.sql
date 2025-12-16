@@ -25,16 +25,10 @@ CREATE TABLE IF NOT EXISTS "transaction" (
     amount REAL NOT NULL,
     date TEXT NOT NULL,
     account_id INTEGER NOT NULL,
-    FOREIGN KEY (account_id) REFERENCES account(id) ON DELETE CASCADE
+    category_id INTEGER,
+    FOREIGN KEY (account_id) REFERENCES account(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS idx_transaction_date ON "transaction"(date);
 CREATE INDEX IF NOT EXISTS idx_transaction_account_id ON "transaction"(account_id);
-
-CREATE TABLE IF NOT EXISTS transaction_category (
-    transaction_id INTEGER NOT NULL,
-    category_id INTEGER NOT NULL,
-    PRIMARY KEY (transaction_id, category_id),
-    FOREIGN KEY (transaction_id) REFERENCES "transaction"(id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE
-);
-CREATE INDEX IF NOT EXISTS idx_transaction_category_category_id ON transaction_category(category_id);
+CREATE INDEX IF NOT EXISTS idx_transaction_category_id ON "transaction"(category_id);
