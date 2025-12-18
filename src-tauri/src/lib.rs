@@ -2,6 +2,7 @@
 use tauri::Manager;
 mod importers {
     pub(crate) mod bank_of_america;
+    pub(crate) mod wells_fargo;
     pub(crate) mod types;
 }
 mod db;
