@@ -18,7 +18,7 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
         .skip_while(|item| !item.as_slice().starts_with(HEADER_START))
         // Skip header and "Beginning balance..." line
         .skip(2)
-        .filter_map(|transaction_record: csv::StringRecord| transaction_record.deserialize(None).ok())
+        .filter_map(|transaction_record| transaction_record.deserialize(None).ok())
         .collect();
 
     Ok(transactions)
@@ -28,7 +28,6 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
 mod tests {
     use std::path::PathBuf;
     use chrono::NaiveDate;
-    use std::iter::zip;
 
     use super::*;
 
