@@ -11,7 +11,7 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
     // TODO: We filter out lines that may have errors, we should handle them explicitly, line 16, 22
     let transactions = reader
         .records()
-        .map_while(|item| item.ok())
+        .filter_map(|item| item.ok())
         .filter_map(|transaction_record| transaction_record.deserialize(Some(&headers)).ok())
         .collect();
 
@@ -22,6 +22,7 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
 mod tests {
     use std::path::PathBuf;
     use chrono::NaiveDate;
+    use rust_decimal::dec;
 
     use super::*;
 
@@ -32,52 +33,52 @@ mod tests {
         let transactions_expected = vec![
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 15).unwrap(),
-                amount: -5.77,
+                amount: dec!(-5.77),
                 description: "SQ *ESPRESSO HOUSE CITY STATE".to_string(),
             },
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 14).unwrap(),
-                amount: -25.24,
+                amount: dec!(-25.24),
                 description: "SIGNATURE FOOD CITY STATE".to_string(),
             },
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 14).unwrap(),
-                amount: -15.25,
+                amount: dec!(-15.25),
                 description: "MCDONALD'S F1111 CITY STATE".to_string(),
             },
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 12).unwrap(),
-                amount: -10.14,
+                amount: dec!(-10.14),
                 description: "TST*PIZZA CITY STATE".to_string(),
             },
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 11).unwrap(),
-                amount: -19.26,
+                amount: dec!(-19.26),
                 description: "FOOD MARKET #111 CITY STATE".to_string(),
             },
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 11).unwrap(),
-                amount: -7.25,
+                amount: dec!(-7.25),
                 description: "FOOD MARKET #111 CITY STATE".to_string(),
             },
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 11).unwrap(),
-                amount: -27.75,
+                amount: dec!(-27.75),
                 description: "SQ *THE FOOD COMPANY".to_string(),
             },
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 10).unwrap(),
-                amount: -4.52,
+                amount: dec!(-4.52),
                 description: "FOOD MARKET #111 CITY STATE".to_string(),
             },
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 10).unwrap(),
-                amount: -17.04,
+                amount: dec!(-17.04),
                 description: "SQ *FOOD GRILL CITY STATE".to_string(),
             },
             Transaction {
                 date: NaiveDate::from_ymd_opt(2025, 12, 10).unwrap(),
-                amount: -3.89,
+                amount: dec!(-3.89),
                 description: "SQ *ESPRESSO HOUSE URBANA IL".to_string(),
             },
         ];
