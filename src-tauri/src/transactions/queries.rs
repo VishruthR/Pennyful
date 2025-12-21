@@ -3,11 +3,14 @@ use crate::types::{Transaction, Cents};
 use chrono::NaiveDate;
 use rust_decimal::dec;
 
-pub async fn get_transactions(pool: &Pool<Sqlite>, limit: Option<u32>) -> Result<Vec<Transaction>, sqlx::Error> {
+pub async fn get_transactions(pool: &Pool<Sqlite>, limit: Option<i64>) -> Result<Vec<Transaction>, sqlx::Error> {
     // TODO: Look into supporting limit using prepared statements, maybe have to do in separate function
-    let mut query = "SELECT * FROM 'transaction' ORDER BY date, id".to_owned();
+    let mut query = "SELECT * FROM 'transaction' ORDER BY date, id LIMIT $1".to_owned();
 
+    // Negative value returns all rows
+    let lim = limit.unwrap_or(-1);
     let res: Vec<Transaction> = sqlx::query_as(query.as_str())
+        .bind(lim)
         .fetch_all(pool).await?;
 
     Ok(res)
@@ -16,10 +19,9 @@ pub async fn get_transactions(pool: &Pool<Sqlite>, limit: Option<u32>) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[sqlx::test(fixtures(path="../fixtures", scripts("transactions")))]
-    async fn test_get_all_transactions(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
-        let transactions_expected = vec![
+    
+    fn get_expected_transactions() -> Vec<Transaction> {
+        vec![
             Transaction::new(
                 1,
                 "TRANSACTION 1".to_owned(),
@@ -52,11 +54,22 @@ mod tests {
                 1,
                 1
             ),
-        ];
+        ]
+    }
 
-        let transactions = get_transactions(&pool, Some(0)).await?;
+    #[sqlx::test(fixtures(path="../fixtures", scripts("transactions")))]
+    async fn test_get_transactions_all(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        let transactions = get_transactions(&pool, None).await?;
         
-        assert_eq!(transactions, transactions_expected);
+        assert_eq!(transactions, get_expected_transactions());
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path="../fixtures", scripts("transactions")))]
+    async fn test_get_transactions_limit(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        let transactions = get_transactions(&pool, Some(2)).await?;
+        
+        assert_eq!(transactions, get_expected_transactions()[..2]);
         Ok(())
     }
 }
