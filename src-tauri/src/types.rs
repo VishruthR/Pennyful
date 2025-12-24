@@ -54,7 +54,7 @@ pub struct Transaction {
     pub amount: Cents,
     pub date: NaiveDate,
     account_id: u64,
-    category_id: Option<u64>,
+    category_id: u64,
 }
 
 impl Transaction {
@@ -66,7 +66,7 @@ impl Transaction {
         &self.account_id
     }
 
-    pub fn category_id(&self) -> &Option<u64> {
+    pub fn category_id(&self) -> &u64 {
         &self.category_id
     }
 
@@ -76,7 +76,7 @@ impl Transaction {
         amount: Cents,
         date: NaiveDate,
         account_id: u64,
-        category_id: Option<u64>
+        category_id: u64
     ) -> Self {
         Transaction {
             id, name, amount, date, account_id, category_id

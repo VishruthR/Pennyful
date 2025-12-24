@@ -1,5 +1,3 @@
-INSERT INTO category (id, name, color) VALUES (1, "Category 1", "#FFFFFF");
-
 INSERT INTO bank (id, bank_name) VALUES
     (1, "Bank of America");
 
