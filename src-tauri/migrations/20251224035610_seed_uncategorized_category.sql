@@ -1,0 +1,1 @@
+INSERT INTO category (name, color) values ('Uncategorized', '#bbbbbb');

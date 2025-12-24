@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS "transaction" (
     amount_cents INTEGER NOT NULL,
     date TEXT NOT NULL,
     account_id INTEGER NOT NULL,
-    category_id INTEGER,
+    category_id INTEGER NOT NULL,
     FOREIGN KEY (account_id) REFERENCES account(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE SET NULL
 );

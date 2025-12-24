@@ -27,7 +27,7 @@ mod tests {
                 Cents(dec!(-5.77)),
                 NaiveDate::from_ymd_opt(2025, 12, 15).unwrap(),
                 1,
-                Some(1)
+                1
             ),
             Transaction::new(
                 2,
@@ -35,7 +35,7 @@ mod tests {
                 Cents(dec!(-10.90)),
                 NaiveDate::from_ymd_opt(2025, 12, 16).unwrap(),
                 1,
-                Some(1)
+                1
             ),
             Transaction::new(
                 4,
@@ -43,7 +43,7 @@ mod tests {
                 Cents(dec!(-0.70)),
                 NaiveDate::from_ymd_opt(2025, 12, 16).unwrap(),
                 1,
-                Some(1)
+                1
             ),
             Transaction::new(
                 3,
@@ -51,7 +51,7 @@ mod tests {
                 Cents(dec!(-1.90)),
                 NaiveDate::from_ymd_opt(2025, 12, 17).unwrap(),
                 1,
-                Some(1)
+                1
             ),
         ]
     }
