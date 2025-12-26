@@ -31,6 +31,6 @@ fn de_decimal_from_money_str<'de, D>(deserializer: D) -> Result<Decimal, D::Erro
     where D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    let clean = s.replace(',', "").replace('\"', "").trim().to_string();
+    let clean = s.replace(['"', ','], "").trim().to_string();
     Decimal::from_str(&clean).map_err(serde::de::Error::custom)
 }

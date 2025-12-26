@@ -1,7 +1,6 @@
 use std::path::Path;
-use crate::{importers::types::TransactionImport, types::Transaction};
+use crate::{importers::types::TransactionImport};
 use csv::ReaderBuilder;
-use rust_decimal::dec;
 
 pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<TransactionImport>, std::io::Error> {
     let mut reader = ReaderBuilder::new()
@@ -14,10 +13,10 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
         .records()
         .filter_map(|item| item.ok())
         .filter_map(|transaction_record| transaction_record.deserialize(Some(&headers)).ok())
+        // AmEx tracks increases/decreases to credit card balance so we invert the amount
         .map(|transaction: TransactionImport| TransactionImport { 
-            date: transaction.date, 
-            name: transaction.name, 
-            amount: transaction.amount * dec!(-1) 
+            amount: -transaction.amount,
+            ..transaction
         })
         .collect();
 
@@ -91,12 +90,7 @@ mod tests {
 
         let transactions = parse_csv_statement(&transactions_path)?;
 
-        // assert_eq!(transactions, transactions_expected);
-
-        use std::iter::zip;
-        for (transaction, expected) in zip(transactions, transactions_expected) {
-            assert_eq!(transaction, expected);
-        }
+        assert_eq!(transactions, transactions_expected);
         Ok(())
     }
 }

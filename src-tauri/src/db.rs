@@ -8,7 +8,7 @@ pub struct Database {
 
 impl Database {
     pub async fn new(app_dir: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        fs::create_dir_all(&app_dir)?;
+        fs::create_dir_all(app_dir)?;
 
         let db_path = app_dir.join("pennyful.db");
 

@@ -1,7 +1,7 @@
-use std::{fmt, u64};
+use std::fmt;
 use chrono::NaiveDate;
 use rust_decimal::{prelude::ToPrimitive, Decimal};
-use sqlx::{sqlite::SqliteQueryResult, Sqlite, decode::Decode, encode::{Encode, IsNull}, Type};
+use sqlx::{Sqlite, decode::Decode, encode::{Encode, IsNull}, Type};
 
 // Custom type to enable automatic encoding/decoding for sqlx
 #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
