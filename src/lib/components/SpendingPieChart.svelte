@@ -1,3 +1,18 @@
+<!-- @component
+  A pie chart component that breaks down spending based on category. 
+  It accepts an array of spending categories and displays them in an interactive pie chart.
+
+  Example data:
+  const spendingCategories = [
+    { name: "Food", color: "#F2B834", icon: "fluent:food-28-filled", iconColor: "#F2B834", amount: 555 },
+    { name: "Transportation", color: "#F4511E", icon: "bxs:car", iconColor: "#F4511E", amount: 300 },
+    { name: "Subscriptions", color: "#FFA7A0", icon: "fluent-mdl2:recurring-event", iconColor: "#FFA7A0", amount: 250 },
+    { name: "Healthcare", color: "#45CAAF", icon: "solar:health-bold", iconColor: "#45CAAF", amount: 150 },
+    { name: "Entertainment", color: "#B585EC", icon: "fluent:movies-and-tv-20-filled", iconColor: "#B585EC", amount: 10 },
+    { name: "Savings", color: "#AEAEAE", icon: "fluent:savings-32-filled", iconColor: "#AEAEAE", amount: 645 },
+  ];
+-->
+
 <script lang="ts">
   import Icon from "@iconify/svelte";
 
@@ -9,6 +24,11 @@
     amount: number;
   }
 
+  interface Segment extends SpendingCategory {
+    percentage: number;
+    path: string;
+  }
+
   interface Props {
     categories: SpendingCategory[];
     size?: number;
@@ -16,66 +36,52 @@
     currency?: string;
   }
 
-  let { categories, size = 200, strokeWidth = 20, currency = "$" }: Props = $props();
+  const ICON_SIZE = 24;
 
+  let { categories, size = 200, strokeWidth = 20, currency = "$" }: Props = $props();
   let hoveredIndex = $state<number | null>(null);
 
+  const center = $derived(size / 2);
+  const radius = $derived((size - strokeWidth) / 2);
   const total = $derived(categories.reduce((sum, cat) => sum + cat.amount, 0));
 
-  // Calculate the arc paths for each segment
-  function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
+  function polarToCartesian(angle: number): { x: number; y: number } {
     const rad = ((angle - 90) * Math.PI) / 180;
-    return {
-      x: cx + r * Math.cos(rad),
-      y: cy + r * Math.sin(rad),
-    };
+    return { x: center + radius * Math.cos(rad), y: center + radius * Math.sin(rad) };
   }
 
-  function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
-    const start = polarToCartesian(cx, cy, r, endAngle);
-    const end = polarToCartesian(cx, cy, r, startAngle);
-    const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
-
-    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+  function describeArc(startAngle: number, endAngle: number): string {
+    const start = polarToCartesian(endAngle);
+    const end = polarToCartesian(startAngle);
+    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+    return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 0 ${end.x} ${end.y}`;
   }
 
-  const segments = $derived.by(() => {
-    const cx = size / 2;
-    const cy = size / 2;
-    const radius = (size - strokeWidth) / 2;
+  function formatPercent(pct: number): string {
+    return pct < 10 ? `${pct.toFixed(1)}%` : `${Math.round(pct)}%`;
+  }
+
+  const segments: Segment[] = $derived.by(() => {
     let currentAngle = 0;
-
-    return categories.map((cat, i) => {
+    return categories.map((cat) => {
       const percentage = total > 0 ? (cat.amount / total) * 100 : 0;
       const angleSpan = (percentage / 100) * 360;
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + angleSpan;
-
-      // Icon position at middle of arc
-      const midAngle = startAngle + angleSpan / 2;
-      const iconPos = polarToCartesian(cx, cy, radius, midAngle);
-
-      currentAngle = endAngle;
-
-      return {
-        ...cat,
-        percentage,
-        startAngle,
-        endAngle,
-        path: describeArc(cx, cy, radius, startAngle, endAngle),
-        iconX: iconPos.x,
-        iconY: iconPos.y,
-      };
+      const path = describeArc(currentAngle, currentAngle + angleSpan);
+      currentAngle += angleSpan;
+      return { ...cat, percentage, path };
     });
   });
 
+  const hoveredSegment = $derived(
+    hoveredIndex !== null ? segments[hoveredIndex] ?? null : null
+  );
+
   const centerText = $derived.by(() => {
-    if (hoveredIndex !== null && segments[hoveredIndex]) {
-      const seg = segments[hoveredIndex];
+    if (hoveredSegment) {
       return {
-        primary: seg.name,
-        secondary: `${currency}${seg.amount.toLocaleString()}`,
-        tertiary: `${Math.round(seg.percentage)}%`,
+        primary: hoveredSegment.name,
+        secondary: `${currency}${hoveredSegment.amount.toLocaleString()}`,
+        tertiary: formatPercent(hoveredSegment.percentage),
       };
     }
     return {
@@ -84,76 +90,58 @@
       tertiary: null,
     };
   });
+
+  const iconTransform = $derived(
+    `translate(${center - ICON_SIZE / 2}, ${center - size * 0.26})`
+  );
 </script>
 
-<div class="pie-chart-container" style="--size: {size}px; --stroke-width: {strokeWidth}px;">
-  <svg
-    viewBox="0 0 {size} {size}"
-    width={size}
-    height={size}
-    class="pie-chart"
-  >
-    <!-- Background ring -->
-    <circle
-      cx={size / 2}
-      cy={size / 2}
-      r={(size - strokeWidth) / 2}
-      fill="none"
-      stroke="#e5e5e5"
-      stroke-width={strokeWidth}
-    />
+<div class="pie-chart-container">
+  <svg viewBox="0 0 {size} {size}" width={size} height={size} class="pie-chart" aria-label="Spending breakdown pie chart">
+    <circle cx={center} cy={center} r={radius} fill="none" stroke="#e5e5e5" stroke-width={strokeWidth} />
 
-    <!-- Segment arcs -->
-    {#each segments as segment, i}
-      <g
-        class="segment"
-        class:hovered={hoveredIndex === i}
-        role="button"
-        tabindex="0"
-        aria-label="{segment.name}: {currency}{segment.amount.toLocaleString()} ({Math.round(segment.percentage)}%)"
-        onmouseenter={() => (hoveredIndex = i)}
-        onmouseleave={() => (hoveredIndex = null)}
-        onfocus={() => (hoveredIndex = i)}
-        onblur={() => (hoveredIndex = null)}
-      >
-        <path
-          d={segment.path}
-          fill="none"
-          stroke={segment.color}
-          stroke-width={strokeWidth}
-          stroke-linecap="butt"
-          class="segment-path"
-        />
-      </g>
-    {/each}
+    {#if categories.length === 0}
+      <text x={center} y={center} class="center-text">
+        <tspan x={center} dy="0.35em" class="center-secondary">No data</tspan>
+      </text>
+    {:else}
+      {#each segments as segment, i}
+        <g
+          class="segment"
+          class:hovered={hoveredIndex === i}
+          style:transform-origin="{center}px {center}px"
+          role="presentation"
+          onmouseenter={() => (hoveredIndex = i)}
+          onmouseleave={() => (hoveredIndex = null)}
+        >
+          <path d={segment.path} fill="none" stroke={segment.color} stroke-width={strokeWidth} stroke-linecap="butt" />
+        </g>
+      {/each}
 
-    <!-- Icon overlay when hovering -->
-    {#if hoveredIndex !== null}
-      <g
-        transform="translate({size / 2 - 14}, {size / 2 - 52})"
-        class="segment-icon-wrapper"
-        aria-hidden="true"
-        style="color: {segments[hoveredIndex].iconColor};"
-      >
-        <Icon icon={segments[hoveredIndex].icon} width="24" height="24" />
-      </g>
-    {/if}
-
-    <!-- Center text -->
-    <text x={size / 2} y={size / 2} class="center-text">
-      <tspan x={size / 2} dy="-0.5em" class="center-primary" style="fill: {hoveredIndex !== null ? segments[hoveredIndex].iconColor : "#333"};">{centerText.primary}</tspan>
-      <tspan x={size / 2} dy="1.2em" class="center-secondary">{centerText.secondary}</tspan>
-      {#if centerText.tertiary}
-        <tspan x={size / 2} dy="1.2em" class="center-tertiary" style="fill: {hoveredIndex !== null ? segments[hoveredIndex].iconColor : "#333"};">{centerText.tertiary}</tspan>
+      {#if hoveredSegment}
+        <g transform={iconTransform} class="segment-icon-wrapper" aria-hidden="true" style:color={hoveredSegment.iconColor}>
+          <Icon icon={hoveredSegment.icon} width={ICON_SIZE} height={ICON_SIZE} />
+        </g>
       {/if}
-    </text>
+
+      <text x={center} y={center} class="center-text">
+        <tspan x={center} dy="-0.5em" class="center-primary" style:fill={hoveredSegment?.iconColor ?? '#333'}>
+          {centerText.primary}
+        </tspan>
+        <tspan x={center} dy="1.2em" class="center-secondary">{centerText.secondary}</tspan>
+        {#if centerText.tertiary}
+          <tspan x={center} dy="1.2em" class="center-tertiary" style:fill={hoveredSegment?.iconColor ?? '#333'}>
+            {centerText.tertiary}
+          </tspan>
+        {/if}
+      </text>
+    {/if}
   </svg>
 </div>
 
 <style>
   .pie-chart-container {
     display: inline-block;
-    position: relative;
   }
 
   .pie-chart {
@@ -163,9 +151,7 @@
 
   .segment {
     cursor: pointer;
-    outline: none;
     transition: transform 0.2s ease-in-out, filter 0.2s ease-in-out;
-    transform-origin: center;
   }
 
   .segment.hovered {
@@ -173,18 +159,8 @@
     filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.4));
   }
 
-  .segment-path {
-    transition: all 0.2s ease-in-out;
-  }
-
-  .segment:focus {
-    transform: scale(1.04);
-    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.4));
-  }
-
   .segment-icon-wrapper {
     pointer-events: none;
-    overflow: visible;
   }
 
   .center-text {
@@ -210,4 +186,3 @@
     fill: #666;
   }
 </style>
-

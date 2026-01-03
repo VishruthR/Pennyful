@@ -6,9 +6,12 @@
   let greetMsg = $state("");
 
   const spendingCategories = [
-    { name: "Food", color: "#FFE062", icon: "fluent:food-28-filled", iconColor: "#CBA50B", amount: 555 },
-    { name: "Savings", color: "#AEAEAE", icon: "fluent:savings-32-filled", iconColor: "#575757", amount: 645 },
-    { name: "Transportation", color: "#FFA862", icon: "bxs:car", iconColor: "#CC742E", amount: 300 },
+    { name: "Food", color: "#F2B834", icon: "fluent:food-28-filled", iconColor: "#F2B834", amount: 555 },
+    { name: "Transportation", color: "#F4511E", icon: "bxs:car", iconColor: "#F4511E", amount: 300 },
+    { name: "Subscriptions", color: "#FFA7A0", icon: "fluent-mdl2:recurring-event", iconColor: "#FFA7A0", amount: 250 },
+    { name: "Healthcare", color: "#45CAAF", icon: "solar:health-bold", iconColor: "#45CAAF", amount: 150 },
+    { name: "Entertainment", color: "#B585EC", icon: "fluent:movies-and-tv-20-filled", iconColor: "#B585EC", amount: 10 },
+    { name: "Savings", color: "#AEAEAE", icon: "fluent:savings-32-filled", iconColor: "#AEAEAE", amount: 645 },
   ];
 
   async function greet(event: Event) {
