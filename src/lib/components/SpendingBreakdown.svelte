@@ -19,7 +19,6 @@
     subtitle?: string;
     size?: number;
     strokeWidth?: number;
-    currency?: string;
   }
 
   let {
@@ -28,7 +27,6 @@
     subtitle = "Each color corresponds to a category. Hover over a color to see more details on your spending within that category.",
     size = 280,
     strokeWidth = 24,
-    currency = "$",
   }: Props = $props();
 </script>
 
@@ -36,7 +34,7 @@
   <h2 class="title">{title}</h2>
   <p class="subtitle">{subtitle}</p>
   <div class="chart-wrapper">
-    <SpendingPieChart {categories} {size} {strokeWidth} {currency} />
+    <SpendingPieChart {categories} {size} {strokeWidth} />
   </div>
 </div>
 
@@ -44,25 +42,25 @@
   .spending-breakdown {
     border: 2px solid #535353;
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 24px;
     display: inline-block;
   }
 
   .title {
     color: #404040;
-    font-size: 1.5rem;
+    font-size: 24px;
     font-weight: 700;
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 8px 0;
     text-align: left;
   }
 
   .subtitle {
     color: #535353;
-    font-size: 0.95rem;
+    font-size: 15px;
     font-weight: 400;
-    margin: 0 0 1.5rem 0;
+    margin: 0 0 24px 0;
     text-align: left;
-    line-height: 1.4;
+    line-height: 22px;
     max-width: 320px;
   }
 
@@ -71,4 +69,3 @@
     justify-content: center;
   }
 </style>
-

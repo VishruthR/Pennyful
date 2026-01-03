@@ -7,9 +7,6 @@
     { name: "Food", color: "#F2B834", icon: "fluent:food-28-filled", iconColor: "#F2B834", amount: 555 },
     { name: "Transportation", color: "#F4511E", icon: "bxs:car", iconColor: "#F4511E", amount: 300 },
     { name: "Subscriptions", color: "#FFA7A0", icon: "fluent-mdl2:recurring-event", iconColor: "#FFA7A0", amount: 250 },
-    { name: "Healthcare", color: "#45CAAF", icon: "solar:health-bold", iconColor: "#45CAAF", amount: 150 },
-    { name: "Entertainment", color: "#B585EC", icon: "fluent:movies-and-tv-20-filled", iconColor: "#B585EC", amount: 10 },
-    { name: "Savings", color: "#AEAEAE", icon: "fluent:savings-32-filled", iconColor: "#AEAEAE", amount: 645 },
   ];
 -->
 
@@ -33,12 +30,11 @@
     categories: SpendingCategory[];
     size?: number;
     strokeWidth?: number;
-    currency?: string;
   }
 
   const ICON_SIZE = 24;
 
-  let { categories, size = 200, strokeWidth = 20, currency = "$" }: Props = $props();
+  let { categories, size = 200, strokeWidth = 20 }: Props = $props();
   let hoveredIndex = $state<number | null>(null);
 
   const center = $derived(size / 2);
@@ -80,13 +76,13 @@
     if (hoveredSegment) {
       return {
         primary: hoveredSegment.name,
-        secondary: `${currency}${hoveredSegment.amount.toLocaleString()}`,
+        secondary: `$${hoveredSegment.amount.toLocaleString()}`,
         tertiary: formatPercent(hoveredSegment.percentage),
       };
     }
     return {
       primary: "Total",
-      secondary: `${currency}${total.toLocaleString()}`,
+      secondary: `$${total.toLocaleString()}`,
       tertiary: null,
     };
   });
@@ -169,19 +165,19 @@
   }
 
   .center-primary {
-    font-size: 1.1rem;
+    font-size: 18px;
     font-weight: 500;
     fill: #333;
   }
 
   .center-secondary {
-    font-size: 1.5rem;
+    font-size: 24px;
     font-weight: 700;
     fill: #111;
   }
 
   .center-tertiary {
-    font-size: 1.1rem;
+    font-size: 18px;
     font-weight: 500;
     fill: #666;
   }
