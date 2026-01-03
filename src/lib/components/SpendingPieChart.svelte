@@ -124,19 +124,6 @@
           stroke-linecap="butt"
           class="segment-path"
         />
-        
-        <!-- <foreignObject
-          x={segment.iconX - 14}
-          y={segment.iconY - 14}
-          width="28"
-          height="28"
-          class="segment-icon-wrapper"
-          aria-hidden="true"
-        >
-          <div class="icon-container" style="color: {segment.iconColor};">
-            <Icon icon={segment.icon} width="24" height="24" />
-          </div>
-        </foreignObject> -->
       </g>
     {/each}
 
@@ -155,9 +142,9 @@
     <!-- Center text -->
     <text x={size / 2} y={size / 2} class="center-text">
       <tspan x={size / 2} dy="-0.5em" class="center-primary" style="fill: {hoveredIndex !== null ? segments[hoveredIndex].iconColor : "#333"};">{centerText.primary}</tspan>
-      <tspan x={size / 2} dy="1.4em" class="center-secondary">{centerText.secondary}</tspan>
+      <tspan x={size / 2} dy="1.2em" class="center-secondary">{centerText.secondary}</tspan>
       {#if centerText.tertiary}
-        <tspan x={size / 2} dy="1.3em" class="center-tertiary" style="fill: {hoveredIndex !== null ? segments[hoveredIndex].iconColor : "#333"};">{centerText.tertiary}</tspan>
+        <tspan x={size / 2} dy="1.2em" class="center-tertiary" style="fill: {hoveredIndex !== null ? segments[hoveredIndex].iconColor : "#333"};">{centerText.tertiary}</tspan>
       {/if}
     </text>
   </svg>
@@ -198,14 +185,6 @@
   .segment-icon-wrapper {
     pointer-events: none;
     overflow: visible;
-  }
-
-  .icon-container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   .center-text {
