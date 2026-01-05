@@ -25,14 +25,6 @@
 </main>
 
 <style>
-  :global(body) {
-    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-    font-size: 16px;
-    line-height: 24px;
-    background-color: #f6f6f6;
-    margin: 0;
-  }
-
   .container {
     min-height: 100vh;
     display: flex;

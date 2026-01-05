@@ -43,15 +43,15 @@
 
   function getProgressColor(category: SpendingCategory): string {
     const progress = getProgress(category);
-    if (progress < 35) return "#378727";
+    if (progress < 35) return "var(--profit-green)";
     if (progress <= 70) return "#F7B500";
-    return "#DC1716";
+    return "var(--loss-red)";
   }
 </script>
 
 <div class="top-categories">
   <header class="header">
-    <h2 class="title">{title}</h2>
+    <h2 class="title h3">{title}</h2>
     <button class="see-all" onclick={onSeeAll}>
       see all categories <Icon icon="stash:chevron-right" width={16} height={16} />
     </button>
@@ -64,7 +64,7 @@
           <div class="category-icon">
             <Icon icon={category.icon} width={20} height={20} />
           </div>
-          <span class="category-name">{category.name}</span>
+          <span class="category-name paragraph">{category.name}</span>
         </div>
       {/each}
     </div>
@@ -72,20 +72,20 @@
     <div class="column-progress">
       {#each categories as category}
         <div class="progress-bar-container">
-            <div class="progress-bar">
+          <div class="progress-bar">
             <div
-                class="progress-fill"
-                style:width="{getProgress(category)}%"
-                style:background-color={getProgressColor(category)}
+              class="progress-fill"
+              style:width="{getProgress(category)}%"
+              style:background-color={getProgressColor(category)}
             ></div>
-            </div>
+          </div>
         </div>
       {/each}
     </div>
 
     <div class="column-amounts">
       {#each categories as category}
-        <span class="category-amount">
+        <span class="category-amount paragraph">
           {#if category.budget}
             {formatAmount(category.spending)} / {formatAmount(category.budget)}
           {:else}
@@ -99,7 +99,7 @@
 
 <style>
   .top-categories {
-    border: 2px solid #535353;
+    border: 2px solid var(--grey-300);
     border-radius: 12px;
     padding: 24px;
     width: 100%;
@@ -113,9 +113,7 @@
   }
 
   .title {
-    color: #404040;
-    font-size: 20px;
-    font-weight: 700;
+    color: var(--grey-500);
     margin: 0;
   }
 
@@ -125,7 +123,7 @@
     gap: 4px;
     background: none;
     border: none;
-    color: #535353;
+    color: var(--grey-300);
     font-size: 14px;
     cursor: pointer;
     padding: 0;
@@ -174,13 +172,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #535353;
+    color: var(--grey-300);
   }
 
   .category-name {
-    color: #404040;
-    font-size: 16px;
-    font-weight: 500;
+    color: var(--grey-500);
     white-space: nowrap;
   }
 
@@ -193,7 +189,7 @@
 
   .progress-bar {
     height: 10px;
-    background-color: #e0e0e0;
+    background-color: var(--grey-100);
     border-radius: 5px;
     overflow: hidden;
     align-self: center;
@@ -207,8 +203,7 @@
   }
 
   .category-amount {
-    color: #404040;
-    font-size: 16px;
+    color: var(--grey-500);
     white-space: nowrap;
     height: 20px;
     display: flex;

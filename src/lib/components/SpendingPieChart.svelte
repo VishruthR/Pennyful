@@ -94,7 +94,7 @@
 
 <div class="pie-chart-container">
   <svg viewBox="0 0 {size} {size}" width={size} height={size} class="pie-chart" aria-label="Spending breakdown pie chart">
-    <circle cx={center} cy={center} r={radius} fill="none" stroke="#e5e5e5" stroke-width={strokeWidth} />
+    <circle cx={center} cy={center} r={radius} fill="none" stroke="var(--grey-100)" stroke-width={strokeWidth} />
 
     {#if categories.length === 0}
       <text x={center} y={center} class="center-text">
@@ -121,12 +121,12 @@
       {/if}
 
       <text x={center} y={center} class="center-text">
-        <tspan x={center} dy="-0.5em" class="center-primary" style:fill={hoveredSegment?.iconColor ?? '#333'}>
+        <tspan x={center} dy="-0.5em" class="center-primary" style:fill={hoveredSegment?.iconColor ?? 'var(--grey-500)'}>
           {centerText.primary}
         </tspan>
         <tspan x={center} dy="1.2em" class="center-secondary">{centerText.secondary}</tspan>
         {#if centerText.tertiary}
-          <tspan x={center} dy="1.2em" class="center-tertiary" style:fill={hoveredSegment?.iconColor ?? '#333'}>
+          <tspan x={center} dy="1.2em" class="center-tertiary" style:fill={hoveredSegment?.iconColor ?? 'var(--grey-300)'}>
             {centerText.tertiary}
           </tspan>
         {/if}
@@ -161,24 +161,24 @@
 
   .center-text {
     text-anchor: middle;
-    font-family: inherit;
+    font-family: var(--font-family);
   }
 
   .center-primary {
     font-size: 18px;
     font-weight: 500;
-    fill: #333;
+    fill: var(--grey-500);
   }
 
   .center-secondary {
     font-size: 24px;
     font-weight: 700;
-    fill: #111;
+    fill: var(--grey-500);
   }
 
   .center-tertiary {
     font-size: 18px;
     font-weight: 500;
-    fill: #666;
+    fill: var(--grey-300);
   }
 </style>
