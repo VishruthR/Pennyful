@@ -1,0 +1,70 @@
+:root {
+  /* Colors */
+  --bg-white: #F9F9F9;
+  --grey-100: #D9D9D9;
+  --grey-200: #AEAEAE;
+  --grey-300: #535353;
+  --grey-500: #404040;
+  --profit-green: #378727;
+  --loss-red: #DC1716;
+
+  /* Typography */
+  --font-family: 'DM Sans', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--grey-500);
+  background-color: var(--bg-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.paragraph {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.paragraph-bold {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.h3 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.h2 {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.h1 {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.h0-5 {
+  font-size: 40px;
+  font-weight: 700;
+}
+
+.h0 {
+  font-size: 48px;
+  font-weight: 700;
+}
+
