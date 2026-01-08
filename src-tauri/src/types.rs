@@ -90,3 +90,12 @@ impl fmt::Display for Transaction {
             self.id, self.date, self.name, self.amount, self.category_id, self.account_id)
     }
 }
+
+#[derive(sqlx::FromRow, Eq, PartialEq, Debug, Clone, serde::Serialize)]
+pub struct Category {
+    id: u64,
+    pub name: String,
+    pub primary_color: String,
+    pub secondary_color: String,
+    pub icon: String,
+}

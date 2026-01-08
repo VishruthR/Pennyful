@@ -16,7 +16,9 @@ CREATE INDEX IF NOT EXISTS idx_account_bank_id ON account(bank_id);
 CREATE TABLE IF NOT EXISTS category (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    color TEXT NOT NULL CHECK(length(color) <= 7)
+    primary_color TEXT NOT NULL CHECK(length(primary_color) <= 7),
+    secondary_color TEXT NOT NULL CHECK(length(secondary_color) <= 7),
+    icon TEXT
 );
 
 CREATE TABLE IF NOT EXISTS "transaction" (

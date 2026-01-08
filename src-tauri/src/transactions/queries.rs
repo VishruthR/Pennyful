@@ -1,7 +1,5 @@
 use sqlx::{Pool, Sqlite};
 use crate::types::{Transaction, Cents};
-use chrono::NaiveDate;
-use rust_decimal::dec;
 
 pub async fn get_transactions(pool: &Pool<Sqlite>, limit: Option<i64>) -> Result<Vec<Transaction>, sqlx::Error> {
     let query = "SELECT id, name, amount_cents, date, account_id, category_id FROM 'transaction' ORDER BY date, id LIMIT $1";
@@ -18,6 +16,8 @@ pub async fn get_transactions(pool: &Pool<Sqlite>, limit: Option<i64>) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::NaiveDate;
+    use rust_decimal::dec;
     
     fn get_expected_transactions() -> Vec<Transaction> {
         vec![

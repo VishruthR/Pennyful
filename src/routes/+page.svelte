@@ -1,6 +1,7 @@
 <script lang="ts">
   import SpendingBreakdown from "$lib/components/SpendingBreakdown.svelte";
   import TopCategories from "$lib/components/TopCategories.svelte";
+  import { invoke } from '@tauri-apps/api/core';
 
   const spendingCategories = [
     { name: "Food", color: "#F2B834", icon: "fluent:food-28-filled", iconColor: "#F2B834", amount: 555 },
@@ -17,6 +18,9 @@
     { name: "Hobbies", icon: "mdi:palette", spending: 555, budget: 600 },
     { name: "Misc", icon: "mdi:wrench", spending: 555 },
   ];
+
+  console.log("Hello, invoking")
+  invoke('get_category_details').then((message) => console.log(message));
 </script>
 
 <main class="container">
