@@ -4,22 +4,22 @@
 
   Example data:
   const spendingCategories = [
-    { name: "Food", color: "#F2B834", icon: "fluent:food-28-filled", iconColor: "#F2B834", amount: 555 },
-    { name: "Transportation", color: "#F4511E", icon: "bxs:car", iconColor: "#F4511E", amount: 300 },
-    { name: "Subscriptions", color: "#FFA7A0", icon: "fluent-mdl2:recurring-event", iconColor: "#FFA7A0", amount: 250 },
+    { name: "Housing", amount: 555 },
+    { name: "Transportation", amount: 300 },
+    { name: "Healthcare", amount: 250 },
   ];
+
+  const categoryDetails = {
+    "Housing": { "name": "Housing", "color": "#B585EC", "icon": "gridicons:house" },
+    "Transportation": { "name": "Transportation", "color": "#E67675", "icon": "mdi:car" },
+    "Healthcare": { "name": "Healthcare", "color": "#7986CB", "icon": "solar:health-bold" },
+  }
 -->
 
 <script lang="ts">
   import Icon from "@iconify/svelte";
-
-  interface SpendingCategory {
-    name: string;
-    color: string;
-    icon: string;
-    iconColor: string;
-    amount: number;
-  }
+  import type { Category } from "$lib/types.ts"
+  import type { SpendingCategory } from "$lib/components/SpendingBreakdown.svelte"
 
   interface Segment extends SpendingCategory {
     percentage: number;
@@ -28,33 +28,44 @@
 
   interface Props {
     categories: SpendingCategory[];
+    categoryDetails: Map<String, Category>;
     size?: number;
     strokeWidth?: number;
   }
 
   const ICON_SIZE = 24;
 
-  let { categories, size = 200, strokeWidth = 20 }: Props = $props();
+  let { categories, categoryDetails, size = 200, strokeWidth = 20 }: Props = $props();
   let hoveredIndex = $state<number | null>(null);
 
   const center = $derived(size / 2);
   const radius = $derived((size - strokeWidth) / 2);
   const total = $derived(categories.reduce((sum, cat) => sum + cat.amount, 0));
 
-  function polarToCartesian(angle: number): { x: number; y: number } {
+  const polarToCartesian = (angle: number): { x: number; y: number } => {
     const rad = ((angle - 90) * Math.PI) / 180;
     return { x: center + radius * Math.cos(rad), y: center + radius * Math.sin(rad) };
   }
 
-  function describeArc(startAngle: number, endAngle: number): string {
+  const describeArc = (startAngle: number, endAngle: number): string => {
     const start = polarToCartesian(endAngle);
     const end = polarToCartesian(startAngle);
     const largeArc = endAngle - startAngle > 180 ? 1 : 0;
     return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 0 ${end.x} ${end.y}`;
   }
 
-  function formatPercent(pct: number): string {
+  const formatPercent = (pct: number): string => {
     return pct < 10 ? `${pct.toFixed(1)}%` : `${Math.round(pct)}%`;
+  }
+
+  const getCategoryDetails = (hoveredSegment: Segment | null): Category | undefined => {
+    if (hoveredSegment === null) {
+      return undefined;
+    }
+
+    console.log("hoveredSegment", hoveredSegment);
+    console.log("specific category", categoryDetails.get(hoveredSegment.name));
+    return categoryDetails.get(hoveredSegment.name);
   }
 
   const segments: Segment[] = $derived.by(() => {
@@ -70,6 +81,9 @@
 
   const hoveredSegment = $derived(
     hoveredIndex !== null ? segments[hoveredIndex] ?? null : null
+  );
+  const hoveredDetails = $derived(
+      getCategoryDetails(hoveredSegment)
   );
 
   const centerText = $derived.by(() => {
@@ -90,6 +104,9 @@
   const iconTransform = $derived(
     `translate(${center - ICON_SIZE / 2}, ${center - size * 0.26})`
   );
+
+  $inspect(categoryDetails);
+  $inspect("hoveredDetails", hoveredDetails);
 </script>
 
 <div class="pie-chart-container">
@@ -110,23 +127,23 @@
           onmouseenter={() => (hoveredIndex = i)}
           onmouseleave={() => (hoveredIndex = null)}
         >
-          <path d={segment.path} fill="none" stroke={segment.color} stroke-width={strokeWidth} stroke-linecap="butt" />
+          <path d={segment.path} fill="none" stroke={getCategoryDetails(segment)?.color ?? "#111111"} stroke-width={strokeWidth} stroke-linecap="butt" />
         </g>
       {/each}
 
-      {#if hoveredSegment}
-        <g transform={iconTransform} class="segment-icon-wrapper" aria-hidden="true" style:color={hoveredSegment.iconColor}>
-          <Icon icon={hoveredSegment.icon} width={ICON_SIZE} height={ICON_SIZE} />
+      {#if hoveredSegment && hoveredDetails}
+        <g transform={iconTransform} class="segment-icon-wrapper" aria-hidden="true" style:color={hoveredDetails?.color ?? 'var(--grey-500)'}>
+          <Icon icon={hoveredDetails.icon} width={ICON_SIZE} height={ICON_SIZE} />
         </g>
       {/if}
 
       <text x={center} y={center} class="center-text">
-        <tspan x={center} dy="-0.5em" class="center-primary" style:fill={hoveredSegment?.iconColor ?? 'var(--grey-500)'}>
+        <tspan x={center} dy="-0.5em" class="center-primary" style:fill={hoveredDetails?.color ?? 'var(--grey-500)'}>
           {centerText.primary}
         </tspan>
         <tspan x={center} dy="1.2em" class="center-secondary">{centerText.secondary}</tspan>
         {#if centerText.tertiary}
-          <tspan x={center} dy="1.2em" class="center-tertiary" style:fill={hoveredSegment?.iconColor ?? 'var(--grey-300)'}>
+          <tspan x={center} dy="1.2em" class="center-tertiary" style:fill={hoveredDetails?.color ?? 'var(--grey-300)'}>
             {centerText.tertiary}
           </tspan>
         {/if}

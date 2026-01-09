@@ -4,12 +4,11 @@
 
 <script lang="ts">
   import SpendingPieChart from "./SpendingPieChart.svelte";
+  import { invoke } from '@tauri-apps/api/core';
+  import type { CategoryDetails, Category } from "$lib/types.ts"
 
-  interface SpendingCategory {
+  export interface SpendingCategory {
     name: string;
-    color: string;
-    icon: string;
-    iconColor: string;
     amount: number;
   }
 
@@ -28,13 +27,27 @@
     size = 280,
     strokeWidth = 24,
   }: Props = $props();
+
+  const fetchCategoryDetails = async () => {
+    // TODO: This function doesn't work on first load, only on refresh
+    let categoryDetails = new Map(Object.entries(await invoke('get_category_details'))) as CategoryDetails
+    console.log("Fetched", categoryDetails);
+    return categoryDetails;
+  }
 </script>
 
 <div class="spending-breakdown">
   <h2 class="title h2">{title}</h2>
   <p class="subtitle paragraph">{subtitle}</p>
   <div class="chart-wrapper">
-    <SpendingPieChart {categories} {size} {strokeWidth} />
+    {#await fetchCategoryDetails()}
+      <p>Loading...</p>
+    {:then categoryDetails}
+        <SpendingPieChart {categories} {categoryDetails} {size} {strokeWidth} />
+    {:catch error}
+      <p>Error: {error}</p>
+    {/await}
+    
   </div>
 </div>
 

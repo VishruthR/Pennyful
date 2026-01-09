@@ -1,12 +1,11 @@
 <script lang="ts">
   import SpendingBreakdown from "$lib/components/SpendingBreakdown.svelte";
   import TopCategories from "$lib/components/TopCategories.svelte";
-  import { invoke } from '@tauri-apps/api/core';
 
   const spendingCategories = [
-    { name: "Food", color: "#F2B834", icon: "fluent:food-28-filled", iconColor: "#F2B834", amount: 555 },
-    { name: "Transportation", color: "#F4511E", icon: "bxs:car", iconColor: "#F4511E", amount: 300 },
-    { name: "Subscriptions", color: "#FFA7A0", icon: "fluent-mdl2:recurring-event", iconColor: "#FFA7A0", amount: 250 },
+    { name: "Housing", amount: 555 },
+    { name: "Healthcare", amount: 300 },
+    { name: "Transportation", amount: 250 },
   ];
 
   const topCategories = [
@@ -18,9 +17,6 @@
     { name: "Hobbies", icon: "mdi:palette", spending: 555, budget: 600 },
     { name: "Misc", icon: "mdi:wrench", spending: 555 },
   ];
-
-  console.log("Hello, invoking")
-  invoke('get_category_details').then((message) => console.log(message));
 </script>
 
 <main class="container">
