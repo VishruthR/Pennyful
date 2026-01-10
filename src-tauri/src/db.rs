@@ -9,8 +9,13 @@ pub struct Database {
 impl Database {
     pub async fn new(app_dir: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         fs::create_dir_all(app_dir)?;
+        let db_path;
 
-        let db_path = app_dir.join("pennyful.db");
+        if cfg!(debug_assertions) {
+            db_path = app_dir.join("pennyful_dev.db");
+        } else {
+            db_path = app_dir.join("pennyful.db");
+        }
 
         println!("Initializing database at: {:?}", db_path);
 
