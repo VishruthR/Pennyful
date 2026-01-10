@@ -1,0 +1,1 @@
+rm "/Users/vishruthraj/Library/Application Support/com.pennyful.app/pennyful_dev.db"
