@@ -30,6 +30,7 @@
 
   const fetchCategoryDetails = async () => {
     // TODO: This function doesn't work on first load, only on refresh
+    // Maybe an issue with being offline?
     let categoryDetails = new Map(Object.entries(await invoke('get_category_details'))) as CategoryDetails
     console.log("Fetched", categoryDetails);
     return categoryDetails;
@@ -43,7 +44,11 @@
     {#await fetchCategoryDetails()}
       <p>Loading...</p>
     {:then categoryDetails}
+      {#if categoryDetails.size > 0}
         <SpendingPieChart {categories} {categoryDetails} {size} {strokeWidth} />
+      {:else}
+        <p>Error: map empty</p>
+      {/if}
     {:catch error}
       <p>Error: {error}</p>
     {/await}
