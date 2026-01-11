@@ -63,8 +63,6 @@
       return undefined;
     }
 
-    console.log("hoveredSegment", hoveredSegment);
-    console.log("specific category", categoryDetails.get(hoveredSegment.name));
     return categoryDetails.get(hoveredSegment.name);
   }
 
@@ -102,11 +100,8 @@
   });
 
   const iconTransform = $derived(
-    `translate(${center - ICON_SIZE / 2}, ${center - size * 0.26})`
+    `translate(${center - ICON_SIZE / 2}, ${center - size * 0.2})`
   );
-
-  $inspect(categoryDetails);
-  $inspect("hoveredDetails", hoveredDetails);
 </script>
 
 <div class="pie-chart-container">

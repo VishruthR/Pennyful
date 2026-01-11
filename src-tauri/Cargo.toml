@@ -26,4 +26,5 @@ sqlx = { version = "0.8", features = [ "runtime-tokio", "tls-native-tls", "sqlit
 chrono = { version = "0.4.42", features = [ "serde" ] }
 csv = "1.4.0"
 rust_decimal = { version = "1.39.0", features = [ "serde", "macros" ] }
+tauri-plugin-devtools = "2.0.0"
 
