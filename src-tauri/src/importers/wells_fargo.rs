@@ -8,7 +8,7 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
         .from_path(filename)?;
 
     let headers = csv::StringRecord::from(vec!["date", "amount", "not_used_1", "not_used_2", "name"]);
-    // e: We filter out lines that may have errors, we should handle them explicitly, line 14
+    // TODO: We filter out lines that may have errors, we should handle them explicitly, line 14
     let transactions = reader
         .records()
         .filter_map(|transaction_record| transaction_record.ok()?.deserialize(Some(&headers)).ok())

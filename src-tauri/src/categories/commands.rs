@@ -13,6 +13,7 @@ pub async fn get_category_details(state: tauri::State<'_, AppState>) -> Result<H
   } else {
     let d = get_all_categories(&db.0)
         .await
+        // TODO: Should map this to custom error that can be serialized and used by FE
         .map_err(|e| e.to_string())?;
 
     *category_details = Some(d.clone());

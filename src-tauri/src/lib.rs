@@ -23,6 +23,7 @@ struct AppState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Add CrabNebula debugger to dev builds
     #[cfg(debug_assertions)]
     let builder = tauri::Builder::default().plugin(tauri_plugin_devtools::init());
     #[cfg(not(debug_assertions))]

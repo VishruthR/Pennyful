@@ -40,11 +40,7 @@
     {#await fetchCategoryDetails()}
       <p>Loading...</p>
     {:then categoryDetails}
-      {#if categoryDetails.size > 0}
-        <SpendingPieChart {categories} {categoryDetails} {size} {strokeWidth} />
-      {:else}
-        <p>Error: map empty</p>
-      {/if}
+      <SpendingPieChart {categories} {categoryDetails} {size} {strokeWidth} />
     {:catch error}
       <p>Error: {error}</p>
     {/await}
