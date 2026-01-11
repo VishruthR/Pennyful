@@ -1,5 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::Manager;
+use tauri::{Manager, async_runtime::Mutex};
 mod importers {
     pub(crate) mod bank_of_america;
     pub(crate) mod wells_fargo;
@@ -9,17 +9,27 @@ mod importers {
 mod transactions {
     pub(crate) mod queries;
 }
+mod categories {
+    pub(crate) mod commands;
+    pub(crate) mod queries;
+}
 mod db;
 mod types;
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+struct AppState {
+    db: db::DatabaseState,
+    category_details: Mutex<Option<Vec<types::Category>>>
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    // Add CrabNebula debugger to dev builds
+    #[cfg(debug_assertions)]
+    let builder = tauri::Builder::default().plugin(tauri_plugin_devtools::init());
+    #[cfg(not(debug_assertions))]
+    let builder = tauri::Builder::default();
+
+    builder
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -31,13 +41,16 @@ pub fn run() {
                 .await
                 .expect("Failed to initialize database");
 
-                app.manage(db::DatabaseState(database.pool));
+                app.manage(AppState {
+                    db: db::DatabaseState(database.pool),
+                    category_details: Mutex::new(None)
+                });
             });
         
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![categories::commands::get_category_details])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -3,9 +3,9 @@
   import TopCategories from "$lib/components/TopCategories.svelte";
 
   const spendingCategories = [
-    { name: "Food", color: "#F2B834", icon: "fluent:food-28-filled", iconColor: "#F2B834", amount: 555 },
-    { name: "Transportation", color: "#F4511E", icon: "bxs:car", iconColor: "#F4511E", amount: 300 },
-    { name: "Subscriptions", color: "#FFA7A0", icon: "fluent-mdl2:recurring-event", iconColor: "#FFA7A0", amount: 250 },
+    { name: "Housing", amount: 555 },
+    { name: "Healthcare", amount: 300 },
+    { name: "Transportation", amount: 250 },
   ];
 
   const topCategories = [
