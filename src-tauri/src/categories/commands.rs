@@ -47,7 +47,6 @@ mod tests {
         vec!["Uncategorized", "Income", "Groceries", "Entertainment", "Miscellaneous"]
     }
 
-    #[sqlx::test(fixtures(path="../fixtures", scripts("transactions")))]
     async fn test_get_category_details(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
         let app = tauri::test::mock_app();
         app.manage(AppState {

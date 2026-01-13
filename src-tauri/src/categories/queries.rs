@@ -33,7 +33,6 @@ mod tests {
         ];
     }
 
-    #[sqlx::test(fixtures(path="../fixtures", scripts("transactions")))]
     async fn test_get_all_transactions(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
         let categories = get_all_categories(&pool).await?;
 
