@@ -96,5 +96,5 @@ pub struct Category {
     id: u64,
     pub name: String,
     pub color: String,
-    pub icon: String,
+    pub icon: Option<String>,
 }
