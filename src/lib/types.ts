@@ -7,5 +7,22 @@ interface Category {
 }
 type CategoryDetails =  Map<String, Category>;
 
-export type { Category, CategoryDetails };
+interface FullTransactionInfo {
+    id: number;
+    name: string;
+    amount: number;
+    date: Date;
+    account: {
+        id: number;
+        name: string;
+    };
+    category: {
+        id: number;
+        name: string;
+        color: string;
+        icon?: string;
+    };
+}
+
+export type { Category, CategoryDetails, FullTransactionInfo };
 
