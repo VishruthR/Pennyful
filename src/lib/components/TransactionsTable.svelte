@@ -72,10 +72,6 @@
   let tableHeight = $derived(
     height ? height : '100%'
   )
-  $inspect(tableHeight);
-
-  // TODO: Add scrolling with max height for the table
-  // TODO: Make category pills transparent
 </script>
 
 <div class="transactions-table-container" style:height={tableHeight}>

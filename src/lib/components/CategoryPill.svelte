@@ -1,6 +1,5 @@
 <!-- @component
   Displays a category pill/badge with transparent text and icon.
-  The text and icon use mix-blend-mode to show through to the underlying color.
 -->
 
 <script lang="ts">
