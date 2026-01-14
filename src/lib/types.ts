@@ -5,7 +5,24 @@ interface Category {
     secondary_color: string,
     icon: string
 }
-type CategoryDetails =  Map<String, Category>;
+type CategoryDetails =  Map<string, Category>;
 
-export type { Category, CategoryDetails };
+interface FullTransactionInfo {
+    id: number;
+    name: string;
+    amount: number;
+    date: Date;
+    account: {
+        id: number;
+        name: string;
+    };
+    category: {
+        id: number;
+        name: string;
+        color: string;
+        icon?: string;
+    };
+}
+
+export type { Category, CategoryDetails, FullTransactionInfo };
 

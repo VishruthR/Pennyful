@@ -9,7 +9,7 @@ INSERT INTO category (name, color, icon) values
     ('Healthcare', '#7986CB', 'solar:health-bold'),
     ('Savings', '#AEAEAE', 'fluent:savings-24-filled'),
     ('Education', '#F2DDB9', 'mage:book-fill'),
-    ('Entertainment', '#5CAAF', 'bxs:party'),
+    ('Entertainment', '#45CAAF', 'bxs:party'),
     ('Shopping', '#F2B834', 'mdi:shopping'),
     ('Hobbies', '#0493D9', 'mdi:youtube-sports'),
     ('Miscellaneous', '#3F51B5', 'mdi:tools');

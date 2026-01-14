@@ -1,10 +1,13 @@
 :root {
   /* Colors */
   --bg-white: #F9F9F9;
+  --pure-white: #FFFFFF;
+  --grey-50: #EEEEEE;
   --grey-100: #D9D9D9;
   --grey-200: #AEAEAE;
   --grey-300: #535353;
   --grey-500: #404040;
+  --blue-50: #E3E9F7;
   --profit-green: #378727;
   --loss-red: #DC1716;
 

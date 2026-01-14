@@ -10,3 +10,4 @@ Compare the git diff of the current working branch to the main remote branch. Re
 - Extensibility
 - Good patterns and abstractions
 - Idiomatic code
+- Unecessary or repetitive code (especially unecessary CSS)
