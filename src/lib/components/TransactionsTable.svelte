@@ -22,12 +22,11 @@
 
   interface Props {
     transactions: FullTransactionInfo[];
+    height?: string;
   }
 
-  let { transactions }: Props = $props();
+  let { transactions, height }: Props = $props();
 
-  // TODO: Consider client vs. server-side sorting options
-  // For now, sort icons are visual placeholders
   let sortColumn: string = $state("date");
   let sortDirection: SortDirection = $state("desc");
 
@@ -50,7 +49,7 @@
   }
 
   function formatDate(date: Date): string {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const month = months[date.getMonth()];
     const day = date.getDate();
     const year = date.getFullYear();
@@ -70,11 +69,16 @@
     return amount >= 0;
   }
 
+  let tableHeight = $derived(
+    height ? height : '100%'
+  )
+  $inspect(tableHeight);
+
   // TODO: Add scrolling with max height for the table
   // TODO: Make category pills transparent
 </script>
 
-<div class="transactions-table-container">
+<div class="transactions-table-container" style:height={tableHeight}>
   <table class="transactions-table">
     <thead>
       <tr>
@@ -136,7 +140,7 @@
     width: 100%;
     border: 2px solid var(--grey-500);
     border-radius: 10px;
-    overflow: hidden;
+    overflow: auto;
   }
 
   .transactions-table {
@@ -146,6 +150,9 @@
   }
 
   thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     background-color: var(--pure-white);
   }
 
@@ -153,8 +160,8 @@
     text-align: left;
     padding: 24px 20px;
     font-weight: bold;
-    color: var(--grey-500);
-    border-bottom: 1px solid var(--grey-100);
+    color: var(--grey-500); 
+    box-shadow: inset 0px 0px #000, 0 1px var(--grey-100);
   }
 
   th.col-amount {
