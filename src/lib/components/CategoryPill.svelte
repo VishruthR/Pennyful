@@ -13,7 +13,6 @@
   }
 
   let { name, icon, color, textColor = 'inherit' }: Props = $props();
-  $inspect(textColor);
 </script>
 
 <span class="category-pill" style:background-color={color} style:color={textColor}>
