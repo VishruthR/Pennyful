@@ -48,12 +48,12 @@
     // TODO: Implement actual sorting logic
   }
 
+  const dateFormatter = new Intl.DateTimeFormat("en-US", { 
+    month: "short", day: "numeric", year: "numeric" 
+  });
+
   function formatDate(date: Date): string {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const month = months[date.getMonth()];
-    const day = date.getDate();
-    const year = date.getFullYear();
-    return `${month} ${day}, ${year}`;
+    return dateFormatter.format(date);
   }
 
   function formatAmount(amount: number): string {
@@ -120,6 +120,7 @@
               name={transaction.category.name}
               icon={transaction.category.icon}
               color={transaction.category.color}
+              textColor={index % 2 === 0 ? 'var(--pure-white)' : 'var(--grey-50)'}
             />
           </td>
           <td class="col-amount {isPositive(transaction.amount) ? 'positive' : 'negative'}">
@@ -189,10 +190,6 @@
 
   tbody tr:hover {
     background-color: var(--blue-50) !important;
-
-    :global(span.pill-content) {
-      color: var(--blue-50);
-    }
   }
 
   tbody tr:hover td:first-child {
@@ -201,18 +198,10 @@
 
   .row-white {
     background-color: var(--pure-white);
-
-    :global(span.pill-content) {
-      color: var(--pure-white);
-    }
   }
 
   .row-grey {
     background-color: var(--grey-50);
-
-    :global(span.pill-content) {
-      color: var(--grey-50);
-    }
   }
 
   td {

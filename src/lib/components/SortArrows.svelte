@@ -29,7 +29,7 @@
       icon="bxs:up-arrow" 
       width={10} 
       height={10}
-      class="arrow arrow-up {isActive && direction === 'asc' ? 'active' : ''}"
+      class="arrow arrow-up"
     />
   {/if}
   {#if showDesc}
@@ -37,7 +37,7 @@
       icon="bxs:up-arrow" 
       width={10} 
       height={10}
-      class="arrow arrow-down {isActive && direction === 'desc' ? 'active' : ''}"
+      class="arrow arrow-down"
     />
   {/if}
 </span>

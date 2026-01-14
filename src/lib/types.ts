@@ -5,7 +5,7 @@ interface Category {
     secondary_color: string,
     icon: string
 }
-type CategoryDetails =  Map<String, Category>;
+type CategoryDetails =  Map<string, Category>;
 
 interface FullTransactionInfo {
     id: number;

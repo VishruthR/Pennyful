@@ -9,12 +9,14 @@
     name: string;
     icon?: string;
     color: string;
+    textColor: string;
   }
 
-  let { name, icon, color }: Props = $props();
+  let { name, icon, color, textColor = 'inherit' }: Props = $props();
+  $inspect(textColor);
 </script>
 
-<span class="category-pill" style:background-color={color}>
+<span class="category-pill" style:background-color={color} style:color={textColor}>
   <span class="pill-content">
     {#if icon}
       <Icon {icon} width={14} height={14} />
@@ -38,6 +40,5 @@
     gap: 6px;
     font-size: 14px;
     font-weight: bold;
-    color: transparent;
   }
 </style>
