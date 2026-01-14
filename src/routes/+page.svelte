@@ -33,7 +33,7 @@
       amount: -100.99,
       date: new Date("2025-10-31"),
       account: { id: 1, name: "BOFA" },
-      category: { id: 13, name: "Fun", color: "#CEE3BE", icon: "bxs:party" }
+      category: { id: 13, name: "Fun", color: "#45CAAF", icon: "bxs:party" }
     },
     {
       id: 5,

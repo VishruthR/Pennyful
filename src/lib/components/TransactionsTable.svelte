@@ -193,6 +193,10 @@
 
   tbody tr:hover {
     background-color: var(--blue-50) !important;
+
+    :global(span.pill-content) {
+      color: var(--blue-50);
+    }
   }
 
   tbody tr:hover td:first-child {
@@ -201,10 +205,18 @@
 
   .row-white {
     background-color: var(--pure-white);
+
+    :global(span.pill-content) {
+      color: var(--pure-white);
+    }
   }
 
   .row-grey {
     background-color: var(--grey-50);
+
+    :global(span.pill-content) {
+      color: var(--grey-50);
+    }
   }
 
   td {

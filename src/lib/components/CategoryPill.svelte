@@ -38,8 +38,7 @@
     align-items: center;
     gap: 6px;
     font-size: 14px;
-    font-weight: 500;
-    color: black;
-    mix-blend-mode: overlay;
+    font-weight: bold;
+    color: transparent;
   }
 </style>
