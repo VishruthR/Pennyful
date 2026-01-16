@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from "$lib/components/Button.svelte";
   import TransactionsTable from "$lib/components/TransactionsTable.svelte";
   import type { FullTransactionInfo } from "$lib/types";
 
@@ -79,6 +80,17 @@
 </script>
 
 <main class="container">
+  <div class="button-demo">
+    <h2 class="h3">Button Variants</h2>
+    <div class="button-row">
+      <Button onclick={() => console.log('Normal button clicked')}>
+        Add transaction
+      </Button>
+      <Button disabled>
+        Add transaction
+      </Button>
+    </div>
+  </div>
   <TransactionsTable {transactions} />
 </main>
 
@@ -86,9 +98,22 @@
   .container {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     flex-grow: 1;
-    align-items: flex-start;
-    justify-content: center;
+    align-items: center;
+    gap: 32px;
     padding: 32px;
+  }
+
+  .button-demo {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .button-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
   }
 </style>
