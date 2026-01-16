@@ -1,5 +1,5 @@
 <!-- @component
-  A reusable button component with normal and disabled variants.
+  A reusable button component.
   Supports full-width mode and form submission types.
 -->
 
@@ -8,28 +8,22 @@
   import type { HTMLButtonAttributes } from 'svelte/elements';
 
   interface Props extends HTMLButtonAttributes {
-    variant?: 'normal' | 'disabled';
     fullWidth?: boolean;
     children: Snippet;
   }
 
   let {
-    variant = 'normal',
     fullWidth = false,
     children,
     type = 'button',
     ...restProps
   }: Props = $props();
-
-  const isDisabled = $derived(variant === 'disabled');
 </script>
 
 <button
   class="btn paragraph-bold"
   class:full-width={fullWidth}
-  class:disabled={isDisabled}
   {type}
-  disabled={isDisabled}
   {...restProps}
 >
   {@render children()}
@@ -62,7 +56,12 @@
     color: var(--pure-white);
   }
 
-  .btn.disabled {
+  .btn:focus-visible {
+    outline: 2px solid var(--grey-500);
+    outline-offset: 2px;
+  }
+
+  .btn:disabled {
     background-color: var(--grey-50);
     border-color: var(--grey-100);
     color: var(--grey-200);

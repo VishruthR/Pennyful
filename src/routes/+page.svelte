@@ -86,7 +86,7 @@
       <Button onclick={() => console.log('Normal button clicked')}>
         Add transaction
       </Button>
-      <Button variant="disabled">
+      <Button disabled>
         Add transaction
       </Button>
     </div>
