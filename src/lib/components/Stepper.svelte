@@ -20,6 +20,7 @@
   interface Step {
     name: string;
     content: Snippet<[StepContext]>;
+    canProceed?: (data: unknown | undefined) => boolean;
   }
 
   interface Props {
@@ -41,10 +42,18 @@
   }
 
   function getAllData(): Record<number, unknown> {
-    return stepData;
+    // Shallow copy to prevent mutation of the original object
+    return { ...stepData };
   }
 
   function goNext() {
+    const currentStepConfig = steps[currentStep];
+    const canProceed = currentStepConfig.canProceed?.(stepData[currentStep]) ?? true;
+    
+    if (!canProceed) {
+      return;
+    }
+
     if (currentStep < steps.length - 1) {
       currentStep++;
     } else if (onComplete) {
@@ -167,7 +176,7 @@
   .step-circle.current {
     box-shadow: inset 0 0 0 3px var(--grey-500);
     background-color: var(--grey-100);
-    color: var(-grey-500);
+    color: var(--grey-500);
   }
 
   .step-circle.upcoming {
@@ -177,7 +186,7 @@
 
   .step-line {
     position: absolute;
-    height: 2px;
+    height: 4px;
     background-color: var(--grey-100);
     transition: background-color 0.2s ease;
   }
@@ -185,14 +194,12 @@
   .step-line-left {
     right: 50%;
     left: 0;
-    height: 4px;
     margin-right: 24px;
   }
 
   .step-line-right {
     left: 50%;
     right: 0;
-    height: 4px;
     margin-left: 24px;
   }
 

@@ -12,7 +12,12 @@
   
   <Stepper
     steps={[
-      { name: 'Select bank account', content: step1Content },
+      { name: 'Select bank account', content: step1Content,
+      canProceed: (data) => {
+        const stepData = data as { bankId: string } | undefined;
+        return !!stepData?.bankId;
+      },
+      },
       { name: 'Choose Import Option', content: step2Content },
       { name: 'Upload File', content: step3Content }
     ]}
