@@ -1,122 +1,55 @@
 <script lang="ts">
-  import BankAccountCard from "$lib/components/BankAccountCard.svelte";
-  import Button from "$lib/components/Button.svelte";
-  import TransactionsTable from "$lib/components/TransactionsTable.svelte";
-  import type { FullTransactionInfo } from "$lib/types";
+  import Stepper from "$lib/components/Stepper.svelte";
 
-  const transactions: FullTransactionInfo[] = [
-    {
-      id: 1,
-      name: "COSTCO WHSE #0008 11/1 PURCHASE...",
-      amount: -10.99,
-      date: new Date("2025-11-01"),
-      account: { id: 1, name: "BOFA" },
-      category: { id: 6, name: "Food", color: "#FEEE8C", icon: "fluent:food-16-filled" }
-    },
-    {
-      id: 2,
-      name: "SimpleBills Prod DES:WEB PMTS ID:XX...",
-      amount: -100.99,
-      date: new Date("2025-11-01"),
-      account: { id: 2, name: "Fidelity" },
-      category: { id: 5, name: "Transportation", color: "#E67675", icon: "mdi:car" }
-    },
-    {
-      id: 3,
-      name: "Zelle payment from JOHN DOE for 'food'; Conf# 11bu1u1",
-      amount: -100.99,
-      date: new Date("2025-11-01"),
-      account: { id: 3, name: "Wells Fargo" },
-      category: { id: 2, name: "Housing", color: "#B585EC", icon: "gridicons:house" }
-    },
-    {
-      id: 4,
-      name: "WELLS FARGO CARD DES:CRD ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB",
-      amount: -100.99,
-      date: new Date("2025-10-31"),
-      account: { id: 1, name: "BOFA" },
-      category: { id: 13, name: "Fun", color: "#45CAAF", icon: "bxs:party" }
-    },
-    {
-      id: 5,
-      name: "COSTCO WHSE#1111 11/14 PURCHASE CITY ST",
-      amount: 100.99,
-      date: new Date("2025-10-30"),
-      account: { id: 4, name: "Amex" },
-      category: { id: 7, name: "Savings", color: "#AEAEAE", icon: "fluent:savings-24-filled" }
-    },
-    {
-      id: 6,
-      name: "BILTPYMTS DES:RENT PMT ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB",
-      amount: -100.99,
-      date: new Date("2025-10-15"),
-      account: { id: 5, name: "Some other bank account...." },
-      category: { id: 9, name: "Healthcare", color: "#7986CB", icon: "solar:health-bold" }
-    },
-    {
-      id: 7,
-      name: "AMEX Airline Fee Reimbursement",
-      amount: -100.99,
-      date: new Date("2025-10-13"),
-      account: { id: 6, name: "Venmo" },
-      category: { id: 11, name: "Hobbies", color: "#0493D9", icon: "mdi:youtube-sports" }
-    },
-    {
-      id: 8,
-      name: "FOOD MARKET #111 CITY STATE",
-      amount: -100.99,
-      date: new Date("2025-09-28"),
-      account: { id: 2, name: "Fidelity" },
-      category: { id: 12, name: "Miscellaneous", color: "#3F51B5", icon: "mdi:tools" }
-    },
-    {
-      id: 9,
-      name: "SQ *FOOD GRILL CITY STATE",
-      amount: -100.99,
-      date: new Date("2025-08-18"),
-      account: { id: 1, name: "BOFA" },
-      category: { id: 1, name: "Income", color: "#CEE3BE", icon: "vaadin:money" }
-    }
-  ];
+  function handleComplete() {
+    console.log('Stepper completed!');
+    alert('All steps completed!');
+  }
 </script>
 
 <main class="container">
-  <div class="button-demo">
-    <h2 class="h3">Button Variants</h2>
-    <div class="button-row">
-      <Button onclick={() => console.log('Normal button clicked')}>
-        Add transaction
-      </Button>
-      <Button disabled>
-        Add transaction
-      </Button>
-    </div>
-  </div>
-
-  <div class="card-demo">
-    <h2 class="h3">Bank Account Card</h2>
-    <div class="card-row">
-      <BankAccountCard
-        icon="ri:bank-fill"
-        name="BoFA Account"
-        provider="Bank of America"
-        accountType="Checking"
-        balance={1900.17}
-        onClick={() => console.log('Card clicked')}
-      />
-      <BankAccountCard
-        icon="ri:bank-fill"
-        name="Savings Account"
-        provider="Wells Fargo"
-        accountType="Savings"
-        balance={-250.5}
-        onClick={() => console.log('Negative balance card clicked')}
-      />
-    </div>
-  </div>
-
-  <TransactionsTable {transactions} />
+  <h1 class="h2">Stepper Component Demo</h1>
+  
+  <Stepper
+    steps={[
+      { name: 'Select bank account', content: step1Content },
+      { name: 'Choose Import Option', content: step2Content },
+      { name: 'Upload File', content: step3Content }
+    ]}
+    onComplete={handleComplete}
+  />
 </main>
+
+{#snippet step1Content()}
+  <div class="step-page">
+    <h2 class="h2">Select your bank account</h2>
+    <p class="paragraph">
+      Choose the bank account you want to import transactions from. 
+      We support all major banks including Bank of America, Wells Fargo, 
+      Chase, and American Express.
+    </p>
+  </div>
+{/snippet}
+
+{#snippet step2Content()}
+  <div class="step-page">
+    <h2 class="h2">Choose import option</h2>
+    <p class="paragraph">
+      Select how you want to import your transaction data. You can upload 
+      a CSV file, connect via API, or paste JSON data directly.
+    </p>
+  </div>
+{/snippet}
+
+{#snippet step3Content()}
+  <div class="step-page">
+    <h2 class="h2">Upload your file</h2>
+    <p class="paragraph">
+      Drag and drop your transaction file here, or click to browse. 
+      We accept CSV files exported from your bank's website.
+    </p>
+  </div>
+{/snippet}
 
 <style>
   .container {
@@ -129,28 +62,20 @@
     padding: 32px;
   }
 
-  .button-demo {
+  .step-page {
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
 
-  .button-row {
-    display: flex;
-    gap: 16px;
-    align-items: center;
+  .step-page h2 {
+    margin: 0;
   }
 
-  .card-demo {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .card-row {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-    width: 750px;
+  .step-page p {
+    margin: 0;
+    color: var(--grey-300);
+    max-width: 600px;
+    line-height: 1.6;
   }
 </style>
