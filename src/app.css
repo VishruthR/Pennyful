@@ -8,6 +8,7 @@
   --grey-300: #535353;
   --grey-500: #404040;
   --blue-50: #E3E9F7;
+  --blue-100: #96AFEB;
   --profit-green: #378727;
   --loss-red: #DC1716;
 
@@ -71,3 +72,15 @@ body {
   font-weight: 700;
 }
 
+/* Utility classes */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
