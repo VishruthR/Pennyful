@@ -8,6 +8,8 @@
 
   /**
    * Context passed to each step's content snippet to centralize data for each step.
+   * We use 'unknown' to allow for steps to store any data. 
+   * Users of Stepper should use type assertions to ensure type safety.
    */
   export interface StepContext {
     setData: (data: unknown) => void;
