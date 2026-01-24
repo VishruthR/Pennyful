@@ -6,25 +6,47 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
+  /**
+   * Context passed to each step's content snippet to centralize data for each step.
+   */
+  export interface StepContext {
+    setData: (data: unknown) => void;
+    getData: () => unknown | undefined;
+    getAllData: () => Record<number, unknown>;
+  }
+
   interface Step {
     name: string;
-    content: Snippet;
+    content: Snippet<[StepContext]>;
   }
 
   interface Props {
     steps: Step[];
-    onComplete?: () => void;
+    onComplete?: (data: Record<number, unknown>) => void;
   }
 
   let { steps, onComplete }: Props = $props();
 
   let currentStep = $state(0);
+  let stepData = $state<Record<number, unknown>>({});
+
+  function setData(data: unknown) {
+    stepData[currentStep] = data;
+  }
+
+  function getData(): unknown | undefined {
+    return stepData[currentStep];
+  }
+
+  function getAllData(): Record<number, unknown> {
+    return stepData;
+  }
 
   function goNext() {
     if (currentStep < steps.length - 1) {
       currentStep++;
     } else if (onComplete) {
-      onComplete();
+      onComplete(stepData);
     }
   }
 
@@ -32,12 +54,6 @@
     if (currentStep > 0) {
       currentStep--;
     }
-  }
-
-  function getStepStatus(index: number): 'completed' | 'current' | 'upcoming' {
-    if (index < currentStep) return 'completed';
-    if (index === currentStep) return 'current';
-    return 'upcoming';
   }
 </script>
 
@@ -74,7 +90,7 @@
 
   <!-- Content area -->
   <div class="step-content">
-    {@render steps[currentStep].content()}
+    {@render steps[currentStep].content({ setData, getData, getAllData })}
   </div>
 
   <!-- Navigation -->
