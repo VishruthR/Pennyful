@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BankAccountCard from "$lib/components/BankAccountCard.svelte";
   import Button from "$lib/components/Button.svelte";
   import TransactionsTable from "$lib/components/TransactionsTable.svelte";
   import type { FullTransactionInfo } from "$lib/types";
@@ -91,6 +92,29 @@
       </Button>
     </div>
   </div>
+
+  <div class="card-demo">
+    <h2 class="h3">Bank Account Card</h2>
+    <div class="card-row">
+      <BankAccountCard
+        icon="ri:bank-fill"
+        name="BoFA Account"
+        provider="Bank of America"
+        accountType="Checking"
+        balance={1900.17}
+        onClick={() => console.log('Card clicked')}
+      />
+      <BankAccountCard
+        icon="ri:bank-fill"
+        name="Savings Account"
+        provider="Wells Fargo"
+        accountType="Savings"
+        balance={-250.5}
+        onClick={() => console.log('Negative balance card clicked')}
+      />
+    </div>
+  </div>
+
   <TransactionsTable {transactions} />
 </main>
 
@@ -115,5 +139,18 @@
     display: flex;
     gap: 16px;
     align-items: center;
+  }
+
+  .card-demo {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .card-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    width: 750px;
   }
 </style>
