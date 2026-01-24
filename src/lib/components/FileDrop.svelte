@@ -6,30 +6,88 @@
 <script lang="ts">
   import Icon from "@iconify/svelte";
 
-  interface Props {
-    onUpload: (files: File[]) => void;
-    acceptedTypes: string[];
-    multiple?: boolean;
+  export interface FileError {
+    file: File;
+    reason: 'size' | 'type';
   }
 
-  let { onUpload, acceptedTypes, multiple = false }: Props = $props();
+  interface Props {
+    onUpload: (files: File[]) => void;
+    onError?: (errors: FileError[]) => void;
+    acceptedTypes: string[];
+    multiple?: boolean;
+    maxFileSize?: number;
+  }
+
+  let { 
+    onUpload, 
+    onError,
+    acceptedTypes, 
+    multiple = false,
+    maxFileSize = 10 * 1024 * 1024 // 10MB default
+  }: Props = $props();
 
   let files = $state<File[]>([]);
   let inputRef: HTMLInputElement | undefined = $state();
-
-  const MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1GB
+  let errorMessage = $state<string | null>(null);
 
   const acceptString = $derived(acceptedTypes.join(','));
   const displayFormats = $derived(
     acceptedTypes.map(t => t.replace('.', '')).join(', ')
   );
 
-  function isValidFile(file: File): boolean {
-    if (file.size > MAX_FILE_SIZE) return false;
-    
-    // Simple file extension check
+  function isValidType(file: File): boolean {
     const fileName = file.name.toLowerCase();
     return acceptedTypes.some(ext => fileName.endsWith(ext.toLowerCase()));
+  }
+
+  function validateFiles(fileList: File[]): { valid: File[]; errors: FileError[] } {
+    const valid: File[] = [];
+    const errors: FileError[] = [];
+
+    for (const file of fileList) {
+      if (file.size > maxFileSize) {
+        errors.push({ file, reason: 'size' });
+      } else if (!isValidType(file)) {
+        errors.push({ file, reason: 'type' });
+      } else {
+        valid.push(file);
+      }
+    }
+
+    return { valid, errors };
+  }
+
+  function processFiles(newFiles: File[]) {
+    const { valid, errors } = validateFiles(newFiles);
+
+    errorMessage = null;
+    if (errors.length > 0) {
+      const sizeErrors = errors.filter(e => e.reason === 'size');
+      const typeErrors = errors.filter(e => e.reason === 'type');
+      
+      const messages: string[] = [];
+      if (sizeErrors.length > 0) {
+        const maxMB = Math.round(maxFileSize / (1024 * 1024));
+        messages.push(`${sizeErrors.length} file(s) exceed ${maxMB}MB limit`);
+      }
+      if (typeErrors.length > 0) {
+        messages.push(`${typeErrors.length} file(s) have unsupported format`);
+      }
+      errorMessage = messages.join('. ');
+      
+      onError?.(errors);
+    }
+
+    if (valid.length === 0) return;
+
+    if (multiple) {
+      files = [...files, ...valid];
+    } else {
+      files = [valid[0]];
+    }
+
+    onUpload(files);
   }
 
   function handleInputChange(e: Event) {
@@ -37,22 +95,12 @@
     const newFiles = target.files;
     
     if (!newFiles) return;
-
-    const validFiles = Array.from(newFiles).filter(isValidFile);
-    
-    if (validFiles.length === 0) return;
-
-    if (multiple) {
-      files = [...files, ...validFiles];
-    } else {
-      files = [validFiles[0]];
-    }
-
-    onUpload(files);
+    processFiles(Array.from(newFiles));
   }
 
   function removeFile(index: number) {
     files = files.filter((_, i) => i !== index);
+    errorMessage = null;
     onUpload(files);
     
     if (inputRef) {
@@ -62,7 +110,7 @@
 </script>
 
 {#if files.length === 0}
-  <label class="drop-zone">
+  <label class="file-zone drop-zone">
     <input
       bind:this={inputRef}
       type="file"
@@ -76,9 +124,12 @@
       Click here to <span class="browse-link">browse files</span> from your device
     </p>
     <p class="formats-text">Supported formats: {displayFormats}</p>
+    {#if errorMessage}
+      <p class="error-text">{errorMessage}</p>
+    {/if}
   </label>
 {:else}
-  <div class="files-zone">
+  <div class="file-zone files-zone">
     {#each files as file, index}
       <div class="file-item">
         <Icon icon="mdi:file-outline" width={24} height={24} class="file-icon" />
@@ -93,22 +144,30 @@
         </button>
       </div>
     {/each}
+    {#if errorMessage}
+      <p class="error-text">{errorMessage}</p>
+    {/if}
   </div>
 {/if}
 
 <style>
-  .drop-zone {
+  /* Shared base styles for drop and files zones */
+  .file-zone {
     display: flex;
     flex-direction: column;
+    border: 2px dashed var(--grey-200);
+    border-radius: 16px;
+    background-color: var(--pure-white);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  /* Drop zone specific styles */
+  .drop-zone {
     align-items: center;
     justify-content: center;
     gap: 16px;
     padding: 48px 32px;
-    border: 2px dashed var(--grey-200);
-    border-radius: 16px;
-    background-color: var(--pure-white);
     cursor: pointer;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
   }
 
   .drop-zone:hover {
@@ -141,14 +200,16 @@
     color: var(--grey-300);
   }
 
+  .error-text {
+    margin: 0;
+    font-size: 14px;
+    color: var(--loss-red);
+  }
+
+  /* Files zone specific styles */
   .files-zone {
-    display: flex;
-    flex-direction: column;
     gap: 8px;
     padding: 24px 32px;
-    border: 2px dashed var(--grey-200);
-    border-radius: 16px;
-    background-color: var(--pure-white);
   }
 
   .file-item {
@@ -183,17 +244,5 @@
 
   .remove-btn:hover {
     color: var(--grey-500);
-  }
-
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
   }
 </style>
