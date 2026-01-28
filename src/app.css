@@ -10,7 +10,9 @@
   --blue-50: #E3E9F7;
   --blue-100: #96AFEB;
   --profit-green: #378727;
+  --profit-green-50: rgba(55, 135, 39, 0.5);
   --loss-red: #DC1716;
+  --loss-red-50: rgba(220, 23, 22, 0.5);
 
   /* Typography */
   --font-family: 'DM Sans', sans-serif;

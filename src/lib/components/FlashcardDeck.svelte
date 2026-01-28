@@ -105,7 +105,7 @@
 
   <div class="controls">
     <Button
-      color="var(--loss-red)"
+      color="var(--loss-red-50)"
       onclick={handleDiscard}
       disabled={isComplete || isAnimating}
     >
@@ -117,7 +117,7 @@
     </span>
 
     <Button
-      color="var(--profit-green)"
+      color="var(--profit-green-50)"
       onclick={handleAccept}
       disabled={isComplete || isAnimating}
     >
