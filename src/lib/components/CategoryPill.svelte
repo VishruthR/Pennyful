@@ -18,7 +18,7 @@
 <span class="category-pill" style:background-color={color} style:color={textColor}>
   <span class="pill-content">
     {#if icon}
-      <Icon {icon} width={14} height={14} />
+      <Icon {icon} width={20} height={20} />
     {/if}
     {name}
   </span>
@@ -28,8 +28,8 @@
   .category-pill {
     display: inline-flex;
     align-items: center;
-    padding: 6px 12px;
-    border-radius: 20px;
+    padding: 6px 6px;
+    border-radius: 10px;
     white-space: nowrap;
   }
 
