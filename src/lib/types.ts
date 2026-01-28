@@ -1,3 +1,5 @@
+import type { Snippet } from 'svelte';
+
 interface Category {
     id: number,
     name: string,
@@ -24,5 +26,10 @@ interface FullTransactionInfo {
     };
 }
 
-export type { Category, CategoryDetails, FullTransactionInfo };
+interface DropdownOption {
+    value: string;
+    content: Snippet;
+}
+
+export type { Category, CategoryDetails, FullTransactionInfo, DropdownOption };
 
