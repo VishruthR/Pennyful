@@ -49,7 +49,6 @@
     // TODO: Implement actual sorting logic
   }
 
-  // TransactionsTable uses a different date format (e.g., "Nov 1, 2025")
   const dateFormatter = new Intl.DateTimeFormat("en-US", { 
     month: "short", day: "numeric", year: "numeric" 
   });

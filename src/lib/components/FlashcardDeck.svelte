@@ -12,15 +12,15 @@
     transactions: FullTransactionInfo[];
     discardText?: string;
     acceptText?: string;
-    onDiscard?: (transaction: FullTransactionInfo) => void;
-    onAccept?: (transaction: FullTransactionInfo) => void;
-    onComplete?: () => void;
+    onDiscard: (transaction: FullTransactionInfo) => void;
+    onAccept: (transaction: FullTransactionInfo) => void;
+    onComplete: () => void;
   }
 
   let {
     transactions,
     discardText = "Delete",
-    acceptText = "Submit",
+    acceptText = "Accept",
     onDiscard,
     onAccept,
     onComplete,
@@ -55,9 +55,9 @@
       isAnimating = false;
 
       if (direction === "left") {
-        onDiscard?.(transaction);
+        onDiscard(transaction);
       } else {
-        onAccept?.(transaction);
+        onAccept(transaction);
       }
       checkComplete();
     }
@@ -79,7 +79,7 @@
 
   function checkComplete() {
     if (currentIndex >= totalCards) {
-      onComplete?.();
+      onComplete();
     }
   }
 </script>
