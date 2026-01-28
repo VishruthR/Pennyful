@@ -1,3 +1,5 @@
+import type { Snippet } from 'svelte';
+
 interface Category {
     id: number,
     name: string,
@@ -16,6 +18,7 @@ interface Transaction {
     category_id: number;
 }
 
+<<<<<<< HEAD
 type TransactionImport = Omit<Transaction, "id">;
 
 enum AccountType {
@@ -34,4 +37,12 @@ interface Account {
 }
 
 export type { Category, CategoryDetails, Transaction, Account, TransactionImport };
+=======
+interface DropdownOption {
+    value: string;
+    content: Snippet;
+}
+
+export type { Category, CategoryDetails, FullTransactionInfo, DropdownOption };
+>>>>>>> 690a756 (Start on dropdown component, needs review)
 
