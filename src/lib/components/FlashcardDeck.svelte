@@ -27,6 +27,8 @@
   }: Props = $props();
 
   let currentIndex = $state(0);
+  let throwDirection = $state<"left" | "right" | null>(null);
+  let isAnimating = $state(false);
 
   let totalCards = $derived(transactions.length);
   let currentTransaction = $derived(
@@ -43,21 +45,35 @@
     return cards;
   });
 
-  function handleDiscard() {
-    if (currentTransaction) {
+  function handleAnimationEnd() {
+    if (throwDirection && currentTransaction) {
       const transaction = currentTransaction;
+      const direction = throwDirection;
+
       currentIndex++;
-      onDiscard?.(transaction);
+      throwDirection = null;
+      isAnimating = false;
+
+      if (direction === "left") {
+        onDiscard?.(transaction);
+      } else {
+        onAccept?.(transaction);
+      }
       checkComplete();
     }
   }
 
+  function handleDiscard() {
+    if (currentTransaction && !isAnimating) {
+      isAnimating = true;
+      throwDirection = "left";
+    }
+  }
+
   function handleAccept() {
-    if (currentTransaction) {
-      const transaction = currentTransaction;
-      currentIndex++;
-      onAccept?.(transaction);
-      checkComplete();
+    if (currentTransaction && !isAnimating) {
+      isAnimating = true;
+      throwDirection = "right";
     }
   }
 
@@ -71,18 +87,17 @@
 <div class="flashcard-deck">
   <div class="cards-container">
     {#if !isComplete}
-      {#each visibleCards() as card, index}
+      {#each visibleCards() as card, index (card.id)}
         <div
           class="card-wrapper"
           class:card-back-2={index === 2}
           class:card-back-1={index === 1}
           class:card-front={index === 0}
+          class:throw-left={index === 0 && throwDirection === "left"}
+          class:throw-right={index === 0 && throwDirection === "right"}
+          onanimationend={index === 0 ? handleAnimationEnd : undefined}
         >
-          {#if index === 0}
-            <Flashcard transaction={card} />
-          {:else}
-            <div class="card-placeholder"></div>
-          {/if}
+          <Flashcard transaction={card} />
         </div>
       {/each}
     {/if}
@@ -92,7 +107,7 @@
     <Button
       color="var(--loss-red)"
       onclick={handleDiscard}
-      disabled={isComplete}
+      disabled={isComplete || isAnimating}
     >
       {discardText}
     </Button>
@@ -104,7 +119,7 @@
     <Button
       color="var(--profit-green)"
       onclick={handleAccept}
-      disabled={isComplete}
+      disabled={isComplete || isAnimating}
     >
       {acceptText}
     </Button>
@@ -131,7 +146,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease-out;
     box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
     border-radius: 12px;
   }
@@ -151,14 +166,6 @@
     transform: translateY(-32px);
   }
 
-  .card-placeholder {
-    width: 100%;
-    height: 100%;
-    background-color: var(--pure-white);
-    border: 2px solid var(--grey-300);
-    border-radius: 12px;
-  }
-
   .controls {
     display: flex;
     align-items: center;
@@ -172,5 +179,38 @@
     font-size: 16px;
     font-weight: 400;
     color: var(--grey-300);
+  }
+
+  /* Throw animations */
+  @keyframes throw-left {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-150px, -100px) rotate(-15deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes throw-right {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(150px, -100px) rotate(15deg);
+      opacity: 0;
+    }
+  }
+
+  .throw-left {
+    animation: throw-left 0.35s ease-out forwards;
+    z-index: 10;
+  }
+
+  .throw-right {
+    animation: throw-right 0.35s ease-out forwards;
+    z-index: 10;
   }
 </style>
