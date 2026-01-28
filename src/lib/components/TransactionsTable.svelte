@@ -19,6 +19,7 @@
   import type { FullTransactionInfo } from "$lib/types";
   import SortArrows, { type SortDirection } from "$lib/components/SortArrows.svelte";
   import CategoryPill from "$lib/components/CategoryPill.svelte";
+  import { formatSignedCurrency, isPositiveAmount } from "$lib/utils/format";
 
   interface Props {
     transactions: FullTransactionInfo[];
@@ -48,25 +49,13 @@
     // TODO: Implement actual sorting logic
   }
 
+  // TransactionsTable uses a different date format (e.g., "Nov 1, 2025")
   const dateFormatter = new Intl.DateTimeFormat("en-US", { 
     month: "short", day: "numeric", year: "numeric" 
   });
 
-  function formatDate(date: Date): string {
+  function formatTableDate(date: Date): string {
     return dateFormatter.format(date);
-  }
-
-  function formatAmount(amount: number): string {
-    const absAmount = Math.abs(amount);
-    const formatted = absAmount.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-    return amount >= 0 ? `+$${formatted}` : `-$${formatted}`;
-  }
-
-  function isPositive(amount: number): boolean {
-    return amount >= 0;
   }
 
   let tableHeight = $derived(
@@ -108,7 +97,7 @@
     <tbody>
       {#each transactions as transaction, index}
         <tr class={index % 2 === 0 ? "row-white" : "row-grey"}>
-          <td class="col-date">{formatDate(transaction.date)}</td>
+          <td class="col-date">{formatTableDate(transaction.date)}</td>
           <td class="col-account">
             <span class="ellipsis">{transaction.account.name}</span>
           </td>
@@ -123,8 +112,8 @@
               textColor={index % 2 === 0 ? 'var(--pure-white)' : 'var(--grey-50)'}
             />
           </td>
-          <td class="col-amount {isPositive(transaction.amount) ? 'positive' : 'negative'}">
-            {formatAmount(transaction.amount)}
+          <td class="col-amount {isPositiveAmount(transaction.amount) ? 'positive' : 'negative'}">
+            {formatSignedCurrency(transaction.amount)}
           </td>
         </tr>
       {/each}

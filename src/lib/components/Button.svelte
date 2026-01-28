@@ -59,18 +59,13 @@
     color: var(--pure-white);
   }
 
-  .btn.custom-color:hover:not(:disabled) {
-    background-color: var(--btn-color);
-    border-color: var(--btn-color);
-    color: var(--pure-white);
-  }
-
   .btn:active:not(:disabled) {
     background-color: var(--grey-500);
     border-color: var(--grey-500);
     color: var(--pure-white);
   }
 
+  .btn.custom-color:hover:not(:disabled),
   .btn.custom-color:active:not(:disabled) {
     background-color: var(--btn-color);
     border-color: var(--btn-color);

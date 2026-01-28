@@ -15,38 +15,19 @@
 <script lang="ts">
     import type { FullTransactionInfo } from "$lib/types";
     import CategoryPill from "$lib/components/CategoryPill.svelte";
+    import { formatDate, formatSignedCurrency, isPositiveAmount } from "$lib/utils/format";
   
     interface Props {
       transaction: FullTransactionInfo;
     }
   
     let { transaction }: Props = $props();
-  
-    function formatDate(date: Date): string {
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${month}/${day}/${year}`;
-    }
-  
-    function formatAmount(amount: number): string {
-      const absAmount = Math.abs(amount);
-      const formatted = absAmount.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-      return amount >= 0 ? `+$${formatted}` : `-$${formatted}`;
-    }
-  
-    function isPositive(amount: number): boolean {
-      return amount >= 0;
-    }
   </script>
   
   <div class="flashcard">
     <div class="field">
       <span class="label">Name</span>
-      <span class="name-value">{transaction.name}</span>
+      <span class="value wrap">{transaction.name}</span>
     </div>
   
     <div class="row">
@@ -56,8 +37,8 @@
       </div>
       <div class="field">
         <span class="label">Amount</span>
-        <span class="value {isPositive(transaction.amount) ? 'positive' : 'negative'}">
-          {formatAmount(transaction.amount)}
+        <span class="value {isPositiveAmount(transaction.amount) ? 'positive' : 'negative'}">
+          {formatSignedCurrency(transaction.amount)}
         </span>
       </div>
     </div>
@@ -108,10 +89,7 @@
       color: var(--grey-300);
     }
   
-    .name-value {
-      font-size: 16px;
-      font-weight: 400;
-      color: var(--grey-300);
+    .value.wrap {
       word-wrap: break-word;
     }
   
@@ -130,4 +108,3 @@
       color: var(--loss-red);
     }
   </style>
-  
