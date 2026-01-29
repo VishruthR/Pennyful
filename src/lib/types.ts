@@ -24,5 +24,20 @@ interface FullTransactionInfo {
     };
 }
 
-export type { Category, CategoryDetails, FullTransactionInfo };
+enum AccountType {
+    Savings = "Savings",
+    Checkings = "Checkings",
+}
+
+interface BankAccount {
+    id: number;
+    name: string;
+    bank_id: number;
+    bank_name: string;
+    account_type: AccountType;
+    initial_balance: number;
+    current_balance: number;
+}
+
+export type { Category, CategoryDetails, FullTransactionInfo, BankAccount };
 

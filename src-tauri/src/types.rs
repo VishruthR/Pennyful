@@ -145,3 +145,39 @@ impl Account {
         }
     }
 }
+
+/// Account with bank information joined from the bank table
+#[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
+pub struct FullAccount {
+    pub id: u64,
+    pub name: String,
+    pub bank_id: u64,
+    pub bank_name: String,
+    pub account_type: AccountType,
+    #[sqlx(rename = "initial_balance_cents")]
+    pub initial_balance: Cents,
+    #[sqlx(rename = "current_balance_cents")]
+    pub current_balance: Cents,
+}
+
+impl FullAccount {
+    pub fn new(
+        id: u64,
+        name: String,
+        bank_id: u64,
+        bank_name: String,
+        account_type: AccountType,
+        initial_balance: Cents,
+        current_balance: Cents,
+    ) -> Self {
+        FullAccount {
+            id,
+            name,
+            bank_id,
+            bank_name,
+            account_type,
+            initial_balance,
+            current_balance,
+        }
+    }
+}

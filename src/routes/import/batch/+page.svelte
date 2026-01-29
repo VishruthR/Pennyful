@@ -4,15 +4,10 @@
   import BankAccountCard from "$lib/components/BankAccountCard.svelte";
   import FileDrop from "$lib/components/FileDrop.svelte";
   import FlashcardDeck from "$lib/components/FlashcardDeck.svelte";
-  import type { FullTransactionInfo } from "$lib/types";
+  import type { BankAccount, FullTransactionInfo } from "$lib/types";
+    import { invoke } from "@tauri-apps/api/core";
 
-  // Mock data for bank accounts
-  const mockAccounts = [
-    { id: 1, icon: "mdi:bank", name: "BoFA Account", provider: "Bank of America", accountType: "Checking", balance: 1900.17 },
-    { id: 2, icon: "mdi:bank", name: "BoFA Account", provider: "Bank of America", accountType: "Checking", balance: 1900.17 },
-    { id: 3, icon: "mdi:bank", name: "BoFA Account", provider: "Bank of America", accountType: "Checking", balance: 1900.17 },
-    { id: 4, icon: "mdi:bank", name: "BoFA Account", provider: "Bank of America", accountType: "Checking", balance: 1900.17 },
-  ];
+  const bankAccounts = (await invoke("get_all_accounts")) as BankAccount[];
 
   // Mock transactions for review step
   const mockTransactions: FullTransactionInfo[] = [
@@ -93,13 +88,13 @@
     </div>
     
     <div class="accounts-grid">
-      {#each mockAccounts as account}
+      {#each bankAccounts as account}
         <BankAccountCard
-          icon={account.icon}
+          icon="mdi:bank"
           name={account.name}
-          provider={account.provider}
-          accountType={account.accountType}
-          balance={account.balance}
+          provider={account.bank_name}
+          accountType={account.account_type}
+          balance={account.current_balance}
           selected={selectedAccountId === account.id}
           onClick={() => {
             selectedAccountId = account.id;
