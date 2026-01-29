@@ -153,6 +153,7 @@
 <style>
   /* Shared base styles for drop and files zones */
   .file-zone {
+    width: 100%;
     display: flex;
     flex-direction: column;
     border: 2px dashed var(--grey-200);

@@ -6,58 +6,30 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
-  /**
-   * Context passed to each step's content snippet to centralize data for each step.
-   * We use 'unknown' to allow for steps to store any data. 
-   * Users of Stepper should use type assertions to ensure type safety.
-   */
-  export interface StepContext {
-    setData: (data: unknown) => void;
-    getData: () => unknown | undefined;
-    getAllData: () => Record<number, unknown>;
-  }
-
   interface Step {
     name: string;
-    content: Snippet<[StepContext]>;
-    canProceed?: (data: unknown | undefined) => boolean;
+    content: Snippet;
+    canProceed?: () => boolean;
+    hideNextButton?: boolean;
   }
 
   interface Props {
     steps: Step[];
-    onComplete?: (data: Record<number, unknown>) => void;
   }
 
-  let { steps, onComplete }: Props = $props();
+  let { steps }: Props = $props();
 
   let currentStep = $state(0);
-  let stepData = $state<Record<number, unknown>>({});
-
-  function setData(data: unknown) {
-    stepData[currentStep] = data;
-  }
-
-  function getData(): unknown | undefined {
-    return stepData[currentStep];
-  }
-
-  function getAllData(): Record<number, unknown> {
-    // Shallow copy to prevent mutation of the original object
-    return { ...stepData };
-  }
+  
+  const canProceed = $derived(steps[currentStep].canProceed?.() ?? true);
 
   function goNext() {
-    const currentStepConfig = steps[currentStep];
-    const canProceed = currentStepConfig.canProceed?.(stepData[currentStep]) ?? true;
-    
     if (!canProceed) {
       return;
     }
 
     if (currentStep < steps.length - 1) {
       currentStep++;
-    } else if (onComplete) {
-      onComplete(stepData);
     }
   }
 
@@ -101,7 +73,7 @@
 
   <!-- Content area -->
   <div class="step-content">
-    {@render steps[currentStep].content({ setData, getData, getAllData })}
+    {@render steps[currentStep].content()}
   </div>
 
   <!-- Navigation -->
@@ -114,9 +86,11 @@
       {/if}
     </div>
     <div class="nav-right">
-      <button class="nav-button paragraph" onclick={goNext}>
-        {currentStep === steps.length - 1 ? 'Complete' : 'Next'} <span class="nav-chevron">&rsaquo;</span>
-      </button>
+      {#if !steps[currentStep].hideNextButton}
+        <button class="nav-button paragraph" class:disabled={!canProceed} disabled={!canProceed} onclick={goNext}>
+          {currentStep === steps.length - 1 ? 'Complete' : 'Next'} <span class="nav-chevron">&rsaquo;</span>
+        </button>
+      {/if}
     </div>
   </div>
 </div>
@@ -137,7 +111,6 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 48px;
   }
 
   .step-item {
@@ -231,6 +204,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 48px;
     padding-top: 16px;
     border-top: 1px solid var(--grey-100);
   }
@@ -257,8 +231,13 @@
     font-size: 14px;
   }
 
-  .nav-button:hover {
+  .nav-button:hover:not(.disabled) {
     color: var(--grey-200);
+  }
+
+  .nav-button.disabled {
+    color: var(--grey-200);
+    cursor: not-allowed;
   }
 
   .nav-chevron {
