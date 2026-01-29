@@ -12,10 +12,11 @@
     accountType: string;
     provider: string;
     balance: number;
+    selected?: boolean;
     onClick: () => void;
   }
 
-  let { icon, name, accountType, provider, balance, onClick }: Props = $props();
+  let { icon, name, accountType, provider, balance, selected = false, onClick }: Props = $props();
 
   const isNegative = $derived(balance < 0);
 
@@ -29,7 +30,7 @@
   );
 </script>
 
-<button class="bank-account-card" onclick={onClick}>
+<button class="bank-account-card" class:selected onclick={onClick}>
   <div class="card-header">
     <Icon {icon} width={24} height={24} />
     <span class="account-name h3">{name}</span>
@@ -60,7 +61,8 @@
     font-family: inherit;
   }
 
-  .bank-account-card:hover {
+  .bank-account-card:hover,
+  .bank-account-card.selected {
     background-color: var(--blue-50);
   }
 

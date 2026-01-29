@@ -21,6 +21,7 @@
     name: string;
     content: Snippet<[StepContext]>;
     canProceed?: (data: unknown | undefined) => boolean;
+    hideNextButton?: boolean;
   }
 
   interface Props {
@@ -114,9 +115,11 @@
       {/if}
     </div>
     <div class="nav-right">
-      <button class="nav-button paragraph" onclick={goNext}>
-        {currentStep === steps.length - 1 ? 'Complete' : 'Next'} <span class="nav-chevron">&rsaquo;</span>
-      </button>
+      {#if !steps[currentStep].hideNextButton}
+        <button class="nav-button paragraph" onclick={goNext}>
+          {currentStep === steps.length - 1 ? 'Complete' : 'Next'} <span class="nav-chevron">&rsaquo;</span>
+        </button>
+      {/if}
     </div>
   </div>
 </div>
@@ -137,7 +140,6 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 48px;
   }
 
   .step-item {
@@ -231,6 +233,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 48px;
     padding-top: 16px;
     border-top: 1px solid var(--grey-100);
   }
