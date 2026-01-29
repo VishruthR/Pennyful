@@ -1,7 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import Stepper from "$lib/components/Stepper.svelte";
-  import type { StepContext } from "$lib/components/Stepper.svelte";
   import BankAccountCard from "$lib/components/BankAccountCard.svelte";
   import FileDrop from "$lib/components/FileDrop.svelte";
   import FlashcardDeck from "$lib/components/FlashcardDeck.svelte";
@@ -43,29 +42,14 @@
     },
   ];
 
-  interface Step1Data {
-    selectedAccountId: number | null;
-  }
-
-  interface Step2Data {
-    file: File;
-  }
-
   // Step 1 state
-  // TODO: Feels like this state is redundant with internal state of stepper
   let selectedAccountId = $state<number | null>(null);
 
-  // Step 2 state (Upload File)
-  let uploadedFile = $state<File>();
+  // Step 2 state
+  let uploadedFile = $state<File | null>(null);
 
-  // Step 3 state (Review)
+  // Step 3 state
   let acceptedTransactions = $state<FullTransactionInfo[]>([]);
-
-  function handleComplete(data: Record<number, unknown>) {
-    console.log("Batch upload complete!", data);
-    console.log("Accepted transactions:", acceptedTransactions);
-    goto("/");
-  }
 
   function handleTransactionDiscard(transaction: FullTransactionInfo) {
     console.log("Discarded:", transaction.name);
@@ -86,18 +70,12 @@
     {
       name: "Select bank account",
       content: step1Content,
-      canProceed: (data: unknown) => {
-        const stepData = data as Step1Data | undefined;
-        return stepData?.selectedAccountId != null;
-      },
+      canProceed: () => selectedAccountId != null,
     },
     {
       name: "Upload File",
       content: step2Content,
-      canProceed: (data: unknown) => {
-        const stepData = data as Step2Data | undefined;
-        return stepData?.file != null;
-      },
+      canProceed: () => uploadedFile != null,
     },
     {
       name: "Review",
@@ -107,10 +85,7 @@
   ];
 </script>
 
-{#snippet step1Content(ctx: StepContext)}
-  {@const currentData = ctx.getData() as Step1Data | undefined}
-  {@const currentSelection = currentData?.selectedAccountId ?? selectedAccountId}
-  
+{#snippet step1Content()}
   <div class="step-container">
     <div class="step-text-container">
       <h2 class="h2 step-title">Select bank account</h2>
@@ -125,10 +100,9 @@
           provider={account.provider}
           accountType={account.accountType}
           balance={account.balance}
-          selected={currentSelection === account.id}
+          selected={selectedAccountId === account.id}
           onClick={() => {
             selectedAccountId = account.id;
-            ctx.setData({ selectedAccountId: account.id } satisfies Step1Data);
           }}
         />
       {/each}
@@ -136,7 +110,7 @@
   </div>
 {/snippet}
 
-{#snippet step2Content(ctx: StepContext)}
+{#snippet step2Content()}
   <div class="step-container">
     <div class="step-text-container">
       <h2 class="h2 step-title">Upload File</h2>
@@ -148,7 +122,6 @@
         acceptedTypes={[".csv"]}
         onUpload={(files) => {
           uploadedFile = files[0];
-          ctx.setData({ file: files[0] } satisfies Step2Data);
         }}
         multiple={false}
       />
@@ -156,7 +129,7 @@
   </div>
 {/snippet}
 
-{#snippet step3Content(ctx: StepContext)}
+{#snippet step3Content()}
   <div class="step-container">
     <div class="step-text-container">
       <h2 class="h2 step-title">Review</h2>
@@ -179,7 +152,7 @@
 <main class="page-container">
   <h1 class="h1 page-title">Batch Add</h1>
   <div class="stepper-container">
-    <Stepper {steps} onComplete={handleComplete} />
+    <Stepper {steps} />
   </div>
 </main>
 
@@ -236,7 +209,6 @@
   /* Step 2: File upload */
   .file-drop-container {
     width: 100%;
-    height: 100%;
     min-height: 200px;
     display: flex;
     align-items: center;
