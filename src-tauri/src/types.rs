@@ -4,7 +4,7 @@ use rust_decimal::{prelude::ToPrimitive, Decimal};
 use sqlx::{Sqlite, decode::Decode, encode::{Encode, IsNull}, Type};
 
 // Custom type to enable automatic encoding/decoding for sqlx
-#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd, serde::Serialize)]
 pub struct Cents (pub Decimal);
 
 impl Type<Sqlite> for Cents {
@@ -97,4 +97,51 @@ pub struct Category {
     pub name: String,
     pub color: String,
     pub icon: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, serde::Serialize)]
+#[sqlx(rename_all = "UPPERCASE")]
+pub enum AccountType {
+    Savings,
+    Checkings,
+}
+
+#[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
+pub struct Account {
+    id: u64,
+    pub name: String,
+    bank_id: u64,
+    pub account_type: AccountType,
+    #[sqlx(rename = "initial_balance_cents")]
+    pub initial_balance: Cents,
+    #[sqlx(rename = "current_balance_cents")]
+    pub current_balance: Cents,
+}
+
+impl Account {
+    pub fn id(&self) -> u64 {
+        self.id
+    }
+
+    pub fn bank_id(&self) -> u64 {
+        self.bank_id
+    }
+
+    pub fn new(
+        id: u64,
+        name: String,
+        bank_id: u64,
+        account_type: AccountType,
+        initial_balance: Cents,
+        current_balance: Cents,
+    ) -> Self {
+        Account {
+            id,
+            name,
+            bank_id,
+            account_type,
+            initial_balance,
+            current_balance,
+        }
+    }
 }

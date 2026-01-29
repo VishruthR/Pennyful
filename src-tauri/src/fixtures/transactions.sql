@@ -1,8 +1,8 @@
 INSERT INTO bank (id, bank_name) VALUES
-    (1, "Bank of America");
+    (1, 'Bank of America');
 
-INSERT INTO account (id, bank_id, account_type, initial_balance_cents, current_balance_cents) VALUES
-    (1, 1, "CHECKINGS", 100, 150);
+INSERT INTO account (id, name, bank_id, account_type, initial_balance_cents, current_balance_cents) VALUES
+    (1, 'Test Account', 1, 'CHECKINGS', 100, 150);
 
 INSERT INTO "transaction" (id, date, amount_cents, name, account_id, category_id) VALUES 
     (1, '2025-12-15', -577, 'TRANSACTION 1', 1, 1),

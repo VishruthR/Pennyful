@@ -9,6 +9,10 @@ mod importers {
 mod transactions {
     pub(crate) mod queries;
 }
+mod accounts {
+    pub(crate) mod commands;
+    pub(crate) mod queries;
+}
 mod categories {
     pub(crate) mod commands;
     pub(crate) mod queries;
@@ -50,7 +54,10 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![categories::commands::get_category_details])
+        .invoke_handler(tauri::generate_handler![
+            categories::commands::get_category_details,
+            accounts::commands::get_all_accounts
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

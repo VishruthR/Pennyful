@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS bank (
 
 CREATE TABLE IF NOT EXISTS account (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
     bank_id INTEGER NOT NULL,
     account_type TEXT NOT NULL CHECK(account_type IN ('SAVINGS', 'CHECKINGS')),
     initial_balance_cents INTEGER NOT NULL DEFAULT 0,
