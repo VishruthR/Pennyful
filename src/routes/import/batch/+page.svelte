@@ -206,12 +206,14 @@
   .step-container {
     display: flex;
     flex-direction: column;
+    align-items: center;
     margin-top: 32px;
     gap: 8px;
   }
 
   .step-text-container {
-    margin-bottom: 48px;
+    width: 100%;
+    margin-bottom: 36px;
   }
 
   .step-title {
@@ -244,6 +246,8 @@
   .review-container {
     display: flex;
     justify-content: center;
+    width: 100%;
+    max-width: 450px;
     margin-top: 16px;
   }
 </style>
