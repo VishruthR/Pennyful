@@ -4,7 +4,7 @@ use serde::{Deserialize, Deserializer};
 use rust_decimal::Decimal;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Clone, serde::Deserialize)]
+#[derive(Debug, PartialEq, Clone, serde::Deserialize, serde::Serialize)]
 pub struct TransactionImport {
     #[serde(deserialize_with = "de_date_from_str")]
     pub date: NaiveDate,

@@ -1,152 +1,95 @@
 <!-- @component
-  A file input component.
-  Accepts configurable file types and supports single or multiple file uploads.
+  A file picker component using Tauri's native file dialog.
+  Accepts configurable file types and supports single or multiple file selection.
 -->
 
 <script lang="ts">
   import Icon from "@iconify/svelte";
-
-  export interface FileError {
-    file: File;
-    reason: 'size' | 'type';
-  }
+  import { open } from "@tauri-apps/plugin-dialog";
 
   interface Props {
-    onUpload: (files: File[]) => void;
-    onError?: (errors: FileError[]) => void;
+    onSelect: (paths: string[]) => void;
     acceptedTypes: string[];
     multiple?: boolean;
-    maxFileSize?: number;
+    filterName?: string;
   }
 
   let { 
-    onUpload, 
-    onError,
+    onSelect, 
     acceptedTypes, 
     multiple = false,
-    maxFileSize = 10 * 1024 * 1024 // 10MB default
+    filterName = "Files"
   }: Props = $props();
 
-  let files = $state<File[]>([]);
-  let inputRef: HTMLInputElement | undefined = $state();
-  let errorMessage = $state<string | null>(null);
+  let selectedPaths = $state<string[]>([]);
 
-  const acceptString = $derived(acceptedTypes.join(','));
   const displayFormats = $derived(
     acceptedTypes.map(t => t.replace('.', '')).join(', ')
   );
 
-  function isValidType(file: File): boolean {
-    const fileName = file.name.toLowerCase();
-    return acceptedTypes.some(ext => fileName.endsWith(ext.toLowerCase()));
-  }
+  // Convert acceptedTypes like [".csv", ".txt"] to extensions ["csv", "txt"]
+  const extensions = $derived(
+    acceptedTypes.map(t => t.replace('.', ''))
+  );
 
-  function validateFiles(fileList: File[]): { valid: File[]; errors: FileError[] } {
-    const valid: File[] = [];
-    const errors: FileError[] = [];
+  async function openFilePicker() {
+    const result = await open({
+      multiple,
+      filters: [{ name: filterName, extensions }],
+    });
 
-    for (const file of fileList) {
-      if (file.size > maxFileSize) {
-        errors.push({ file, reason: 'size' });
-      } else if (!isValidType(file)) {
-        errors.push({ file, reason: 'type' });
-      } else {
-        valid.push(file);
-      }
+    if (!result) {
+      return;
     }
-
-    return { valid, errors };
-  }
-
-  function processFiles(newFiles: File[]) {
-    const { valid, errors } = validateFiles(newFiles);
-
-    errorMessage = null;
-    if (errors.length > 0) {
-      const sizeErrors = errors.filter(e => e.reason === 'size');
-      const typeErrors = errors.filter(e => e.reason === 'type');
-      
-      const messages: string[] = [];
-      if (sizeErrors.length > 0) {
-        const maxMB = Math.round(maxFileSize / (1024 * 1024));
-        messages.push(`${sizeErrors.length} file(s) exceed ${maxMB}MB limit`);
-      }
-      if (typeErrors.length > 0) {
-        messages.push(`${typeErrors.length} file(s) have unsupported format`);
-      }
-      errorMessage = messages.join('. ');
-      
-      onError?.(errors);
-    }
-
-    if (valid.length === 0) return;
-
-    if (multiple) {
-      files = [...files, ...valid];
-    } else {
-      files = [valid[0]];
-    }
-
-    onUpload(files);
-  }
-
-  function handleInputChange(e: Event) {
-    const target = e.target as HTMLInputElement;
-    const newFiles = target.files;
     
-    if (!newFiles) return;
-    processFiles(Array.from(newFiles));
+    if (multiple && Array.isArray(result)) {
+      selectedPaths = result;
+    } else if (typeof result === 'string') {
+      selectedPaths = [result];
+    }
+    onSelect(selectedPaths);
+  }
+
+  function getFileName(path: string): string {
+    return path.split('/').pop() || path;
   }
 
   function removeFile(index: number) {
-    files = files.filter((_, i) => i !== index);
-    errorMessage = null;
-    onUpload(files);
-    
-    if (inputRef) {
-      inputRef.value = '';
-    }
+    selectedPaths = selectedPaths.filter((_, i) => i !== index);
+    onSelect(selectedPaths);
   }
 </script>
 
-{#if files.length === 0}
-  <label class="file-zone drop-zone">
-    <input
-      bind:this={inputRef}
-      type="file"
-      accept={acceptString}
-      {multiple}
-      class="visually-hidden"
-      onchange={handleInputChange}
-    />
+{#if selectedPaths.length === 0}
+  <button type="button" class="file-zone drop-zone" onclick={openFilePicker}>
     <Icon icon="lets-icons:upload" width={64} height={64} class="upload-icon" />
     <p class="drop-text paragraph">
       Click here to <span class="browse-link">browse files</span> from your device
     </p>
     <p class="formats-text">Supported formats: {displayFormats}</p>
-    {#if errorMessage}
-      <p class="error-text">{errorMessage}</p>
-    {/if}
-  </label>
+  </button>
 {:else}
   <div class="file-zone files-zone">
-    {#each files as file, index}
+    {#each selectedPaths as filePath, index}
       <div class="file-item">
         <Icon icon="mdi:file-outline" width={24} height={24} class="file-icon" />
-        <span class="file-name paragraph">{file.name}</span>
+        <div class="file-info">
+          <span class="file-name paragraph">{getFileName(filePath)}</span>
+          <span class="file-path">{filePath}</span>
+        </div>
         <button
           type="button"
           class="remove-btn"
           onclick={() => removeFile(index)}
-          aria-label="Remove {file.name}"
+          aria-label="Remove {getFileName(filePath)}"
         >
           &times;
         </button>
       </div>
     {/each}
-    {#if errorMessage}
-      <p class="error-text">{errorMessage}</p>
-    {/if}
+    <button type="button" class="change-file-btn" onclick={openFilePicker}>
+      Change file
+    </button>
   </div>
 {/if}
 
@@ -176,7 +119,7 @@
     background-color: var(--blue-50);
   }
 
-  .drop-zone:focus-within {
+  .drop-zone:focus {
     outline: 2px solid var(--grey-500);
     outline-offset: 2px;
   }
@@ -201,22 +144,16 @@
     color: var(--grey-300);
   }
 
-  .error-text {
-    margin: 0;
-    font-size: 14px;
-    color: var(--loss-red);
-  }
-
   /* Files zone specific styles */
   .files-zone {
-    gap: 8px;
+    gap: 12px;
     padding: 24px 32px;
   }
 
   .file-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
   }
 
   .file-item :global(.file-icon) {
@@ -224,9 +161,24 @@
     flex-shrink: 0;
   }
 
+  .file-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
   .file-name {
     color: var(--grey-500);
-    flex: 1;
+    font-weight: 500;
+  }
+
+  .file-path {
+    font-size: 12px;
+    color: var(--grey-300);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .remove-btn {
@@ -245,5 +197,20 @@
 
   .remove-btn:hover {
     color: var(--grey-500);
+  }
+
+  .change-file-btn {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    color: var(--blue-100);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 0;
+    transition: color 0.15s ease;
+  }
+
+  .change-file-btn:hover {
+    color: var(--blue-200, var(--grey-500));
   }
 </style>

@@ -10,6 +10,8 @@
     name: string;
     content: Snippet;
     canProceed?: () => boolean;
+    onNext?: () => void;
+    onBack?: () => void;
     hideNextButton?: boolean;
   }
 
@@ -28,6 +30,8 @@
       return;
     }
 
+    steps[currentStep].onNext?.();
+
     if (currentStep < steps.length - 1) {
       currentStep++;
     }
@@ -35,6 +39,7 @@
 
   function goBack() {
     if (currentStep > 0) {
+      steps[currentStep].onBack?.();
       currentStep--;
     }
   }

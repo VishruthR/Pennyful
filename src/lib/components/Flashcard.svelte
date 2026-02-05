@@ -13,15 +13,19 @@
 -->
 
 <script lang="ts">
-    import type { FullTransactionInfo } from "$lib/types";
+    import type { TransactionImport } from "$lib/types";
     import CategoryPill from "$lib/components/CategoryPill.svelte";
-    import { formatDate, formatSignedCurrency, isPositiveAmount } from "$lib/utils/format";
+    import { formatDate, formatSignedCurrencyChange, isPositiveAmount } from "$lib/utils/format";
+    import { categoriesApi } from "$lib/api/categories";
   
     interface Props {
-      transaction: FullTransactionInfo;
+      transaction: TransactionImport;
     }
   
     let { transaction }: Props = $props();
+
+    // TODO: Handle errors in case category doesn't exist
+    const category = $derived(await categoriesApi.getCategoryById(transaction.category_id));
   </script>
   
   <div class="flashcard">
@@ -38,21 +42,23 @@
       <div class="field">
         <span class="label">Amount</span>
         <span class="value {isPositiveAmount(transaction.amount) ? 'positive' : 'negative'}">
-          {formatSignedCurrency(transaction.amount)}
+          {formatSignedCurrencyChange(transaction.amount)}
         </span>
       </div>
     </div>
   
     <div class="field">
       <span class="label">Category</span>
+      {#if category}
       <div>
         <CategoryPill
-          name={transaction.category.name}
-          icon={transaction.category.icon}
-          color={transaction.category.color}
+          name={category.name}
+          icon={category.icon}
+          color={category.color}
           textColor="white"
         />
       </div>
+      {/if}
     </div>
   </div>
   

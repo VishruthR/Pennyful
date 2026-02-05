@@ -1,12 +1,17 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::{Manager, async_runtime::Mutex};
 mod importers {
+    pub(crate) mod commands;
     pub(crate) mod bank_of_america;
     pub(crate) mod wells_fargo;
     pub(crate) mod american_express;
     pub(crate) mod types;
 }
 mod transactions {
+    pub(crate) mod queries;
+}
+mod accounts {
+    pub(crate) mod commands;
     pub(crate) mod queries;
 }
 mod categories {
@@ -50,7 +55,12 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![categories::commands::get_category_details])
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![
+            categories::commands::get_category_details,
+            accounts::commands::get_all_accounts,
+            importers::commands::import_transactions
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,61 +1,33 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import Stepper from "$lib/components/Stepper.svelte";
-  import BankAccountCard from "$lib/components/BankAccountCard.svelte";
+  import AccountCard from "$lib/components/AccountCard.svelte";
   import FileDrop from "$lib/components/FileDrop.svelte";
   import FlashcardDeck from "$lib/components/FlashcardDeck.svelte";
-  import type { FullTransactionInfo } from "$lib/types";
+  import type { TransactionImport, Account } from "$lib/types";
+  import { importTransactions } from "$lib/api/importers";
+  import { accountsApi } from "$lib/api/accounts";
 
-  // Mock data for bank accounts
-  const mockAccounts = [
-    { id: 1, icon: "mdi:bank", name: "BoFA Account", provider: "Bank of America", accountType: "Checking", balance: 1900.17 },
-    { id: 2, icon: "mdi:bank", name: "BoFA Account", provider: "Bank of America", accountType: "Checking", balance: 1900.17 },
-    { id: 3, icon: "mdi:bank", name: "BoFA Account", provider: "Bank of America", accountType: "Checking", balance: 1900.17 },
-    { id: 4, icon: "mdi:bank", name: "BoFA Account", provider: "Bank of America", accountType: "Checking", balance: 1900.17 },
-  ];
+  // TODO: Handle errors
+  const accounts = await accountsApi.getAllAccounts();
 
-  // Mock transactions for review step
-  const mockTransactions: FullTransactionInfo[] = [
-    {
-      id: 1,
-      name: "CSTCO 11/28 KIRKLAND SIGNATURE BLAH BLAH BLAH BLAH BLAH",
-      amount: -190.10,
-      date: new Date("2025-11-10"),
-      account: { id: 1, name: "BOFA" },
-      category: { id: 1, name: "Housing", color: "#A78BFA", icon: "mdi:home" },
-    },
-    {
-      id: 2,
-      name: "AMAZON PRIME MEMBERSHIP",
-      amount: -14.99,
-      date: new Date("2025-11-08"),
-      account: { id: 2, name: "AMEX" },
-      category: { id: 2, name: "Subscriptions", color: "#60A5FA", icon: "mdi:credit-card" },
-    },
-    {
-      id: 3,
-      name: "PAYROLL DEPOSIT",
-      amount: 3500.00,
-      date: new Date("2025-11-01"),
-      account: { id: 1, name: "BOFA" },
-      category: { id: 3, name: "Income", color: "#4ADE80", icon: "mdi:cash" },
-    },
-  ];
+  let currentStep = $state(0);
 
   // Step 1 state
-  let selectedAccountId = $state<number | null>(null);
+  let selectedAccount = $state<Account | undefined>(undefined);
 
   // Step 2 state
-  let uploadedFile = $state<File | null>(null);
+  let selectedFilePath = $state<string | null>(null);
+  let importedTransactions = $state<TransactionImport[]>([]);
 
   // Step 3 state
-  let acceptedTransactions = $state<FullTransactionInfo[]>([]);
+  let acceptedTransactions = $state<TransactionImport[]>([]);
 
-  function handleTransactionDiscard(transaction: FullTransactionInfo) {
+  function handleTransactionDiscard(transaction: TransactionImport) {
     console.log("Discarded:", transaction.name);
   }
 
-  function handleTransactionAccept(transaction: FullTransactionInfo) {
+  function handleTransactionAccept(transaction: TransactionImport) {
     console.log("Accepted:", transaction.name);
     acceptedTransactions = [...acceptedTransactions, transaction];
   }
@@ -70,17 +42,39 @@
     {
       name: "Select bank account",
       content: step1Content,
-      canProceed: () => selectedAccountId != null,
+      canProceed: () => selectedAccount != null,
+      onNext: () => {
+        currentStep = 1;
+      },
     },
     {
       name: "Upload File",
       content: step2Content,
-      canProceed: () => uploadedFile != null,
+      canProceed: () => selectedFilePath != null,
+      onNext: async () => {
+        currentStep = 2;
+        // TODO: Handle errors (file selected doesn't exist, transactions import fails)
+        // Both these variables should be populated but Typescript doesn't know that
+        if (!selectedFilePath || !selectedAccount) {
+          return;
+        }
+        importedTransactions = await importTransactions(
+          selectedFilePath, 
+          selectedAccount.bank_name, 
+          selectedAccount.id
+        );
+      },
+      onBack: () => {
+        currentStep = 0;
+      },
     },
     {
       name: "Review",
       content: step3Content,
       hideNextButton: true,
+      onBack: () => {
+        currentStep = 1;
+      },
     },
   ];
 </script>
@@ -93,16 +87,16 @@
     </div>
     
     <div class="accounts-grid">
-      {#each mockAccounts as account}
-        <BankAccountCard
-          icon={account.icon}
+      {#each accounts as account}
+        <AccountCard
+          icon="mdi:bank"
           name={account.name}
-          provider={account.provider}
-          accountType={account.accountType}
-          balance={account.balance}
-          selected={selectedAccountId === account.id}
+          provider={account.bank_name}
+          accountType={account.account_type}
+          balance={account.current_balance}
+          selected={selectedAccount?.id === account.id}
           onClick={() => {
-            selectedAccountId = account.id;
+            selectedAccount = account;
           }}
         />
       {/each}
@@ -120,10 +114,11 @@
     <div class="file-drop-container">
       <FileDrop
         acceptedTypes={[".csv"]}
-        onUpload={(files) => {
-          uploadedFile = files[0];
+        filterName="CSV Files"
+        onSelect={(paths) => {
+          selectedFilePath = paths[0] ?? null;
         }}
-        multiple={false}
+        multiple={true}
       />
     </div>
   </div>
@@ -138,7 +133,7 @@
     
     <div class="review-container">
       <FlashcardDeck
-        transactions={mockTransactions}
+        transactions={importedTransactions}
         discardText="Delete"
         acceptText="Submit"
         onDiscard={handleTransactionDiscard}

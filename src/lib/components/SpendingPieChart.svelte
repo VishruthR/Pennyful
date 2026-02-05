@@ -18,7 +18,7 @@
 
 <script lang="ts">
   import Icon from "@iconify/svelte";
-  import type { Category } from "$lib/types.ts"
+  import type { Category, CategoryDetails } from "$lib/types.ts"
   import type { SpendingCategory } from "$lib/components/SpendingBreakdown.svelte"
 
   interface Segment extends SpendingCategory {
@@ -28,7 +28,7 @@
 
   interface Props {
     categories: SpendingCategory[];
-    categoryDetails: Map<String, Category>;
+    categoryDetails: CategoryDetails;
     size?: number;
     strokeWidth?: number;
   }
@@ -63,7 +63,7 @@
       return undefined;
     }
 
-    return categoryDetails.get(hoveredSegment.name);
+    return categoryDetails[hoveredSegment.name];
   }
 
   const segments: Segment[] = $derived.by(() => {

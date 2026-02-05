@@ -19,7 +19,7 @@
   import type { FullTransactionInfo } from "$lib/types";
   import SortArrows, { type SortDirection } from "$lib/components/SortArrows.svelte";
   import CategoryPill from "$lib/components/CategoryPill.svelte";
-  import { formatSignedCurrency, isPositiveAmount } from "$lib/utils/format";
+  import { formatSignedCurrencyChange, isPositiveAmount } from "$lib/utils/format";
 
   interface Props {
     transactions: FullTransactionInfo[];
@@ -112,7 +112,7 @@
             />
           </td>
           <td class="col-amount {isPositiveAmount(transaction.amount) ? 'positive' : 'negative'}">
-            {formatSignedCurrency(transaction.amount)}
+            {formatSignedCurrencyChange(transaction.amount)}
           </td>
         </tr>
       {/each}

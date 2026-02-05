@@ -5,24 +5,33 @@ interface Category {
     secondary_color: string,
     icon: string
 }
-type CategoryDetails =  Map<string, Category>;
+type CategoryDetails =  Record<string, Category>;
 
-interface FullTransactionInfo {
+interface Transaction {
     id: number;
     name: string;
     amount: number;
     date: Date;
-    account: {
-        id: number;
-        name: string;
-    };
-    category: {
-        id: number;
-        name: string;
-        color: string;
-        icon?: string;
-    };
+    account_id: number;
+    category_id: number;
 }
 
-export type { Category, CategoryDetails, FullTransactionInfo };
+type TransactionImport = Omit<Transaction, "id">;
+
+enum AccountType {
+    Savings = "Savings",
+    Checkings = "Checkings",
+}
+
+interface Account {
+    id: number;
+    name: string;
+    bank_id: number;
+    bank_name: string;
+    account_type: AccountType;
+    initial_balance: number;
+    current_balance: number;
+}
+
+export type { Category, CategoryDetails, Transaction, Account, TransactionImport };
 

@@ -4,7 +4,7 @@ use rust_decimal::{prelude::ToPrimitive, Decimal};
 use sqlx::{Sqlite, decode::Decode, encode::{Encode, IsNull}, Type};
 
 // Custom type to enable automatic encoding/decoding for sqlx
-#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd, serde::Serialize)]
 pub struct Cents (pub Decimal);
 
 impl Type<Sqlite> for Cents {
@@ -97,4 +97,78 @@ pub struct Category {
     pub name: String,
     pub color: String,
     pub icon: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, serde::Serialize)]
+#[sqlx(rename_all = "UPPERCASE")]
+pub enum AccountType {
+    Savings,
+    Checkings,
+}
+
+#[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
+pub struct Account {
+    pub id: u64,
+    pub name: String,
+    pub bank_id: u64,
+    pub account_type: AccountType,
+    #[sqlx(rename = "initial_balance_cents")]
+    pub initial_balance: Cents,
+    #[sqlx(rename = "current_balance_cents")]
+    pub current_balance: Cents,
+}
+
+impl Account {
+    pub fn new(
+        id: u64,
+        name: String,
+        bank_id: u64,
+        account_type: AccountType,
+        initial_balance: Cents,
+        current_balance: Cents,
+    ) -> Self {
+        Account {
+            id,
+            name,
+            bank_id,
+            account_type,
+            initial_balance,
+            current_balance,
+        }
+    }
+}
+
+/// Account with bank information joined from the bank table
+#[derive(PartialEq, Debug, Clone, serde::Serialize)]
+pub struct FullAccount {
+    #[serde(flatten)]
+    pub account: Account,
+    pub bank_name: String,
+}
+
+impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for FullAccount {
+    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, sqlx::Error> {
+        use sqlx::Row;
+        Ok(FullAccount {
+            account: Account::from_row(row)?,
+            bank_name: row.try_get("bank_name")?,
+        })
+    }
+}
+
+impl FullAccount {
+    pub fn new(
+        id: u64,
+        name: String,
+        bank_id: u64,
+        bank_name: String,
+        account_type: AccountType,
+        initial_balance: Cents,
+        current_balance: Cents,
+    ) -> Self {
+        FullAccount {
+            account: Account::new(id, name, bank_id, account_type, initial_balance, current_balance),
+            bank_name,
+        }
+    }
 }

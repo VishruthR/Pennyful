@@ -4,6 +4,7 @@
 -->
 
 <script lang="ts">
+  import { formatSignedCurrencyAmount } from "$lib/utils/format";
   import Icon from "@iconify/svelte";
 
   interface Props {
@@ -19,15 +20,6 @@
   let { icon, name, accountType, provider, balance, selected = false, onClick }: Props = $props();
 
   const isNegative = $derived(balance < 0);
-
-  const formattedBalance = $derived(
-    balance.toLocaleString('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-  );
 </script>
 
 <button class="bank-account-card" class:selected onclick={onClick}>
@@ -40,7 +32,7 @@
   </div>
   <div class="balance-row paragraph">
     <span class="balance-label">Balance:</span>
-    <span class="balance-amount" class:negative={isNegative}>{formattedBalance}</span>
+    <span class="balance-amount" class:negative={isNegative}>{formatSignedCurrencyAmount(balance)}</span>
   </div>
 </button>
 
