@@ -38,14 +38,16 @@
       filters: [{ name: filterName, extensions }],
     });
 
-    if (result) {
-      if (multiple && Array.isArray(result)) {
-        selectedPaths = result;
-      } else if (typeof result === 'string') {
-        selectedPaths = [result];
-      }
-      onSelect(selectedPaths);
+    if (!result) {
+      return;
     }
+    
+    if (multiple && Array.isArray(result)) {
+      selectedPaths = result;
+    } else if (typeof result === 'string') {
+      selectedPaths = [result];
+    }
+    onSelect(selectedPaths);
   }
 
   function getFileName(path: string): string {

@@ -15,7 +15,7 @@
 <script lang="ts">
     import type { CategoryDetails, TransactionImport } from "$lib/types";
     import CategoryPill from "$lib/components/CategoryPill.svelte";
-    import { formatDate, formatSignedCurrency, isPositiveAmount } from "$lib/utils/format";
+    import { formatDate, formatSignedCurrencyChange, isPositiveAmount } from "$lib/utils/format";
     import { categoriesApi } from "$lib/api/categories";
   
     interface Props {
@@ -41,7 +41,7 @@
       <div class="field">
         <span class="label">Amount</span>
         <span class="value {isPositiveAmount(transaction.amount) ? 'positive' : 'negative'}">
-          {formatSignedCurrency(transaction.amount)}
+          {formatSignedCurrencyChange(transaction.amount)}
         </span>
       </div>
     </div>

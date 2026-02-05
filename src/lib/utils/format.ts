@@ -12,13 +12,26 @@ export function formatDate(date: Date): string {
  * Formats a number as currency with sign prefix.
  * Positive amounts show as "+$X.XX", negative as "-$X.XX".
  */
-export function formatSignedCurrency(amount: number): string {
+export function formatSignedCurrencyChangeChange(change: number): string {
+  const absAmount = Math.abs(change);
+  const formatted = absAmount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return change >= 0 ? `+$${formatted}` : `-$${formatted}`;
+}
+
+/**
+ * Formats a number as currency with sign prefix.
+ * Positive amounts show as "$X.XX", negative as "-$X.XX".
+ */
+export function formatSignedCurrencyAmount(amount: number): string {
   const absAmount = Math.abs(amount);
   const formatted = absAmount.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return amount >= 0 ? `+$${formatted}` : `-$${formatted}`;
+  return amount >= 0 ? `$${formatted}` : `-$${formatted}`;
 }
 
 /**

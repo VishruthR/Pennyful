@@ -117,7 +117,7 @@
         onSelect={(paths) => {
           selectedFilePath = paths[0] ?? null;
         }}
-        multiple={false}
+        multiple={true}
       />
     </div>
   </div>
