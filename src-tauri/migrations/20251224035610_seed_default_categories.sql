@@ -1,4 +1,4 @@
-INSERT INTO category (name, color) values ('Uncategorized', '#FFFFFF');
+INSERT INTO category (name, color) values ('Uncategorized', '#535353');
 
 INSERT INTO category (name, color, icon) values
     ('Income', '#CEE3BE', 'vaadin:money'),

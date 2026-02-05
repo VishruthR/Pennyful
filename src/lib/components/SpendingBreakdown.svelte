@@ -4,8 +4,7 @@
 
 <script lang="ts">
   import SpendingPieChart from "./SpendingPieChart.svelte";
-  import { invoke } from '@tauri-apps/api/core';
-  import type { CategoryDetails, Category } from "$lib/types.ts"
+  import { getCategoryDetails } from "$lib/api/categories";
 
   export interface SpendingCategory {
     name: string;
@@ -29,7 +28,7 @@
   }: Props = $props();
 
   const fetchCategoryDetails = async () => {
-    return new Map(Object.entries(await invoke('get_category_details'))) as CategoryDetails;
+    return getCategoryDetails();
   }
 </script>
 

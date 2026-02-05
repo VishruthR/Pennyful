@@ -40,7 +40,7 @@
   </div>
   <div class="balance-row paragraph">
     <span class="balance-label">Balance:</span>
-    <span class="balance-amount" class:negative={isNegative}>{formattedBalance}</span>
+    <span class="balance-amount" class:negative={isNegative}>{`$${formattedBalance}`}</span>
   </div>
 </button>
 

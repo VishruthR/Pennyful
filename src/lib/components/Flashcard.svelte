@@ -16,7 +16,7 @@
     import type { CategoryDetails, TransactionImport } from "$lib/types";
     import CategoryPill from "$lib/components/CategoryPill.svelte";
     import { formatDate, formatSignedCurrency, isPositiveAmount } from "$lib/utils/format";
-    import { invoke } from "@tauri-apps/api/core";
+    import { getCategoryById } from "$lib/api/categories";
   
     interface Props {
       transaction: TransactionImport;
@@ -24,9 +24,9 @@
   
     let { transaction }: Props = $props();
 
-    // TODO: Handle categories better, including uncategorized
-    const categories = (await invoke("get_category_details")) as CategoryDetails;
-    const category = Object.values(categories).find(category => category.id === transaction.category_id);
+    // TODO: Category id should always be populated at this point
+    const category  = $derived(await getCategoryById(transaction.category_id ?? 0));
+    $inspect(category);
   </script>
   
   <div class="flashcard">
