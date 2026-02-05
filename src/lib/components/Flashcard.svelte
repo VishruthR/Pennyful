@@ -26,7 +26,6 @@
 
     // TODO: Category id should always be populated at this point
     const category  = $derived(await getCategoryById(transaction.category_id ?? 0));
-    $inspect(category);
   </script>
   
   <div class="flashcard">

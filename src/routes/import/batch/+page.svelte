@@ -29,9 +29,7 @@
 
   function handleTransactionAccept(transaction: TransactionImport) {
     console.log("Accepted:", transaction.name);
-    // TODO: Need to update the transactions category here (including uncategorized)
-    let fullTransaction = { ...transaction, account_id: selectedAccountId !== null ? selectedAccountId : undefined };
-    acceptedTransactions = [...acceptedTransactions, fullTransaction];
+    acceptedTransactions = [...acceptedTransactions, transaction];
   }
 
   function handleReviewComplete() {
@@ -55,7 +53,6 @@
       canProceed: () => selectedFilePath != null,
       onNext: async () => {
         currentStep = 2;
-        console.log("selected file path: ", selectedFilePath);
         // TODO: Handle errors (no file selected or transactions import fails)
         if (!selectedFilePath || !selectedAccountId) {
           return;

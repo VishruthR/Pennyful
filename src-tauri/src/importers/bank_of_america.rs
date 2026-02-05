@@ -21,8 +21,6 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
         .filter_map(|transaction_record| transaction_record.deserialize(None).ok())
         .collect();
 
-    println!("Transactions: {:?}", transactions);
-
     Ok(transactions)
 }
 

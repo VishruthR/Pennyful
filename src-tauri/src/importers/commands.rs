@@ -10,8 +10,6 @@ Returns the transactions imported or an error
 */
 #[tauri::command]
 pub fn import_transactions(file_path: String, bank_name: String) -> Result<Vec<TransactionImport>, String> {
-    println!("Importing transactions from file: {}", file_path);
-    println!("Bank name: {}", bank_name);
     match bank_name.as_str() {
         "Bank of America" => bank_of_america::parse_csv_statement(file_path).map_err(|e| e.to_string()),
         "Wells Fargo" => wells_fargo::parse_csv_statement(file_path).map_err(|e| e.to_string()),

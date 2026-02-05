@@ -22,7 +22,6 @@
   let { steps }: Props = $props();
 
   let currentStep = $state(0);
-  $inspect(currentStep);
   
   const canProceed = $derived(steps[currentStep].canProceed?.() ?? true);
 
