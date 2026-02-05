@@ -13,7 +13,7 @@
 -->
 
 <script lang="ts">
-    import type { CategoryDetails, TransactionImport } from "$lib/types";
+    import type { TransactionImport } from "$lib/types";
     import CategoryPill from "$lib/components/CategoryPill.svelte";
     import { formatDate, formatSignedCurrencyChange, isPositiveAmount } from "$lib/utils/format";
     import { categoriesApi } from "$lib/api/categories";
@@ -24,6 +24,7 @@
   
     let { transaction }: Props = $props();
 
+    // TODO: Handle errors in case category doesn't exist
     const category = $derived(await categoriesApi.getCategoryById(transaction.category_id));
   </script>
   
