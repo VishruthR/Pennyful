@@ -4,7 +4,7 @@
 -->
 
 <script lang="ts">
-    import { formatSignedCurrencyAmount } from "$lib/utils/format";
+  import { formatSignedCurrencyAmount } from "$lib/utils/format";
   import Icon from "@iconify/svelte";
 
   interface Props {

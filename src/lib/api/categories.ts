@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 Invoke is super fast in Tauri so for now we can just call the backend directly
 
 TODO: In the future switch to using a context provider and make categories a singleton
+TODO: Figure out if you like having categories be indexed by name or id
 */
 const getCategoryDetails = async (): Promise<CategoryDetails> => {
     return (await invoke("get_category_details")) as CategoryDetails;

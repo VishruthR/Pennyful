@@ -1,20 +1,20 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import Stepper from "$lib/components/Stepper.svelte";
-  import BankAccountCard from "$lib/components/BankAccountCard.svelte";
+  import AccountCard from "$lib/components/AccountCard.svelte";
   import FileDrop from "$lib/components/FileDrop.svelte";
   import FlashcardDeck from "$lib/components/FlashcardDeck.svelte";
-  import type { TransactionImport } from "$lib/types";
+  import type { TransactionImport, Account } from "$lib/types";
   import { importTransactions } from "$lib/api/importers";
   import { accountsApi } from "$lib/api/accounts";
 
   // TODO: Handle errors
-  const bankAccounts = await accountsApi.getAllAccounts();
+  const accounts = await accountsApi.getAllAccounts();
 
   let currentStep = $state(0);
 
   // Step 1 state
-  let selectedAccountId = $state<number | null>(null);
+  let selectedAccount = $state<Account | undefined>(undefined);
 
   // Step 2 state
   let selectedFilePath = $state<string | null>(null);
@@ -42,7 +42,7 @@
     {
       name: "Select bank account",
       content: step1Content,
-      canProceed: () => selectedAccountId != null,
+      canProceed: () => selectedAccount != null,
       onNext: () => {
         currentStep = 1;
       },
@@ -53,14 +53,15 @@
       canProceed: () => selectedFilePath != null,
       onNext: async () => {
         currentStep = 2;
-        // TODO: Handle errors (no file selected or transactions import fails)
-        if (!selectedFilePath || !selectedAccountId) {
+        // TODO: Handle errors (file selected doesn't exist, transactions import fails)
+        // Both these variables should be populated but Typescript doesn't know that
+        if (!selectedFilePath || !selectedAccount) {
           return;
         }
         importedTransactions = await importTransactions(
           selectedFilePath, 
-          bankAccounts.find(account => account.id === selectedAccountId)?.bank_name ?? "", 
-          selectedAccountId
+          selectedAccount.bank_name, 
+          selectedAccount.id
         );
       },
       onBack: () => {
@@ -86,16 +87,16 @@
     </div>
     
     <div class="accounts-grid">
-      {#each bankAccounts as account}
-        <BankAccountCard
+      {#each accounts as account}
+        <AccountCard
           icon="mdi:bank"
           name={account.name}
           provider={account.bank_name}
           accountType={account.account_type}
           balance={account.current_balance}
-          selected={selectedAccountId === account.id}
+          selected={selectedAccount?.id === account.id}
           onClick={() => {
-            selectedAccountId = account.id;
+            selectedAccount = account;
           }}
         />
       {/each}

@@ -23,7 +23,7 @@ enum AccountType {
     Checkings = "Checkings",
 }
 
-interface BankAccount {
+interface Account {
     id: number;
     name: string;
     bank_id: number;
@@ -33,5 +33,5 @@ interface BankAccount {
     current_balance: number;
 }
 
-export type { Category, CategoryDetails, Transaction, BankAccount, TransactionImport };
+export type { Category, CategoryDetails, Transaction, Account, TransactionImport };
 
