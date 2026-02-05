@@ -68,19 +68,4 @@ mod tests {
         assert_eq!(result, get_expected_full_accounts());
         Ok(())
     }
-
-    #[sqlx::test(fixtures(path = "../fixtures", scripts("accounts")))]
-    async fn test_get_all_accounts_has_bank_name(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
-        let app = tauri::test::mock_app();
-        app.manage(AppState {
-            db: DatabaseState(pool),
-            category_details: Mutex::new(None),
-        });
-
-        let result = get_all_accounts(app.state::<AppState>()).await?;
-        
-        assert_eq!(result[0].bank_name, "Bank of America");
-        assert_eq!(result[2].bank_name, "Wells Fargo");
-        Ok(())
-    }
 }

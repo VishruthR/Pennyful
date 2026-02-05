@@ -119,14 +119,6 @@ pub struct Account {
 }
 
 impl Account {
-    pub fn id(&self) -> u64 {
-        self.id
-    }
-
-    pub fn bank_id(&self) -> u64 {
-        self.bank_id
-    }
-
     pub fn new(
         id: u64,
         name: String,

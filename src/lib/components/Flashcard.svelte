@@ -24,8 +24,7 @@
   
     let { transaction }: Props = $props();
 
-    // TODO: Category id should always be populated at this point
-    const category  = $derived(await getCategoryById(transaction.category_id ?? 0));
+    const category = $derived(await getCategoryById(transaction.category_id));
   </script>
   
   <div class="flashcard">

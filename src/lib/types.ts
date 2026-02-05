@@ -7,14 +7,6 @@ interface Category {
 }
 type CategoryDetails =  Record<string, Category>;
 
-interface TransactionImport {
-    name: string;
-    amount: number;
-    date: Date;
-    acccount_id?: number;
-    category_id?: number;
-}
-
 interface Transaction {
     id: number;
     name: string;
@@ -23,6 +15,8 @@ interface Transaction {
     account_id: number;
     category_id: number;
 }
+
+type TransactionImport = Omit<Transaction, "id">;
 
 enum AccountType {
     Savings = "Savings",
