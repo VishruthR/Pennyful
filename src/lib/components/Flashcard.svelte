@@ -16,7 +16,7 @@
     import type { CategoryDetails, TransactionImport } from "$lib/types";
     import CategoryPill from "$lib/components/CategoryPill.svelte";
     import { formatDate, formatSignedCurrency, isPositiveAmount } from "$lib/utils/format";
-    import { getCategoryById } from "$lib/api/categories";
+    import { categoriesApi } from "$lib/api/categories";
   
     interface Props {
       transaction: TransactionImport;
@@ -24,7 +24,7 @@
   
     let { transaction }: Props = $props();
 
-    const category = $derived(await getCategoryById(transaction.category_id));
+    const category = $derived(await categoriesApi.getCategoryById(transaction.category_id));
   </script>
   
   <div class="flashcard">

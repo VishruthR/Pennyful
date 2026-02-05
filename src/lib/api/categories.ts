@@ -20,4 +20,8 @@ const getCategoryById = async (id: number): Promise<Category | undefined> => {
     return Object.values(categories).find(category => category.id === id);
 }
 
-export { getCategoryDetails,getCategoryByName, getCategoryById };
+export const categoriesApi = {
+    getCategoryDetails,
+    getCategoryByName,
+    getCategoryById,
+}

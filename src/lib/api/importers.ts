@@ -1,9 +1,9 @@
 import type { TransactionImport } from "$lib/types";
 import { invoke } from "@tauri-apps/api/core";
-import { getCategoryByName } from "./categories";
+import { categoriesApi } from "./categories";
 
 const importTransactions = async (filePath: string, bankName: string, accountId: number): Promise<TransactionImport[]> => {
-    const uncategorizedCategory = await getCategoryByName("Uncategorized");
+    const uncategorizedCategory = await categoriesApi.getCategoryByName("Uncategorized");
     const transactions =  await invoke("import_transactions", {
         filePath: filePath,
         bankName: bankName,

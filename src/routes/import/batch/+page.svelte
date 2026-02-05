@@ -4,12 +4,12 @@
   import BankAccountCard from "$lib/components/BankAccountCard.svelte";
   import FileDrop from "$lib/components/FileDrop.svelte";
   import FlashcardDeck from "$lib/components/FlashcardDeck.svelte";
-  import type { BankAccount, TransactionImport } from "$lib/types";
-  import { invoke } from "@tauri-apps/api/core";
-    import { importTransactions } from "$lib/api/importers";
+  import type { TransactionImport } from "$lib/types";
+  import { importTransactions } from "$lib/api/importers";
+  import { accountsApi } from "$lib/api/accounts";
 
-  // TODO: Handle errors, store users bank accounts in context much like you do with categories
-  const bankAccounts = (await invoke("get_all_accounts")) as BankAccount[];
+  // TODO: Handle errors
+  const bankAccounts = await accountsApi.getAllAccounts();
 
   let currentStep = $state(0);
 

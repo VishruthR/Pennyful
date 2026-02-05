@@ -4,7 +4,7 @@
 
 <script lang="ts">
   import SpendingPieChart from "./SpendingPieChart.svelte";
-  import { getCategoryDetails } from "$lib/api/categories";
+  import { categoriesApi } from "$lib/api/categories";
 
   export interface SpendingCategory {
     name: string;
@@ -28,7 +28,7 @@
   }: Props = $props();
 
   const fetchCategoryDetails = async () => {
-    return getCategoryDetails();
+    return categoriesApi.getCategoryDetails();
   }
 </script>
 
