@@ -108,9 +108,9 @@ pub enum AccountType {
 
 #[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
 pub struct Account {
-    id: u64,
+    pub id: u64,
     pub name: String,
-    bank_id: u64,
+    pub bank_id: u64,
     pub account_type: AccountType,
     #[sqlx(rename = "initial_balance_cents")]
     pub initial_balance: Cents,
@@ -139,17 +139,21 @@ impl Account {
 }
 
 /// Account with bank information joined from the bank table
-#[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
+#[derive(PartialEq, Debug, Clone, serde::Serialize)]
 pub struct FullAccount {
-    pub id: u64,
-    pub name: String,
-    pub bank_id: u64,
+    #[serde(flatten)]
+    pub account: Account,
     pub bank_name: String,
-    pub account_type: AccountType,
-    #[sqlx(rename = "initial_balance_cents")]
-    pub initial_balance: Cents,
-    #[sqlx(rename = "current_balance_cents")]
-    pub current_balance: Cents,
+}
+
+impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for FullAccount {
+    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, sqlx::Error> {
+        use sqlx::Row;
+        Ok(FullAccount {
+            account: Account::from_row(row)?,
+            bank_name: row.try_get("bank_name")?,
+        })
+    }
 }
 
 impl FullAccount {
@@ -163,13 +167,8 @@ impl FullAccount {
         current_balance: Cents,
     ) -> Self {
         FullAccount {
-            id,
-            name,
-            bank_id,
+            account: Account::new(id, name, bank_id, account_type, initial_balance, current_balance),
             bank_name,
-            account_type,
-            initial_balance,
-            current_balance,
         }
     }
 }
