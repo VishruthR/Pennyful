@@ -13,15 +13,20 @@
 -->
 
 <script lang="ts">
-    import type { FullTransactionInfo } from "$lib/types";
+    import type { CategoryDetails, TransactionImport } from "$lib/types";
     import CategoryPill from "$lib/components/CategoryPill.svelte";
     import { formatDate, formatSignedCurrency, isPositiveAmount } from "$lib/utils/format";
+    import { invoke } from "@tauri-apps/api/core";
   
     interface Props {
-      transaction: FullTransactionInfo;
+      transaction: TransactionImport;
     }
   
     let { transaction }: Props = $props();
+
+    // TODO: Handle categories better, including uncategorized
+    const categories = (await invoke("get_category_details")) as CategoryDetails;
+    const category = Object.values(categories).find(category => category.id === transaction.category_id);
   </script>
   
   <div class="flashcard">
@@ -45,14 +50,16 @@
   
     <div class="field">
       <span class="label">Category</span>
+      {#if category}
       <div>
         <CategoryPill
-          name={transaction.category.name}
-          icon={transaction.category.icon}
-          color={transaction.category.color}
+          name={category.name}
+          icon={category.icon}
+          color={category.color}
           textColor="white"
         />
       </div>
+      {/if}
     </div>
   </div>
   

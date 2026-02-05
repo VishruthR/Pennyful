@@ -10,6 +10,8 @@
     name: string;
     content: Snippet;
     canProceed?: () => boolean;
+    onNext?: () => void;
+    onBack?: () => void;
     hideNextButton?: boolean;
   }
 
@@ -20,6 +22,7 @@
   let { steps }: Props = $props();
 
   let currentStep = $state(0);
+  $inspect(currentStep);
   
   const canProceed = $derived(steps[currentStep].canProceed?.() ?? true);
 
@@ -28,6 +31,8 @@
       return;
     }
 
+    steps[currentStep].onNext?.();
+
     if (currentStep < steps.length - 1) {
       currentStep++;
     }
@@ -35,6 +40,7 @@
 
   function goBack() {
     if (currentStep > 0) {
+      steps[currentStep].onBack?.();
       currentStep--;
     }
   }

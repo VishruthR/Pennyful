@@ -4,16 +4,16 @@
 -->
 
 <script lang="ts">
-  import type { FullTransactionInfo } from "$lib/types";
+  import type { TransactionImport } from "$lib/types";
   import Flashcard from "$lib/components/Flashcard.svelte";
   import Button from "$lib/components/Button.svelte";
 
   interface Props {
-    transactions: FullTransactionInfo[];
+    transactions: TransactionImport[];
     discardText?: string;
     acceptText?: string;
-    onDiscard: (transaction: FullTransactionInfo) => void;
-    onAccept: (transaction: FullTransactionInfo) => void;
+    onDiscard: (transaction: TransactionImport) => void;
+    onAccept: (transaction: TransactionImport) => void;
     onComplete: () => void;
   }
 
@@ -38,7 +38,7 @@
 
   // Get up to 3 cards to display
   let visibleCards = $derived.by(() => {
-    const cards: FullTransactionInfo[] = [];
+    const cards: TransactionImport[] = [];
     for (let i = 0; i < 3 && currentIndex + i < totalCards; i++) {
       cards.push(transactions[currentIndex + i]);
     }
@@ -87,7 +87,7 @@
 <div class="flashcard-deck">
   <div class="cards-container">
     {#if !isComplete}
-      {#each visibleCards as card, index (card.id)}
+      {#each visibleCards as card, index (`${card.name}-${card.date}-${card.amount}-${index}`)}
         <div
           class="card-wrapper"
           class:card-back-2={index === 2}

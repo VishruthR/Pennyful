@@ -4,55 +4,34 @@
   import BankAccountCard from "$lib/components/BankAccountCard.svelte";
   import FileDrop from "$lib/components/FileDrop.svelte";
   import FlashcardDeck from "$lib/components/FlashcardDeck.svelte";
-  import type { BankAccount, FullTransactionInfo } from "$lib/types";
-    import { invoke } from "@tauri-apps/api/core";
+  import type { BankAccount, TransactionImport } from "$lib/types";
+  import { invoke } from "@tauri-apps/api/core";
+    import { importTransactions } from "$lib/api/importers";
 
+  // TODO: Handle errors, store users bank accounts in context much like you do with categories
   const bankAccounts = (await invoke("get_all_accounts")) as BankAccount[];
 
-  // Mock transactions for review step
-  const mockTransactions: FullTransactionInfo[] = [
-    {
-      id: 1,
-      name: "CSTCO 11/28 KIRKLAND SIGNATURE BLAH BLAH BLAH BLAH BLAH",
-      amount: -190.10,
-      date: new Date("2025-11-10"),
-      account: { id: 1, name: "BOFA" },
-      category: { id: 1, name: "Housing", color: "#A78BFA", icon: "mdi:home" },
-    },
-    {
-      id: 2,
-      name: "AMAZON PRIME MEMBERSHIP",
-      amount: -14.99,
-      date: new Date("2025-11-08"),
-      account: { id: 2, name: "AMEX" },
-      category: { id: 2, name: "Subscriptions", color: "#60A5FA", icon: "mdi:credit-card" },
-    },
-    {
-      id: 3,
-      name: "PAYROLL DEPOSIT",
-      amount: 3500.00,
-      date: new Date("2025-11-01"),
-      account: { id: 1, name: "BOFA" },
-      category: { id: 3, name: "Income", color: "#4ADE80", icon: "mdi:cash" },
-    },
-  ];
+  let currentStep = $state(0);
 
   // Step 1 state
   let selectedAccountId = $state<number | null>(null);
 
   // Step 2 state
-  let uploadedFile = $state<File | null>(null);
+  let selectedFilePath = $state<string | null>(null);
+  let importedTransactions = $state<TransactionImport[]>([]);
 
   // Step 3 state
-  let acceptedTransactions = $state<FullTransactionInfo[]>([]);
+  let acceptedTransactions = $state<TransactionImport[]>([]);
 
-  function handleTransactionDiscard(transaction: FullTransactionInfo) {
+  function handleTransactionDiscard(transaction: TransactionImport) {
     console.log("Discarded:", transaction.name);
   }
 
-  function handleTransactionAccept(transaction: FullTransactionInfo) {
+  function handleTransactionAccept(transaction: TransactionImport) {
     console.log("Accepted:", transaction.name);
-    acceptedTransactions = [...acceptedTransactions, transaction];
+    // TODO: Need to update the transactions category here (including uncategorized)
+    let fullTransaction = { ...transaction, account_id: selectedAccountId !== null ? selectedAccountId : undefined };
+    acceptedTransactions = [...acceptedTransactions, fullTransaction];
   }
 
   function handleReviewComplete() {
@@ -66,16 +45,38 @@
       name: "Select bank account",
       content: step1Content,
       canProceed: () => selectedAccountId != null,
+      onNext: () => {
+        currentStep = 1;
+      },
     },
     {
       name: "Upload File",
       content: step2Content,
-      canProceed: () => uploadedFile != null,
+      canProceed: () => selectedFilePath != null,
+      onNext: async () => {
+        currentStep = 2;
+        console.log("selected file path: ", selectedFilePath);
+        // TODO: Handle errors (no file selected or transactions import fails)
+        if (!selectedFilePath || !selectedAccountId) {
+          return;
+        }
+        importedTransactions = await importTransactions(
+          selectedFilePath, 
+          bankAccounts.find(account => account.id === selectedAccountId)?.bank_name ?? "", 
+          selectedAccountId
+        );
+      },
+      onBack: () => {
+        currentStep = 0;
+      },
     },
     {
       name: "Review",
       content: step3Content,
       hideNextButton: true,
+      onBack: () => {
+        currentStep = 1;
+      },
     },
   ];
 </script>
@@ -115,8 +116,9 @@
     <div class="file-drop-container">
       <FileDrop
         acceptedTypes={[".csv"]}
-        onUpload={(files) => {
-          uploadedFile = files[0];
+        filterName="CSV Files"
+        onSelect={(paths) => {
+          selectedFilePath = paths[0] ?? null;
         }}
         multiple={false}
       />
@@ -133,7 +135,7 @@
     
     <div class="review-container">
       <FlashcardDeck
-        transactions={mockTransactions}
+        transactions={importedTransactions}
         discardText="Delete"
         acceptText="Submit"
         onDiscard={handleTransactionDiscard}

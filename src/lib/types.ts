@@ -5,23 +5,23 @@ interface Category {
     secondary_color: string,
     icon: string
 }
-type CategoryDetails =  Map<string, Category>;
+type CategoryDetails =  Record<string, Category>;
 
-interface FullTransactionInfo {
+interface TransactionImport {
+    name: string;
+    amount: number;
+    date: Date;
+    acccount_id?: number;
+    category_id?: number;
+}
+
+interface Transaction {
     id: number;
     name: string;
     amount: number;
     date: Date;
-    account: {
-        id: number;
-        name: string;
-    };
-    category: {
-        id: number;
-        name: string;
-        color: string;
-        icon?: string;
-    };
+    account_id: number;
+    category_id: number;
 }
 
 enum AccountType {
@@ -39,5 +39,5 @@ interface BankAccount {
     current_balance: number;
 }
 
-export type { Category, CategoryDetails, FullTransactionInfo, BankAccount };
+export type { Category, CategoryDetails, Transaction, BankAccount, TransactionImport };
 
