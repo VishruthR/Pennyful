@@ -1,3 +1,5 @@
+import type { Snippet } from 'svelte';
+
 interface Category {
     id: number,
     name: string,
@@ -33,5 +35,9 @@ interface Account {
     current_balance: number;
 }
 
-export type { Category, CategoryDetails, Transaction, Account, TransactionImport };
+interface DropdownOption {
+    value: string;
+    content: Snippet;
+}
 
+export type { Category, CategoryDetails, Transaction, TransactionImport, AccountType, Account, DropdownOption };
