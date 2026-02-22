@@ -1,88 +1,68 @@
 <script lang="ts">
+  import { Select } from 'bits-ui';
   import Icon from '@iconify/svelte';
-  import { Combobox } from "melt/builders";
   import type { DropdownOption } from '$lib/types';
 
   interface Props {
     options: DropdownOption[];
-    onSelect: (value: string | null) => void;
+    onSelect?: (value: string | null) => void;
     placeholder?: string;
-    getSelectedValue?: () => string;
+    value?: string | null;
   }
 
-  let {
-    options,
-    onSelect,
-    placeholder = 'Select...',
-    getSelectedValue
-  }: Props = $props();
+  let { options, onSelect, placeholder = 'Select...', value = $bindable<string | null>(null) }: Props = $props();
 
-  const optionsLabels = $derived(options.map(o => o.value));
+  let isOpen = $state(false);
+
+  function handleValueChange(v: string | undefined) {
+    value = v ?? null;
+    onSelect?.(v ?? null);
+  }
+
+  const selectedOption = $derived(options.find(o => o.value === value));
   const optionsContent = $derived(Object.fromEntries(options.map(o => [o.value, o.content])));
-  type Option = (typeof optionsLabels)[number];
- 
-  const combobox = new Combobox<Option>({
-    value: getSelectedValue,
-    onValueChange: (val) => {
-      onSelect(val ?? null);
-    },
-  });
-
-  let dropdownEl: HTMLDivElement;
-
-  function handleWindowClick(e: MouseEvent) {
-    if (combobox.open && dropdownEl && !dropdownEl.contains(e.target as Node)) {
-      combobox.open = false;
-    }
-  }
 </script>
 
-<svelte:window onclick={handleWindowClick} />
+<div class="combobox" class:open={isOpen}>
+  <Select.Root
+    type="single"
+    value={value ?? undefined}
+    onValueChange={handleValueChange}
+    bind:open={isOpen}
+  >
+    <Select.Trigger class="trigger paragraph">
+      <span class="trigger-content">
+        {#if selectedOption}
+          {@render selectedOption.content()}
+        {:else}
+          <span class="placeholder">{placeholder}</span>
+        {/if}
+      </span>
+      <Icon icon="mdi:chevron-down" width={24} height={24} class="chevron" />
+    </Select.Trigger>
 
-<div class="dropdown" bind:this={dropdownEl}>
-  <button 
-    class="dropdown-trigger paragraph {combobox.open ? 'open' : ''}"
-    {...combobox.trigger}
-  >
-    <span class="dropdown-trigger-content">
-      {#if combobox.value}
-        {@render optionsContent[combobox.value]()}
-      {:else}
-        <span class="placeholder">{placeholder}</span>
-      {/if}
-    </span>
-    <Icon icon="mdi:chevron-down"
-      width={24}
-      height={24}
-      class="dropdown-chevron {combobox.touched ? 'rotated' : ''}"
-    />
-  </button>
-  
-  <ul
-    class="dropdown-menu"
-    {...combobox.content}
-    popover={undefined}
-  >
-    {#each optionsLabels as option (option)}
-      <li
-        class="dropdown-item paragraph"
-        {...combobox.getOption(option)}
-      >
-        {@render optionsContent[option]()}
-      </li>
-    {:else}
-      <span class="paragraph">No results found</span>
-    {/each}
-  </ul>
+    <Select.Content class="menu" sideOffset={4}>
+      <Select.Viewport>
+        {#each options as option (option.value)}
+          <Select.Item value={option.value} label={option.value} class="item paragraph">
+            {@render optionsContent[option.value]()}
+          </Select.Item>
+        {:else}
+          <span class="paragraph">No results found</span>
+        {/each}
+      </Select.Viewport>
+    </Select.Content>
+  </Select.Root>
 </div>
 
 <style>
-  .dropdown {
+  /* ── Wrapper (scopes all :global rules to this component) ──────────── */
+  .combobox {
     position: relative;
     width: 100%;
   }
 
-  .dropdown-trigger {
+  .combobox :global(.trigger) {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -97,20 +77,20 @@
     text-align: left;
   }
 
-  .dropdown-trigger:hover {
+  .combobox :global(.trigger:hover) {
     border-color: var(--grey-200);
   }
 
-  .dropdown-trigger:focus-visible {
+  .combobox :global(.trigger:focus-visible) {
     outline: 2px solid var(--grey-500);
     outline-offset: 2px;
   }
 
-  .dropdown-trigger.open {
+  .combobox.open :global(.trigger) {
     border-color: var(--grey-300);
   }
 
-  .dropdown-trigger-content {
+  .trigger-content {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -122,25 +102,19 @@
     color: var(--grey-200);
   }
 
-  .dropdown-trigger :global(.dropdown-chevron) {
+  .combobox :global(.chevron) {
     flex-shrink: 0;
     color: var(--grey-200);
     transition: transform 0.2s ease;
   }
 
-  .dropdown-trigger :global(.dropdown-chevron.rotated) {
+  .combobox.open :global(.chevron) {
     transform: rotate(180deg);
+    color: var(--grey-300);
   }
 
-  .dropdown-menu {
-    display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    margin: 0;
-    padding: 8px 0;
-    list-style: none;
+  .combobox :global(.menu) {
+    width: var(--bits-select-anchor-width);
     background-color: var(--pure-white);
     border: 2px solid var(--grey-300);
     border-radius: 10px;
@@ -148,13 +122,10 @@
     max-height: 280px;
     overflow-y: auto;
     z-index: 100;
+    padding: 8px 0;
   }
 
-  .dropdown-menu[data-open] {
-    display: block;
-  }
-
-  .dropdown-item {
+  .combobox :global(.item) {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -163,13 +134,11 @@
     transition: background-color 0.1s ease;
   }
 
-  .dropdown-item:hover,
-  .dropdown-item.focused {
+  .combobox :global(.item[data-highlighted]) {
     background-color: var(--grey-50);
   }
 
-  .dropdown-item.selected {
+  .combobox :global(.item[data-selected]) {
     background-color: var(--blue-50);
   }
-
 </style>
