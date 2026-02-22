@@ -3,7 +3,6 @@
   import { Combobox } from "melt/builders";
   import type { DropdownOption } from '$lib/types';
     import type { Snippet } from "svelte";
-    import Page from '../../routes/+page.svelte';
 
   interface Props {
     options: DropdownOption[];
@@ -28,21 +27,22 @@
     onValueChange: (val) => {
       onSelect(val ?? null);
     },
-    floatingConfig: {
-    //   computePosition: {
-    //     placement: 'bottom',
-    //   },
-    //   sameWidth: true,
-    //   offset: 4,
-    // }
-      onCompute: null,
-    }
   });
+
+  let dropdownEl: HTMLDivElement;
+
+  function handleWindowClick(e: MouseEvent) {
+    if (combobox.open && dropdownEl && !dropdownEl.contains(e.target as Node)) {
+      combobox.open = false;
+    }
+  }
 </script>
 
-<div class="dropdown">
+<svelte:window onclick={handleWindowClick} />
+
+<div class="dropdown" bind:this={dropdownEl}>
   <button 
-    class="dropdown-trigger paragraph"
+    class="dropdown-trigger paragraph {combobox.open ? 'open' : ''}"
     {...combobox.trigger}
   >
     <span class="dropdown-trigger-content">
@@ -62,6 +62,7 @@
   <ul
     class="dropdown-menu"
     {...combobox.content}
+    popover={undefined}
   >
     {#each optionsLabels as option (option)}
       <li
@@ -133,11 +134,11 @@
   }
 
   .dropdown-menu {
+    display: none;
     position: absolute;
-    top: 4px;
-    left: 0px;
-    right: 0px;
-    bottom: 0px;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
     margin: 0;
     padding: 8px 0;
     list-style: none;
@@ -148,6 +149,10 @@
     max-height: 280px;
     overflow-y: auto;
     z-index: 100;
+  }
+
+  .dropdown-menu[data-open] {
+    display: block;
   }
 
   .dropdown-item {
