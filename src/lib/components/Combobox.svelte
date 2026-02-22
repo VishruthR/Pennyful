@@ -2,7 +2,6 @@
   import Icon from '@iconify/svelte';
   import { Combobox } from "melt/builders";
   import type { DropdownOption } from '$lib/types';
-    import type { Snippet } from "svelte";
 
   interface Props {
     options: DropdownOption[];
