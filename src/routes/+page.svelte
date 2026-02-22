@@ -17,6 +17,7 @@
     align-items: center;
     justify-content: center;
     padding: 32px;
+    gap: 48px;
   }
 
   .batch-link {
