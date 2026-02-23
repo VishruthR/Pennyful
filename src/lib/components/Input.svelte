@@ -87,7 +87,7 @@
   }
 
   .wrapper.has-counter .input {
-    padding-bottom: 36px;
+    padding-bottom: 8px;
   }
 
   .counter {
