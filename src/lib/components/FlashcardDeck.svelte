@@ -87,7 +87,7 @@
 <div class="flashcard-deck">
   <div class="cards-container">
     {#if !isComplete}
-      {#each visibleCards as card, index (`${card.name}-${card.date}-${card.amount}-${index}`)}
+      {#each visibleCards as card, index (currentIndex + index)}
         <div
           class="card-wrapper"
           class:card-back-2={index === 2}
@@ -138,7 +138,7 @@
   .cards-container {
     position: relative;
     width: 100%;
-    height: 280px;
+    height: 340px;
   }
 
   .card-wrapper {
