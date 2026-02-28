@@ -138,7 +138,7 @@
   .cards-container {
     position: relative;
     width: 100%;
-    height: 340px;
+    height: 360px;
   }
 
   .card-wrapper {
