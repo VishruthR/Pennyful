@@ -214,7 +214,7 @@
     display: flex;
     justify-content: center;
     width: 100%;
-    max-width: 450px;
+    max-width: 500px;
     margin-top: 16px;
   }
 </style>
