@@ -8,7 +8,7 @@
     status = "Connecting…";
     try {
       const accessToken = await plaidApi.connectToPlaid();
-      status = `Connected. Access token: ${accessToken}`;
+      status = `Connected. Number of Transactions: ${accessToken}`;
     } catch (error) {
       console.error("Failed to connect to Plaid:", error);
       status = `Error: ${error}`;

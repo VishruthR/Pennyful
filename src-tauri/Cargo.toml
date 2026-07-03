@@ -30,3 +30,4 @@ rust_decimal = { version = "1.39.0", features = [ "serde", "macros" ] }
 tauri-plugin-devtools = "2.0.0"
 plaid = "9.0.1"
 dotenvy = "0.15"
+tokio = { version = "1", features = ["time"] }
