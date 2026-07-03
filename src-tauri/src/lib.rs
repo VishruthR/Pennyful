@@ -6,6 +6,7 @@ mod importers {
     pub(crate) mod wells_fargo;
     pub(crate) mod american_express;
     pub(crate) mod types;
+    pub(crate) mod plaid;
 }
 mod transactions {
     pub(crate) mod queries;
@@ -28,6 +29,9 @@ struct AppState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Load environment variables from src-tauri/.env (ignored if the file is absent)
+    let _ = dotenvy::dotenv();
+
     // Add CrabNebula debugger to dev builds
     #[cfg(debug_assertions)]
     let builder = tauri::Builder::default().plugin(tauri_plugin_devtools::init());
@@ -59,7 +63,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             categories::commands::get_category_details,
             accounts::commands::get_all_accounts,
-            importers::commands::import_transactions
+            importers::commands::import_transactions,
+            importers::plaid::connect_to_plaid
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

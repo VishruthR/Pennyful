@@ -6,6 +6,9 @@
   <a href="/import/batch" class="batch-link">
     <Button>Batch Add Transactions</Button>
   </a>
+  <a href="/plaid" class="batch-link">
+    <Button>Test Plaid Integration</Button>
+  </a>
 </main>
 
 <style>
