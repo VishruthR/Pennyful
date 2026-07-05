@@ -6,7 +6,10 @@ mod importers {
     pub(crate) mod wells_fargo;
     pub(crate) mod american_express;
     pub(crate) mod types;
-    pub(crate) mod plaid;
+}
+mod plaid {
+    pub(crate) mod commands;
+    pub(crate) mod queries;
 }
 mod transactions {
     pub(crate) mod queries;
@@ -64,7 +67,8 @@ pub fn run() {
             categories::commands::get_category_details,
             accounts::commands::get_all_accounts,
             importers::commands::import_transactions,
-            importers::plaid::connect_to_plaid
+            plaid::commands::generate_link_token,
+            plaid::commands::generate_access_token
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

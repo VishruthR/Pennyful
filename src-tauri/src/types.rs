@@ -172,3 +172,35 @@ impl FullAccount {
         }
     }
 }
+
+#[derive(sqlx::FromRow, PartialEq, Debug)]
+pub struct PlaidItem {
+    item_id: String,
+    access_token: String,
+}
+
+impl PlaidItem {
+    pub fn item_id(&self) -> &String {
+        &self.item_id
+    }
+
+    pub fn access_token(&self) -> &String {
+        &self.access_token
+    }
+
+    pub fn new(
+        item_id: String,
+        access_token: String,
+    ) -> Self {
+        PlaidItem {
+            item_id, access_token
+        }
+    }
+}
+
+impl fmt::Display for PlaidItem {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "PlaidItem: {}", 
+            self.item_id)
+    }
+}
