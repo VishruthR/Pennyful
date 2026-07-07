@@ -1,12 +1,12 @@
 <!-- @component
-  A button that renders the full Plaid Link flow
-  It will accept a callback which accepts the generated access token
+  A button that prompts the full Plaid Link flow
+  In dev mode, it will include a button to get an access_token without requiring deep links
 -->
 
 <script lang="ts">
   import { plaidApi } from "$lib/api/plaid";
   import { openUrl } from "@tauri-apps/plugin-opener";
-  import Button from "./Button.svelte";
+  import Button from "$lib/components/Button.svelte";
 
   let error = $state<string | null>(null);
   let loading = $state(false);
@@ -19,17 +19,24 @@
       let hosted_link_url = await plaidApi.generateLinkToken();
       await openUrl(hosted_link_url);
     } catch (err) {
-      console.log(err);
+      error = err as string;
+      console.log(error);
     } finally {
       loading = false;
     }
   }
 
   async function handleRedirect() {
+    loading = true;
+    error = null;
+
     try {
       await plaidApi.generateAccessTokenFromHostedLink();
     } catch (err) {
-      console.log(err);
+      error = err as string
+      console.log(error);
+    } finally {
+      loading = false;
     }
   }
 </script>

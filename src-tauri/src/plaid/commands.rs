@@ -44,7 +44,6 @@ fn plaid_client() -> PlaidClient {
 #[tauri::command]
 pub async fn generate_link_token(state: tauri::State<'_, AppState>) -> Result<String, String> {
     let client = plaid_client();
-
     let completion_redirect_uri = completion_redirect_uri_for(tauri::is_dev());
 
     let client_name = "Pennyful";
@@ -85,7 +84,7 @@ pub async fn generate_link_token(state: tauri::State<'_, AppState>) -> Result<St
     Ok(link_token_create_resp.hosted_link_url.ok_or("no hosted_link_url returned")?)
 }
 
-pub async fn complete_hosted_link(state: &AppState) -> Result<String, String> {
+pub async fn complete_hosted_link(state: &AppState) -> Result<u64, String> {
     let db = &state.db;
     let client = plaid_client();
 
@@ -102,15 +101,15 @@ pub async fn complete_hosted_link(state: &AppState) -> Result<String, String> {
 
     let response = client.item_public_token_exchange(&public_token).await.map_err(|e| format!("token exchange failed: {e}"))?;
 
-    let _rows_affected = insert_plaid_item(&db.0, response.item_id, &response.access_token)
+    let rows_affected = insert_plaid_item(&db.0, response.item_id, &response.access_token)
         .await
         .map_err(|e| e.to_string());
 
-    Ok(response.access_token)
+    Ok(rows_affected?)
 }
 
 #[tauri::command]
-pub async fn generate_access_token_from_hosted_link(state: tauri::State<'_, AppState>) -> Result<String, String> {
+pub async fn generate_access_token_from_hosted_link(state: tauri::State<'_, AppState>) -> Result<u64, String> {
     complete_hosted_link(state.inner()).await
 }
 

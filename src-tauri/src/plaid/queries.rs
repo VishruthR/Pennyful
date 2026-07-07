@@ -39,8 +39,6 @@ pub async fn insert_plaid_item(
 mod tests {
     use super::*;
 
-    // No fixture: these exercise inserts, so they start from the empty (but
-    // migrated) table that #[sqlx::test] provides.
     #[sqlx::test]
     async fn insert_persists_item_fields(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
         let affected = insert_plaid_item(&pool, "item-1".to_owned(), &"access-1".to_owned()).await?;

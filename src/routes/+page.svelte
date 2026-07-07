@@ -1,14 +1,11 @@
 <script lang="ts">
   import Button from "$lib/components/Button.svelte";
-    import PlaidLink from "$lib/components/PlaidLink.svelte";
+  import PlaidLink from "$lib/components/PlaidLink.svelte";
 </script>
 
 <main class="container">
   <a href="/import/batch" class="batch-link">
     <Button>Batch Add Transactions</Button>
-  </a>
-  <a href="/plaid" class="batch-link">
-    <Button>Test Plaid Integration</Button>
   </a>
   <PlaidLink />
 </main>

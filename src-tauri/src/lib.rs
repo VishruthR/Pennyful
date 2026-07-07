@@ -32,8 +32,6 @@ struct AppState {
     link_token: Mutex<Option<String>>
 }
 
-// True when one of the delivered deep links is our Plaid completion redirect.
-// Matches on the prefix so appended query params (e.g. ?status=success) still count.
 fn is_plaid_completion_url(urls: &[tauri::Url]) -> bool {
     urls.iter().any(|u| u.as_str().starts_with("pennyful://plaid-complete"))
 }
@@ -47,7 +45,7 @@ fn handle_plaid_deep_link(handle: &tauri::AppHandle, urls: Vec<tauri::Url>) {
     tauri::async_runtime::spawn(async move {
         let state = handle.state::<AppState>();
         match plaid::commands::complete_hosted_link(state.inner()).await {
-            Ok(access_token) => println!("Plaid access token: {access_token}"),
+            Ok(_access_token) => {},
             Err(e) => eprintln!("Plaid completion failed: {e}"),
         }
     });
