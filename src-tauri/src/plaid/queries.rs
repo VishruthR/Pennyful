@@ -19,7 +19,7 @@ pub async fn get_plaid_item(pool: &Pool<Sqlite>) -> Result<Vec<PlaidItem>, sqlx:
 pub async fn insert_plaid_item(
     pool: &Pool<Sqlite>, 
     item_id: String, 
-    access_token: String) -> Result<u64, sqlx::Error> 
+    access_token: &String) -> Result<u64, sqlx::Error> 
 {
     let query = r#"
         INSERT INTO plaid_items (item_id, access_token)

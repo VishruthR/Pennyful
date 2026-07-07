@@ -7,7 +7,13 @@
   async function handleDeepLink(urls: string[]) {
     console.log("urls: ", urls);
     if (urls[0] == "pennyful://plaid-complete") {
-      plaidApi.generateAccessTokenFromHostedLink();
+      console.log("should generate an access token");
+      try {
+        let access_token = await plaidApi.generateAccessTokenFromHostedLink();
+        console.log("access_token", access_token);
+      } catch (err) {
+        console.log(err);
+      }
     }
   }
 
