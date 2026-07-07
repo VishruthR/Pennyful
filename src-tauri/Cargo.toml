@@ -28,4 +28,9 @@ chrono = { version = "0.4.42", features = [ "serde" ] }
 csv = "1.4.0"
 rust_decimal = { version = "1.39.0", features = [ "serde", "macros" ] }
 tauri-plugin-devtools = "2.0.0"
-
+plaid = "9.0.1"
+tokio = { version = "1", features = ["time"] }
+tauri-plugin-deep-link = "2"
+dotenvy_macro = "0.15.7"
+dotenvy = "0.15.7"
+httpclient = "0.21.3"
