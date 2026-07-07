@@ -61,6 +61,7 @@ mod tests {
         app.manage(AppState {
             db: DatabaseState(pool),
             category_details: Mutex::new(None),
+            link_token: Mutex::new(None),
         });
 
         let result = get_all_accounts(app.state::<AppState>()).await?;
