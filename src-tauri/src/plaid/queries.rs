@@ -1,7 +1,24 @@
 use sqlx::{Pool, Sqlite};
 use crate::types::PlaidItem;
 
-pub async fn get_plaid_item(pool: &Pool<Sqlite>) -> Result<Vec<PlaidItem>, sqlx::Error> {
+pub async fn get_plaid_item(pool: &Pool<Sqlite>, item_id: String) -> Result<PlaidItem, sqlx::Error> {
+    let query = r#"
+        SELECT
+            pi.item_id,
+            pi.access_token
+        FROM plaid_item pi
+        WHERE pi.item_id=$1
+    "#;
+
+    let plaid_item: PlaidItem = sqlx::query_as(query)
+        .bind(item_id)
+        .fetch_one(pool)
+        .await?;
+
+    Ok(plaid_item)
+}
+
+pub async fn get_all_plaid_items(pool: &Pool<Sqlite>) -> Result<Vec<PlaidItem>, sqlx::Error> {
     let query = r#"
         SELECT
             pi.item_id,

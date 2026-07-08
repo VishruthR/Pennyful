@@ -1,8 +1,118 @@
 use crate::AppState;
-use plaid::{PlaidAuth, PlaidClient, model::{CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, Products}, request::link_token_create::LinkTokenCreateRequired};
+use plaid::{PlaidAuth, PlaidClient, model::{CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, Products, RemovedTransaction, Transaction, TransactionsSyncRequestOptions}, request::link_token_create::LinkTokenCreateRequired};
+use crate::plaid::queries;
 use crate::plaid::queries::insert_plaid_item;
+use crate::types::{Cents, NewTransaction};
 use dotenvy_macro::dotenv;
 use httpclient::Client;
+
+fn plaid_client() -> PlaidClient {
+    let http_client = Client::new().base_url(dotenv!("PLAID_ENV"));
+    let auth = PlaidAuth::ClientId {
+        client_id: dotenv!("PLAID_CLIENT_ID").to_string(),
+        secret: dotenv!("PLAID_SECRET").to_string(),
+        version: dotenv!("PLAID_VERSION").to_string(),
+    };
+    PlaidClient::new(http_client, auth)
+}
+
+#[tauri::command]
+pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: String, cursor: String, days_requested: i64) -> Result<(), String> {
+    let client = plaid_client();
+    let db = &state.db;
+    let plaid_item = queries::get_plaid_item(&db.0, item_id)
+        .await
+        .map_err(|e| format!("Error with fetching plaid_item: {e}"))?; 
+
+    let transactions = client
+        .transactions_sync(plaid_item.access_token())
+        .cursor(cursor.as_str())
+        .options(TransactionsSyncRequestOptions {
+            days_requested: Some(days_requested),
+            include_logo_and_counterparty_beta: Some(false),
+            include_original_description: Some(true),
+            include_personal_finance_category: Some(true)
+        })
+        .await
+        .map_err(|e| format!("transactions_sync failed: {e}"))?;
+
+    Ok(())
+}
+
+fn plaid_transaction_to_new_transaction(plaid_transaction: Transaction) -> Result<NewTransaction, String> {
+    let plaid_transaction_id = plaid_transaction.transaction_id.clone();
+    let amount = Cents::from_dollars_f64(plaid_transaction.amount)
+        .ok_or(format!("transaction {plaid_transaction_id} does not have a valid amount"))?;
+
+    Ok(NewTransaction::new(
+        Some(plaid_transaction_id),
+        plaid_transaction.merchant_name.clone(),
+        plaid_transaction.merchant_entity_id.clone(),
+        amount,
+        plaid_transaction.date,
+        plaid_transaction.pending,
+        Some(plaid_transaction.account_id.clone()),
+        None,
+    ))
+}
+
+struct SyncedTransactions {
+    added: Vec<NewTransaction>,
+    modified: Vec<NewTransaction>,
+    removed: Vec<RemovedTransaction>
+}
+
+async fn sync_transactions_with_retry(client: PlaidClient, access_token: String, cursor: String, days_requested: Option<i64>, retries_left: Option<u8>) -> Result<SyncedTransactions, String> {
+    let retries_left = retries_left.unwrap_or(3);
+    let original_cursor = cursor.clone();
+
+    let all_data = SyncedTransactions {
+        added: vec![],
+        modified: vec![],
+        removed: vec![]
+    }; 
+
+    if retries_left <= 0 {
+        Err("Failed to sync transactions after retries")
+    }
+
+    loop {
+        // TODO: Catch error and figure out if you should retry or give up
+        let transactions = client
+            .transactions_sync(&access_token)
+            .cursor(cursor.as_str())
+            .options(TransactionsSyncRequestOptions {
+                days_requested: days_requested,
+                include_logo_and_counterparty_beta: Some(false),
+                include_original_description: Some(true),
+                include_personal_finance_category: Some(true)
+            })
+            .await
+            .map_err(|e| format!("transactions_sync failed: {e}"))?;
+        
+        // TODO: We quietly filter out invalid transactions. I don't expect to see transactions
+        // failing, but could be annoying for a user.
+        all_data.added.extend(
+            transactions
+                .added
+                .into_iter()
+                .map(|t| plaid_transaction_to_new_transaction(t))
+                .filter_map(|t| t.ok())
+        );
+        all_data.modified.extend(
+            transactions
+                .modified
+                .into_iter()
+                .map(|t| plaid_transaction_to_new_transaction(t))
+                .filter_map(|t| t.ok())
+        );
+        all_data.removed.extend(
+            transactions
+                .removed
+                .into_iter()
+        );
+    }
+}
 
 // completion_redirect_uri is where Plaid sends the browser once the Hosted Link
 // flow finishes. Under `tauri dev` the pennyful:// deep link can't reach the
@@ -29,16 +139,6 @@ fn extract_public_token(
         .map(|item| item.public_token)
         .next()
         .ok_or_else(|| "no public_token in link sessions yet".to_owned())
-}
-
-fn plaid_client() -> PlaidClient {
-    let http_client = Client::new().base_url(dotenv!("PLAID_ENV"));
-    let auth = PlaidAuth::ClientId {
-        client_id: dotenv!("PLAID_CLIENT_ID").to_string(),
-        secret: dotenv!("PLAID_SECRET").to_string(),
-        version: dotenv!("PLAID_VERSION").to_string(),
-    };
-    PlaidClient::new(http_client, auth)
 }
 
 #[tauri::command]
