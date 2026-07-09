@@ -40,3 +40,6 @@ CREATE TABLE IF NOT EXISTS "transaction" (
 CREATE INDEX IF NOT EXISTS idx_transaction_date ON "transaction"(date);
 CREATE INDEX IF NOT EXISTS idx_transaction_account_id ON "transaction"(account_id);
 CREATE INDEX IF NOT EXISTS idx_transaction_category_id ON "transaction"(category_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_transaction_plaid_transaction_id
+    ON "transaction"(plaid_transaction_id)
+    WHERE plaid_transaction_id IS NOT NULL;

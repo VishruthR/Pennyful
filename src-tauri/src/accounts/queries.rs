@@ -1,5 +1,22 @@
+use std::collections::HashMap;
 use sqlx::{Pool, Sqlite};
 use crate::types::FullAccount;
+
+pub async fn get_account_id_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<String, i64>, sqlx::Error> {
+    let query = r#"
+        SELECT 
+            a.plaid_account_id,
+            a.id
+        FROM account a
+        ORDER BY a.id
+    "#;
+
+    let accounts: Vec<(String, i64)> = sqlx::query_as(query)
+        .fetch_all(pool)
+        .await?;
+
+    Ok(accounts.into_iter().collect())
+}
 
 pub async fn get_full_accounts(pool: &Pool<Sqlite>) -> Result<Vec<FullAccount>, sqlx::Error> {
     let query = r#"

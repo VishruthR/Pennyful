@@ -1,10 +1,11 @@
 use crate::AppState;
-use plaid::{PlaidAuth, PlaidClient, model::{CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, Products, RemovedTransaction, Transaction, TransactionsSyncRequestOptions}, request::link_token_create::LinkTokenCreateRequired};
-use crate::plaid::queries;
-use crate::plaid::queries::insert_plaid_item;
-use crate::types::{Cents, NewTransaction};
+use ::plaid::{PlaidAuth, PlaidClient, model::{CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, PlaidError, Products, RemovedTransaction, Transaction, TransactionsSyncRequestOptions}, request::link_token_create::LinkTokenCreateRequired};
+use crate::plaid;
+use crate::accounts;
+use crate::transactions;
+use crate::types::{Cents, PlaidTransaction};
 use dotenvy_macro::dotenv;
-use httpclient::Client;
+use httpclient::{Client, InMemoryResponseExt};
 
 fn plaid_client() -> PlaidClient {
     let http_client = Client::new().base_url(dotenv!("PLAID_ENV"));
@@ -17,101 +18,167 @@ fn plaid_client() -> PlaidClient {
 }
 
 #[tauri::command]
-pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: String, cursor: String, days_requested: i64) -> Result<(), String> {
+pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: String, days_requested: Option<i64>) -> Result<(), String> {
     let client = plaid_client();
     let db = &state.db;
-    let plaid_item = queries::get_plaid_item(&db.0, item_id)
+    let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
         .await
         .map_err(|e| format!("Error with fetching plaid_item: {e}"))?; 
 
-    let transactions = client
-        .transactions_sync(plaid_item.access_token())
-        .cursor(cursor.as_str())
-        .options(TransactionsSyncRequestOptions {
-            days_requested: Some(days_requested),
-            include_logo_and_counterparty_beta: Some(false),
-            include_original_description: Some(true),
-            include_personal_finance_category: Some(true)
-        })
+    let plaid_account_id_to_account_id = accounts::queries::get_account_id_plaid_id(&db.0)
         .await
-        .map_err(|e| format!("transactions_sync failed: {e}"))?;
+        .map_err(|e| format!("Failed to fetch account_id mapping {e}"))?;
+
+    let (synced_transactions, new_cursor) = sync_transactions_with_retry(
+        client,
+        plaid_item.access_token(),
+        plaid_item.cursor(),
+        days_requested,
+        None
+    ).await?;
+
+    // Only added transactions need account_ids populated   
+    let added = synced_transactions
+        .added
+        .into_iter()
+        .map(|t| {
+            let account_id = plaid_account_id_to_account_id[t.plaid_account_id()];
+            t.update_account_id(account_id)
+        })
+        .collect(); 
+
+    let add_failures = transactions::queries::add_plaid_transactions(&db.0, added)
+        .await
+        .map_err(|e| format!("Failed to add plaid transactions: {e}"))?;
+    println!("Had {add_failures} due to plaid_transaction_id conflicts");
+    transactions::queries::modify_plaid_transactions(&db.0, synced_transactions.modified)
+        .await
+        .map_err(|e| format!("Failed to modify plaid transactions: {e}"))?;
+    transactions::queries::remove_plaid_transactions(&db.0, synced_transactions.removed)
+        .await
+        .map_err(|e| format!("Failed to remove plaid transactions: {e}"))?;
+
+    plaid::queries::update_plaid_item_cursor(&db.0, &item_id, &new_cursor)
+        .await
+        .map_err(|e| format!("Error updating cursor: {e}"))?;
 
     Ok(())
 }
 
-fn plaid_transaction_to_new_transaction(plaid_transaction: Transaction) -> Result<NewTransaction, String> {
+fn plaid_transaction_to_new_transaction(plaid_transaction: Transaction) -> Result<PlaidTransaction, String> {
     let plaid_transaction_id = plaid_transaction.transaction_id.clone();
     let amount = Cents::from_dollars_f64(plaid_transaction.amount)
         .ok_or(format!("transaction {plaid_transaction_id} does not have a valid amount"))?;
 
-    Ok(NewTransaction::new(
+    Ok(PlaidTransaction::new(
         Some(plaid_transaction_id),
         plaid_transaction.merchant_name.clone(),
         plaid_transaction.merchant_entity_id.clone(),
         amount,
         plaid_transaction.date,
         plaid_transaction.pending,
-        Some(plaid_transaction.account_id.clone()),
+        plaid_transaction.account_id.clone(),
+        None,
         None,
     ))
 }
 
 struct SyncedTransactions {
-    added: Vec<NewTransaction>,
-    modified: Vec<NewTransaction>,
+    added: Vec<PlaidTransaction>,
+    modified: Vec<PlaidTransaction>,
     removed: Vec<RemovedTransaction>
 }
 
-async fn sync_transactions_with_retry(client: PlaidClient, access_token: String, cursor: String, days_requested: Option<i64>, retries_left: Option<u8>) -> Result<SyncedTransactions, String> {
+async fn sync_transactions_with_retry(
+    client: PlaidClient, 
+    access_token: &String, 
+    original_cursor: &Option<String>, 
+    days_requested: Option<i64>, 
+    retries_left: Option<u8>
+) -> Result<(SyncedTransactions, Option<String>), String> {
     let retries_left = retries_left.unwrap_or(3);
-    let original_cursor = cursor.clone();
+    if retries_left == 0 {
+        return Err("Failed to sync transactions after retries".to_string());
+    }
 
-    let all_data = SyncedTransactions {
+    let mut cursor = original_cursor.clone();
+    let mut all_data = SyncedTransactions {
         added: vec![],
         modified: vec![],
         removed: vec![]
-    }; 
-
-    if retries_left <= 0 {
-        Err("Failed to sync transactions after retries")
-    }
+    };
 
     loop {
-        // TODO: Catch error and figure out if you should retry or give up
-        let transactions = client
-            .transactions_sync(&access_token)
-            .cursor(cursor.as_str())
+        let mut transactions_sync_request = client
+            .transactions_sync(access_token)
             .options(TransactionsSyncRequestOptions {
-                days_requested: days_requested,
+                days_requested,
                 include_logo_and_counterparty_beta: Some(false),
                 include_original_description: Some(true),
                 include_personal_finance_category: Some(true)
-            })
-            .await
-            .map_err(|e| format!("transactions_sync failed: {e}"))?;
-        
-        // TODO: We quietly filter out invalid transactions. I don't expect to see transactions
-        // failing, but could be annoying for a user.
+            });
+        if let Some(ref cursor) = cursor {
+            transactions_sync_request = transactions_sync_request.cursor(cursor);
+        }
+
+        let transactions = match transactions_sync_request.await {
+            Ok(transactions) => transactions,
+            // Plaid returns error details as the JSON body of a non-2xx response
+            // (HttpError); protocol failures (timeouts, decode errors) don't carry a
+            // Plaid error code, so there's nothing to branch on.
+            Err(httpclient::Error::Protocol(p)) => {
+                return Err(format!("transactions_sync failed: {p}"));
+            }
+            Err(httpclient::Error::HttpError(resp)) => {
+                let plaid_error = resp.json::<PlaidError>()
+                    .map_err(|e| format!("transactions_sync failed, unparseable error body: {e}"))?;
+                if plaid_error.error_code == "SYNC_MUTATION_ERROR_DURING_PAGINATION" {
+                    // The underlying data changed while we were paginating. Plaid asks
+                    // us to discard this partial run and restart from the cursor we
+                    // began this sync with. Box::pin keeps the recursive future sized.
+                    return Box::pin(sync_transactions_with_retry(
+                        client,
+                        access_token,
+                        original_cursor,
+                        days_requested,
+                        Some(retries_left - 1),
+                    )).await;
+                }
+                return Err(format!(
+                    "transactions_sync failed: {} ({})",
+                    plaid_error.error_message, plaid_error.error_code
+                ));
+            }
+        };
+
+        // If a transaction fails to fit our data model (probably due to amount conversion) then it
+        // will be logged and filtered here
         all_data.added.extend(
             transactions
                 .added
                 .into_iter()
-                .map(|t| plaid_transaction_to_new_transaction(t))
-                .filter_map(|t| t.ok())
+                .filter_map(|t| plaid_transaction_to_new_transaction(t).ok())
         );
         all_data.modified.extend(
             transactions
                 .modified
                 .into_iter()
-                .map(|t| plaid_transaction_to_new_transaction(t))
-                .filter_map(|t| t.ok())
+                .filter_map(|t| plaid_transaction_to_new_transaction(t).ok())
         );
         all_data.removed.extend(
             transactions
                 .removed
                 .into_iter()
         );
+
+        cursor = Some(transactions.next_cursor);
+
+        if !transactions.has_more {
+            break;
+        }
     }
+
+    Ok((all_data, cursor))
 }
 
 // completion_redirect_uri is where Plaid sends the browser once the Hosted Link
@@ -201,7 +268,7 @@ pub async fn complete_hosted_link(state: &AppState) -> Result<u64, String> {
 
     let response = client.item_public_token_exchange(&public_token).await.map_err(|e| format!("token exchange failed: {e}"))?;
 
-    let rows_affected = insert_plaid_item(&db.0, response.item_id, &response.access_token)
+    let rows_affected = plaid::queries::insert_plaid_item_without_cursor(&db.0, response.item_id, &response.access_token)
         .await
         .map_err(|e| e.to_string());
 
@@ -218,8 +285,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    #[test]
-    fn dev_build_omits_completion_redirect() {
+    #[test] fn dev_build_omits_completion_redirect() {
         // In dev we can't receive the deep link, so Plaid should not redirect.
         assert_eq!(completion_redirect_uri_for(true), None);
     }
