@@ -4,10 +4,11 @@ use crate::types::FullAccount;
 
 pub async fn get_account_id_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<String, i64>, sqlx::Error> {
     let query = r#"
-        SELECT 
+        SELECT
             a.plaid_account_id,
             a.id
         FROM account a
+        WHERE a.plaid_account_id IS NOT NULL
         ORDER BY a.id
     "#;
 

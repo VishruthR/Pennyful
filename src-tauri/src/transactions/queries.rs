@@ -1,10 +1,9 @@
-use sqlx::{Pool, QueryBuilder, Sqlite};
-use futures::future::join_all;
+use sqlx::{Pool, QueryBuilder, Sqlite, SqliteConnection};
 use crate::types::{PlaidTransaction, Transaction};
 use ::plaid::model::RemovedTransaction;
 
 pub async fn get_transactions(pool: &Pool<Sqlite>, limit: Option<i64>) -> Result<Vec<Transaction>, sqlx::Error> {
-    let query = "SELECT id, name, amount_cents, date, account_id, category_id FROM 'transaction' ORDER BY date, id LIMIT $1";
+    let query = "SELECT id, name, amount_cents, date, account_id, category_id FROM 'transaction' WHERE deleted_at IS NULL ORDER BY date, id LIMIT $1";
 
     // Negative value returns all rows
     let lim = limit.unwrap_or(-1);
@@ -15,10 +14,10 @@ pub async fn get_transactions(pool: &Pool<Sqlite>, limit: Option<i64>) -> Result
     Ok(res)
 }
 
-pub async fn add_plaid_transactions(pool: &Pool<Sqlite>, new_transactions: Vec<PlaidTransaction>) -> Result<u64, sqlx::Error> {
+pub async fn add_plaid_transactions(conn: &mut SqliteConnection, new_transactions: Vec<PlaidTransaction>) -> Result<u64, sqlx::Error> {
     if new_transactions.is_empty() {
         return Ok(0);
-    } 
+    }
     let num_transactions = new_transactions.len() as u64;
 
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
@@ -44,53 +43,51 @@ pub async fn add_plaid_transactions(pool: &Pool<Sqlite>, new_transactions: Vec<P
     query_builder.push(" ON CONFLICT(plaid_transaction_id) WHERE plaid_transaction_id IS NOT NULL DO NOTHING");
 
     let query = query_builder.build();
-    let res = query.execute(pool).await?;
+    let res = query.execute(&mut *conn).await?;
 
     Ok(num_transactions - res.rows_affected())
 }
 
-pub async fn modify_plaid_transactions(pool: &Pool<Sqlite>, modified_transactions: Vec<PlaidTransaction>) -> Result<(), sqlx::Error> {
+pub async fn modify_plaid_transactions(conn: &mut SqliteConnection, modified_transactions: Vec<PlaidTransaction>) -> Result<(), sqlx::Error> {
+    // plaid_transaction_id is globally unique, so it alone identifies the row.
     let query = r#"
         UPDATE 'transaction'
-        SET amount_cents=$1,
-            date=$2,
-            name=$3,
-            merchant_entity_id=$4
-        WHERE plaid_transaction_id=$4 AND plaid_account_id=$5
+        SET amount_cents=?,
+            date=?,
+            name=?,
+            merchant_entity_id=?
+        WHERE plaid_transaction_id=?
     "#;
 
-    let modified_queries = modified_transactions
-        .into_iter()
-        .map(|t| {
-            sqlx::query(query)
-                .bind(t.amount)
-                .bind(t.name)
-                .bind(t.merchant_entity_id)
-                .bind(t.plaid_transaction_id)
-                .bind(t.plaid_account_id())
-                .execute(pool)
-        });
-    join_all(modified_queries).await?;
+    for t in modified_transactions {
+        sqlx::query(query)
+            .bind(t.amount)
+            .bind(t.date)
+            .bind(t.name)
+            .bind(t.merchant_entity_id)
+            .bind(t.plaid_transaction_id)
+            .execute(&mut *conn)
+            .await?;
+    }
 
     Ok(())
 }
 
-pub async fn remove_plaid_transactions(pool: &Pool<Sqlite>, removed_transactions: Vec<RemovedTransaction>) -> Result<(), sqlx::Error> {
+pub async fn remove_plaid_transactions(conn: &mut SqliteConnection, removed_transactions: Vec<RemovedTransaction>) -> Result<(), sqlx::Error> {
+    // Soft delete. plaid_transaction_id alone identifies the row (Plaid's
+    // account_id on a removed transaction is a deprecated field).
     let query = r#"
         UPDATE 'transaction'
-        SET delete_at=NOW()
-        WHERE plaid_transaction_id=$1 AND plaid_accout_id=$2
+        SET deleted_at=date('now')
+        WHERE plaid_transaction_id=?
     "#;
 
-    let removal_queries = removed_transactions
-        .into_iter()
-        .map(|t| {
-            sqlx::query(query)
-                .bind(t.transaction_id)
-                .bind(t.account_id)
-                .execute(pool)
-        });
-    join_all(removal_queries).await?;
+    for t in removed_transactions {
+        sqlx::query(query)
+            .bind(t.transaction_id)
+            .execute(&mut *conn)
+            .await?;
+    }
 
     Ok(())
 }

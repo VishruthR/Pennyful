@@ -37,30 +37,47 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
         None
     ).await?;
 
-    // Only added transactions need account_ids populated   
-    let added = synced_transactions
+    // Only added transactions need account_ids populated. Transactions for an
+    // account we don't have locally (e.g. newly linked at the bank) are skipped.
+    let added: Vec<PlaidTransaction> = synced_transactions
         .added
         .into_iter()
-        .map(|t| {
-            let account_id = plaid_account_id_to_account_id[t.plaid_account_id()];
-            t.update_account_id(account_id)
+        .filter_map(|t| match plaid_account_id_to_account_id.get(t.plaid_account_id()) {
+            Some(&account_id) => Some(t.update_account_id(account_id)),
+            None => {
+                eprintln!(
+                    "Skipping added transaction {:?}: no local account for plaid_account_id {}",
+                    t.plaid_transaction_id, t.plaid_account_id()
+                );
+                None
+            }
         })
-        .collect(); 
+        .collect();
 
-    let add_failures = transactions::queries::add_plaid_transactions(&db.0, added)
+    // Apply all writes (and the cursor advance) in one transaction so a partial
+    // failure rolls back and the sync cleanly re-runs from the same cursor.
+    let mut tx = db.0.begin()
+        .await
+        .map_err(|e| format!("Failed to begin transaction: {e}"))?;
+
+    let skipped_duplicates = transactions::queries::add_plaid_transactions(&mut tx, added)
         .await
         .map_err(|e| format!("Failed to add plaid transactions: {e}"))?;
-    println!("Had {add_failures} due to plaid_transaction_id conflicts");
-    transactions::queries::modify_plaid_transactions(&db.0, synced_transactions.modified)
+    println!("Skipped {skipped_duplicates} already-synced transactions (plaid_transaction_id conflicts)");
+    transactions::queries::modify_plaid_transactions(&mut tx, synced_transactions.modified)
         .await
         .map_err(|e| format!("Failed to modify plaid transactions: {e}"))?;
-    transactions::queries::remove_plaid_transactions(&db.0, synced_transactions.removed)
+    transactions::queries::remove_plaid_transactions(&mut tx, synced_transactions.removed)
         .await
         .map_err(|e| format!("Failed to remove plaid transactions: {e}"))?;
 
-    plaid::queries::update_plaid_item_cursor(&db.0, &item_id, &new_cursor)
+    plaid::queries::update_plaid_item_cursor(&mut tx, &item_id, &new_cursor)
         .await
         .map_err(|e| format!("Error updating cursor: {e}"))?;
+
+    tx.commit()
+        .await
+        .map_err(|e| format!("Failed to commit transaction: {e}"))?;
 
     Ok(())
 }
@@ -157,13 +174,17 @@ async fn sync_transactions_with_retry(
             transactions
                 .added
                 .into_iter()
-                .filter_map(|t| plaid_transaction_to_new_transaction(t).ok())
+                .filter_map(|t| plaid_transaction_to_new_transaction(t)
+                    .map_err(|e| eprintln!("Skipping added transaction: {e}"))
+                    .ok())
         );
         all_data.modified.extend(
             transactions
                 .modified
                 .into_iter()
-                .filter_map(|t| plaid_transaction_to_new_transaction(t).ok())
+                .filter_map(|t| plaid_transaction_to_new_transaction(t)
+                    .map_err(|e| eprintln!("Skipping modified transaction: {e}"))
+                    .ok())
         );
         all_data.removed.extend(
             transactions

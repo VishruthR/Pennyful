@@ -1,4 +1,4 @@
-use sqlx::{Pool, Sqlite};
+use sqlx::{Pool, Sqlite, SqliteConnection};
 use crate::types::PlaidItem;
 
 pub async fn get_plaid_item(pool: &Pool<Sqlite>, item_id: &String) -> Result<PlaidItem, sqlx::Error> {
@@ -36,7 +36,7 @@ pub async fn get_all_plaid_items(pool: &Pool<Sqlite>) -> Result<Vec<PlaidItem>, 
 }
 
 pub async fn update_plaid_item_cursor(
-    pool: &Pool<Sqlite>,
+    conn: &mut SqliteConnection,
     item_id: &String,
     cursor: &Option<String>) -> Result<u64, sqlx::Error>
 {
@@ -49,7 +49,7 @@ pub async fn update_plaid_item_cursor(
     let res = sqlx::query(query)
         .bind(cursor)
         .bind(item_id)
-        .execute(pool)
+        .execute(&mut *conn)
         .await?;
 
     Ok(res.rows_affected())
