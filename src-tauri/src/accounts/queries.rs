@@ -1,6 +1,62 @@
 use std::collections::HashMap;
+use plaid::model::{AccountSubtype, AccountType, AccountsGetResponse};
 use sqlx::{Pool, Sqlite};
-use crate::types::FullAccount;
+use crate::types::{Bank, FullAccount};
+use crate::types;
+
+pub async fn upsert_accounts_of_item_from_plaid(
+    pool: &Pool<Sqlite>,
+    bank: Bank,
+    accounts_get_resp: AccountsGetResponse
+) -> Result<(), String> {
+    let query = r#"
+        INSERT INTO account (
+            plaid_account_id,
+            name,
+            official_name,
+            bank_id,
+            plaid_item_id,
+            account_type,
+            initial_balance_cents,
+            available_balance_cents,
+            current_balance_cents
+        )
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ON CONFLICT(plaid_account_id) WHERE plaid_account_id IS NOT NULL DO NOTHING
+    "#;
+
+    for account in accounts_get_resp.accounts {
+        let account_type = match account.type_ {
+            AccountType::Depository => {
+                match account.subtype.ok_or(format!("Account subtype doesn't exist"))? {
+                AccountSubtype::Savings => Ok(types::AccountType::Savings),
+                AccountSubtype::Checking => Ok(types::AccountType::Checkings),
+                _ => Err("Invalid account subtype")
+                }
+            },
+            AccountType::Credit => Ok(types::AccountType::Credit),
+            _ => return Err("Invalid account type".to_string())
+        }?;
+
+        
+
+        sqlx::query(query)
+            .bind(account.account_id)
+            .bind(account.name)
+            .bind(account.official_name)
+            .bind(bank.id())
+            .bind(bank.plaid_item_id())
+            .bind(account_type)
+            .bind(account.balances.current)
+            .bind(account.balances.available)
+            .bind(account.balances.current)
+            .execute(pool)
+            .await
+            .map_err(|e| format!("Failed to upsert {e}"))?;
+    }
+
+    Ok(())
+}
 
 pub async fn get_account_id_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<String, i64>, sqlx::Error> {
     let query = r#"

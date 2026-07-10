@@ -300,3 +300,43 @@ impl fmt::Display for PlaidItem {
             self.item_id, self.cursor.clone().unwrap_or("No cursor".to_string()))
     }
 }
+
+#[derive(sqlx::FromRow, PartialEq, Debug)]
+pub struct Bank {
+    id: i64,
+    plaid_item_id: Option<String>,
+    plaid_institution_id: Option<String>,
+    bank_name: String,
+}
+
+impl Bank {
+    pub fn new(
+        id: i64,
+        plaid_item_id: Option<String>,
+        plaid_institution_id: Option<String>,
+        bank_name: String
+    ) -> Self {
+        Bank {
+            id, plaid_item_id, plaid_institution_id, bank_name
+        }
+    }
+
+    pub fn id(&self) -> i64 {
+        self.id
+    }
+
+    pub fn plaid_item_id(&self) -> &Option<String> {
+        &self.plaid_item_id
+    }
+}
+
+impl fmt::Display for Bank {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Bank: {} {} {} {}", 
+            self.id, 
+            self.plaid_item_id.clone().unwrap_or("no_item_id".to_string()), 
+            self.plaid_institution_id.clone().unwrap_or("no_institution_id".to_string()), 
+            self.bank_name
+        )
+    }
+}

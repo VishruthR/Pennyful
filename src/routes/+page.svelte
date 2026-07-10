@@ -1,6 +1,11 @@
 <script lang="ts">
+    import { plaidApi } from "$lib/api/plaid";
   import Button from "$lib/components/Button.svelte";
   import PlaidLink from "$lib/components/PlaidLink.svelte";
+
+  const syncTransactions = async () => {
+    console.log(await plaidApi.fetchItemAndAccounts("AzvX08j5jbTapxEyxwQvcdVnBygpgafNjn5Ke"))
+  };
 </script>
 
 <main class="container">
@@ -8,6 +13,7 @@
     <Button>Batch Add Transactions</Button>
   </a>
   <PlaidLink />
+  <Button onclick={syncTransactions}>Sync Transactions</Button>
 </main>
 
 <style>

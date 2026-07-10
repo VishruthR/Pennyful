@@ -57,7 +57,7 @@ pub async fn update_plaid_item_cursor(
 
 pub async fn insert_plaid_item_without_cursor(
     pool: &Pool<Sqlite>, 
-    item_id: String, 
+    item_id: &String, 
     access_token: &String) -> Result<u64, sqlx::Error> 
 {
     let query = r#"

@@ -23,6 +23,9 @@ mod categories {
     pub(crate) mod commands;
     pub(crate) mod queries;
 }
+mod banks {
+    pub(crate) mod queries;
+}
 mod db;
 mod types;
 
@@ -97,7 +100,9 @@ pub fn run() {
             accounts::commands::get_all_accounts,
             importers::commands::import_transactions,
             plaid::commands::generate_link_token,
-            plaid::commands::generate_access_token_from_hosted_link
+            plaid::commands::generate_access_token_from_hosted_link,
+            plaid::commands::fetch_item_and_accounts,
+            plaid::commands::fetch_item_and_accounts
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

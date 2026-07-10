@@ -1,6 +1,7 @@
-use crate::AppState;
+use crate::{AppState, accounts::queries::upsert_accounts_of_item_from_plaid};
 use ::plaid::{PlaidAuth, PlaidClient, model::{CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, PlaidError, Products, RemovedTransaction, Transaction, TransactionsSyncRequestOptions}, request::link_token_create::LinkTokenCreateRequired};
 use crate::plaid;
+use crate::banks;
 use crate::accounts;
 use crate::transactions;
 use crate::types::{Cents, PlaidTransaction};
@@ -272,7 +273,7 @@ pub async fn generate_link_token(state: tauri::State<'_, AppState>) -> Result<St
     Ok(link_token_create_resp.hosted_link_url.ok_or("no hosted_link_url returned")?)
 }
 
-pub async fn complete_hosted_link(state: &AppState) -> Result<u64, String> {
+pub async fn complete_hosted_link(state: &AppState) -> Result<(String, u64), String> {
     let db = &state.db;
     let client = plaid_client();
 
@@ -289,16 +290,75 @@ pub async fn complete_hosted_link(state: &AppState) -> Result<u64, String> {
 
     let response = client.item_public_token_exchange(&public_token).await.map_err(|e| format!("token exchange failed: {e}"))?;
 
-    let rows_affected = plaid::queries::insert_plaid_item_without_cursor(&db.0, response.item_id, &response.access_token)
+    let rows_affected = plaid::queries::insert_plaid_item_without_cursor(&db.0, &response.item_id, &response.access_token)
         .await
         .map_err(|e| e.to_string());
 
-    Ok(rows_affected?)
+    Ok((response.item_id, rows_affected?))
 }
 
 #[tauri::command]
-pub async fn generate_access_token_from_hosted_link(state: tauri::State<'_, AppState>) -> Result<u64, String> {
-    complete_hosted_link(state.inner()).await
+pub async fn generate_access_token_from_hosted_link(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let (item_id, _rows_affected) = complete_hosted_link(state.inner()).await?;
+
+    Ok(item_id)
+}
+
+#[tauri::command]
+pub async fn fetch_item_and_accounts(state: tauri::State<'_, AppState>, item_id: String) -> Result<u64, String> {
+    upsert_item(&state, &item_id)
+        .await?;
+
+    upsert_accounts_of_item(&state, &item_id)
+        .await?;
+
+    Ok(1)
+}
+
+async fn upsert_item(state: &tauri::State<'_, AppState>, item_id: &String) -> Result<(), String> {
+    let db = &state.db;
+    let client = plaid_client();
+
+    let plaid_item = plaid::queries::get_plaid_item(&db.0, item_id)
+        .await
+        .map_err(|e| format!("Failed to get plaid_item: {e}"))?;
+
+    let item_get_resp = client
+        .item_get(plaid_item.access_token())
+        .await
+        .map_err(|e| format!("Failed to item_get: {e}"))?;
+
+    let item = item_get_resp.item;
+    banks::queries::upsert_item_from_plaid(&db.0, &item)
+        .await
+        .map_err(|e| format!("Error upserting account from plaid: {e}"))?;
+    
+    Ok(())
+}
+
+pub async fn upsert_accounts_of_item(state: &tauri::State<'_, AppState>, item_id: &String) -> Result<u64, String> {
+    let db = &state.db;
+    let client = plaid_client();
+
+    println!("Item Id: {item_id}");
+
+    let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
+        .await
+        .map_err(|e| format!("Failed to get plaid_item: {e}"))?;
+    println!("{:?}", plaid_item);
+    let bank = banks::queries::get_bank_by_item_id(&db.0, &item_id)
+        .await
+        .map_err(|e| format!("Failed to get bank: {e}"))?;
+
+    let accounts_get_resp = client
+        .accounts_get(plaid_item.access_token())
+        .await
+        .map_err(|e| format!("Failed to get accounts: {e}"))?;
+
+    upsert_accounts_of_item_from_plaid(&db.0, bank, accounts_get_resp)
+        .await?;
+
+    Ok(1)
 }
 
 #[cfg(test)]
