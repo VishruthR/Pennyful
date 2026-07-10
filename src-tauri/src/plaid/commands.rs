@@ -19,7 +19,8 @@ fn plaid_client() -> PlaidClient {
 }
 
 #[tauri::command]
-pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: String, days_requested: Option<i64>) -> Result<(), String> {
+pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: String, days_requested: Option<i64>) -> Result<u64, String> {
+    println!("SYNCING");
     let client = plaid_client();
     let db = &state.db;
     let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
@@ -33,7 +34,8 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
     let (synced_transactions, new_cursor) = sync_transactions_with_retry(
         client,
         plaid_item.access_token(),
-        plaid_item.cursor(),
+        &None,
+        // plaid_item.cursor(),
         days_requested,
         None
     ).await?;
@@ -80,17 +82,24 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
         .await
         .map_err(|e| format!("Failed to commit transaction: {e}"))?;
 
-    Ok(())
+    Ok(1)
 }
 
 fn plaid_transaction_to_new_transaction(plaid_transaction: Transaction) -> Result<PlaidTransaction, String> {
     let plaid_transaction_id = plaid_transaction.transaction_id.clone();
     let amount = Cents::from_dollars_f64(plaid_transaction.amount)
         .ok_or(format!("transaction {plaid_transaction_id} does not have a valid amount"))?;
+    // The name field of Transaction is non-nullable so using a default value here is fine
+    let name = plaid_transaction.merchant_name.clone()
+        .unwrap_or(plaid_transaction.original_description.clone()
+            .unwrap_or(plaid_transaction.name.clone()
+                .unwrap_or("".to_string())
+            )
+        );
 
     Ok(PlaidTransaction::new(
         Some(plaid_transaction_id),
-        plaid_transaction.merchant_name.clone(),
+        Some(name),
         plaid_transaction.merchant_entity_id.clone(),
         amount,
         plaid_transaction.date,
@@ -168,6 +177,7 @@ async fn sync_transactions_with_retry(
                 ));
             }
         };
+        println!("{:?}", transactions);
 
         // If a transaction fails to fit our data model (probably due to amount conversion) then it
         // will be logged and filtered here

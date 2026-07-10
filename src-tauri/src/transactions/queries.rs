@@ -31,14 +31,15 @@ pub async fn add_plaid_transactions(conn: &mut SqliteConnection, new_transaction
         let account_id = *t.account_id();
 
         b.push_bind(t.plaid_transaction_id)
-         .push_bind(t.name)
+         .push_bind(t.name.unwrap_or("".to_string()))
          .push_bind(t.merchant_entity_id)
          .push_bind(t.amount)
          .push_bind(t.date)
          .push_bind(t.pending)
          .push_bind(plaid_account_id)
          .push_bind(account_id)
-         .push_bind(0); // "Uncategorized" category
+         .push_bind(1); // "Uncategorized" category, TODO: Fetch "Uncategorized" category thru
+                        // query for source of truth
     });
     query_builder.push(" ON CONFLICT(plaid_transaction_id) WHERE plaid_transaction_id IS NOT NULL DO NOTHING");
 

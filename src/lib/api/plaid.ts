@@ -14,8 +14,16 @@ const fetchItemAndAccounts = async (item_id: string): Promise<string> => {
   })) as string;
 }
 
+const syncTransactions = async (item_id: string): Promise<string> => {
+  return (await invoke("sync_transactions", {
+    itemId: item_id,
+    daysRequested: 30,
+  })) as string;
+}
+
 export const plaidApi = {
     generateLinkToken,
     generateAccessTokenFromHostedLink,
-    fetchItemAndAccounts
+    fetchItemAndAccounts,
+    syncTransactions
 };

@@ -5,6 +5,7 @@
 
   const syncTransactions = async () => {
     console.log(await plaidApi.fetchItemAndAccounts("AzvX08j5jbTapxEyxwQvcdVnBygpgafNjn5Ke"))
+    console.log(await plaidApi.syncTransactions("AzvX08j5jbTapxEyxwQvcdVnBygpgafNjn5Ke"))
   };
 </script>
 

@@ -17,8 +17,8 @@ pub async fn upsert_item_from_plaid(
     let upsert_res = sqlx::query(query)
         .bind(item.get("item_id").and_then(|v| v.as_str()).unwrap_or(""))
         .bind(item.get("institution_id").and_then(|v| v.as_str()).unwrap_or(""))
-       .bind(item.get("institution_name").and_then(|v| v.as_str()).unwrap_or(""))
-       .execute(pool)
+        .bind(item.get("institution_name").and_then(|v| v.as_str()).unwrap_or(""))
+        .execute(pool)
         .await?;
     
     Ok(upsert_res.rows_affected())
