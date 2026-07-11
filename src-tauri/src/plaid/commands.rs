@@ -34,8 +34,7 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
     let (synced_transactions, new_cursor) = sync_transactions_with_retry(
         client,
         plaid_item.access_token(),
-        &None,
-        // plaid_item.cursor(),
+        plaid_item.cursor(),
         days_requested,
         None
     ).await?;
@@ -337,6 +336,9 @@ async fn upsert_item(state: &tauri::State<'_, AppState>, item_id: &String) -> Re
         .item_get(plaid_item.access_token())
         .await
         .map_err(|e| format!("Failed to item_get: {e}"))?;
+    let access_token = plaid_item.access_token();
+    println!("plaid_item access token: {access_token}");
+    println!("Item: {:?}", item_get_resp);
 
     let item = item_get_resp.item;
     banks::queries::upsert_item_from_plaid(&db.0, &item)
