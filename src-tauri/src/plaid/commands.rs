@@ -26,7 +26,7 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
         .await
         .map_err(|e| format!("Error with fetching plaid_item: {e}"))?; 
 
-    let plaid_account_id_to_account_id = accounts::queries::get_account_id_plaid_id(&db.0)
+    let plaid_account_id_to_account_id = accounts::queries::get_account_id_by_plaid_id(&db.0)
         .await
         .map_err(|e| format!("Failed to fetch account_id mapping {e}"))?;
 

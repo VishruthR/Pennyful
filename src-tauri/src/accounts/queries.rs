@@ -40,6 +40,13 @@ pub async fn upsert_accounts_of_item_from_plaid(
 
         
 
+        let current_balance = account.balances.current
+            .and_then(types::Cents::from_dollars_f64)
+            .unwrap_or_default();
+        let available_balance = account.balances.available
+            .and_then(types::Cents::from_dollars_f64)
+            .unwrap_or_default();
+
         sqlx::query(query)
             .bind(account.account_id)
             .bind(account.name)
@@ -47,9 +54,9 @@ pub async fn upsert_accounts_of_item_from_plaid(
             .bind(bank.id())
             .bind(bank.plaid_item_id())
             .bind(account_type)
-            .bind(account.balances.current)
-            .bind(account.balances.available)
-            .bind(account.balances.current)
+            .bind(current_balance)
+            .bind(available_balance)
+            .bind(current_balance)
             .execute(pool)
             .await
             .map_err(|e| format!("Failed to upsert {e}"))?;
@@ -58,7 +65,7 @@ pub async fn upsert_accounts_of_item_from_plaid(
     Ok(())
 }
 
-pub async fn get_account_id_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<String, i64>, sqlx::Error> {
+pub async fn get_account_id_by_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<String, i64>, sqlx::Error> {
     let query = r#"
         SELECT
             a.plaid_account_id,
@@ -148,7 +155,7 @@ mod tests {
     async fn account_map_excludes_manual_accounts(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
         // The fixture has a Plaid-linked account (id 1) and a manual one (id 2, no
         // plaid_account_id). Only the linked account should be resolvable.
-        let map = get_account_id_plaid_id(&pool).await?;
+        let map = get_account_id_by_plaid_id(&pool).await?;
 
         assert_eq!(map.len(), 1);
         assert_eq!(map.get("plaid-acct-1"), Some(&1));

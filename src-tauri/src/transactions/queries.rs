@@ -62,7 +62,7 @@ pub async fn modify_plaid_transactions(conn: &mut SqliteConnection, modified_tra
         sqlx::query(query)
             .bind(t.amount)
             .bind(t.date)
-            .bind(t.name)
+            .bind(t.name.unwrap_or_default())
             .bind(t.merchant_entity_id)
             .bind(t.pending)
             .bind(t.plaid_transaction_id)
