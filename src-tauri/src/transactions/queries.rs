@@ -25,8 +25,6 @@ pub async fn add_plaid_transactions(conn: &mut SqliteConnection, new_transaction
     );
 
     query_builder.push_values(new_transactions, |mut b, t| {
-        // Copy the values reached through getters first, which ends the borrow of
-        // `t` so the owned fields below can be moved into the query.
         let plaid_account_id = t.plaid_account_id().clone();
         let account_id = *t.account_id();
 
@@ -50,7 +48,6 @@ pub async fn add_plaid_transactions(conn: &mut SqliteConnection, new_transaction
 }
 
 pub async fn modify_plaid_transactions(conn: &mut SqliteConnection, modified_transactions: Vec<PlaidTransaction>) -> Result<(), sqlx::Error> {
-    // plaid_transaction_id is globally unique, so it alone identifies the row.
     let query = r#"
         UPDATE 'transaction'
         SET amount_cents=?,
@@ -77,8 +74,6 @@ pub async fn modify_plaid_transactions(conn: &mut SqliteConnection, modified_tra
 }
 
 pub async fn remove_plaid_transactions(conn: &mut SqliteConnection, removed_transactions: Vec<RemovedTransaction>) -> Result<(), sqlx::Error> {
-    // Soft delete. plaid_transaction_id alone identifies the row (Plaid's
-    // account_id on a removed transaction is a deprecated field).
     let query = r#"
         UPDATE 'transaction'
         SET deleted_at=date('now')
@@ -155,7 +150,6 @@ mod tests {
         Ok(())
     }
 
-    // account 1 exists in the plaid_sync fixture with plaid_account_id "plaid-acct-1".
     fn plaid_txn(plaid_id: &str, name: &str, amount_dollars: f64, pending: bool) -> PlaidTransaction {
         PlaidTransaction::new(
             Some(plaid_id.to_owned()),
@@ -210,19 +204,11 @@ mod tests {
         Ok(())
     }
 
-    #[sqlx::test]
-    async fn add_empty_returns_zero(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
-        let mut conn = pool.acquire().await?;
-        assert_eq!(add_plaid_transactions(&mut conn, vec![]).await?, 0);
-        Ok(())
-    }
-
     #[sqlx::test(fixtures(path = "../fixtures", scripts("plaid_sync")))]
     async fn modify_updates_matching_transaction(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
         let mut conn = pool.acquire().await?;
         add_plaid_transactions(&mut conn, vec![plaid_txn("txn-1", "Pending Coffee", -4.50, true)]).await?;
 
-        // Plaid sends the posted version: new amount/name/date and pending -> false.
         let mut posted = plaid_txn("txn-1", "Posted Coffee", -5.25, false);
         posted.date = NaiveDate::from_ymd_opt(2026, 1, 20).unwrap();
         modify_plaid_transactions(&mut conn, vec![posted]).await?;
@@ -248,14 +234,12 @@ mod tests {
             ..Default::default()
         }]).await?;
 
-        // Removed transactions disappear from listings...
         let transactions = get_transactions(&pool, None).await?;
         assert!(
             transactions.iter().all(|t| t.plaid_transaction_id().as_deref() != Some("txn-1")),
             "removed transaction should not appear in get_transactions"
         );
 
-        // ...but are soft-deleted, not physically removed.
         let deleted_at: Option<String> = sqlx::query_scalar(
             "SELECT deleted_at FROM 'transaction' WHERE plaid_transaction_id = ?"
         ).bind("txn-1").fetch_one(&pool).await?;

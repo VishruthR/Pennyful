@@ -20,7 +20,6 @@ fn plaid_client() -> PlaidClient {
 
 #[tauri::command]
 pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: String, days_requested: Option<i64>) -> Result<u64, String> {
-    println!("SYNCING");
     let client = plaid_client();
     let db = &state.db;
     let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
@@ -40,7 +39,7 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
     ).await?;
 
     // Only added transactions need account_ids populated. Transactions for an
-    // account we don't have locally (e.g. newly linked at the bank) are skipped.
+    // account we don't have locally (e.g. user chose to ignore that bank) are skipped.
     let added: Vec<PlaidTransaction> = synced_transactions
         .added
         .into_iter()
@@ -176,7 +175,6 @@ async fn sync_transactions_with_retry(
                 ));
             }
         };
-        println!("{:?}", transactions);
 
         // If a transaction fails to fit our data model (probably due to amount conversion) then it
         // will be logged and filtered here
@@ -315,16 +313,16 @@ pub async fn generate_access_token_from_hosted_link(state: tauri::State<'_, AppS
 
 #[tauri::command]
 pub async fn fetch_item_and_accounts(state: tauri::State<'_, AppState>, item_id: String) -> Result<u64, String> {
-    upsert_item(&state, &item_id)
+    fetch_item_and_upsert(&state, &item_id)
         .await?;
 
-    upsert_accounts_of_item(&state, &item_id)
+    fetch_accounts_of_item_and_upsert(&state, &item_id)
         .await?;
 
     Ok(1)
 }
 
-async fn upsert_item(state: &tauri::State<'_, AppState>, item_id: &String) -> Result<(), String> {
+async fn fetch_item_and_upsert(state: &tauri::State<'_, AppState>, item_id: &String) -> Result<(), String> {
     let db = &state.db;
     let client = plaid_client();
 
@@ -336,9 +334,6 @@ async fn upsert_item(state: &tauri::State<'_, AppState>, item_id: &String) -> Re
         .item_get(plaid_item.access_token())
         .await
         .map_err(|e| format!("Failed to item_get: {e}"))?;
-    let access_token = plaid_item.access_token();
-    println!("plaid_item access token: {access_token}");
-    println!("Item: {:?}", item_get_resp);
 
     let item = item_get_resp.item;
     banks::queries::upsert_item_from_plaid(&db.0, &item)
@@ -348,16 +343,14 @@ async fn upsert_item(state: &tauri::State<'_, AppState>, item_id: &String) -> Re
     Ok(())
 }
 
-pub async fn upsert_accounts_of_item(state: &tauri::State<'_, AppState>, item_id: &String) -> Result<u64, String> {
+pub async fn fetch_accounts_of_item_and_upsert(state: &tauri::State<'_, AppState>, item_id: &String) -> Result<u64, String> {
     let db = &state.db;
     let client = plaid_client();
-
-    println!("Item Id: {item_id}");
 
     let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
         .await
         .map_err(|e| format!("Failed to get plaid_item: {e}"))?;
-    println!("{:?}", plaid_item);
+
     let bank = banks::queries::get_bank_by_item_id(&db.0, &item_id)
         .await
         .map_err(|e| format!("Failed to get bank: {e}"))?;

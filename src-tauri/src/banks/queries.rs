@@ -63,9 +63,6 @@ mod tests {
     async fn upsert_stores_lookupable_item_id(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
         upsert_item_from_plaid(&pool, &plaid_item("item-abc", "ins_1", "Bank of America")).await?;
 
-        // Behavior: the bank is retrievable by the *raw* item_id. This fails if the
-        // JSON Value was serialized (stored with surrounding quotes) instead of read
-        // as a string.
         let bank = get_bank_by_item_id(&pool, &"item-abc".to_owned()).await?;
         assert_eq!(bank.plaid_item_id(), &Some("item-abc".to_owned()));
 
