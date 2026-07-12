@@ -77,8 +77,9 @@ pub async fn get_account_id_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<Stri
 
 pub async fn get_full_accounts(pool: &Pool<Sqlite>) -> Result<Vec<FullAccount>, sqlx::Error> {
     let query = r#"
-        SELECT 
+        SELECT
             a.id,
+            a.plaid_account_id,
             a.name,
             a.bank_id,
             b.bank_name,
@@ -140,6 +141,17 @@ mod tests {
         let accounts = get_full_accounts(&pool).await?;
 
         assert_eq!(accounts, get_expected_full_accounts());
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("plaid_sync")))]
+    async fn account_map_excludes_manual_accounts(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        // The fixture has a Plaid-linked account (id 1) and a manual one (id 2, no
+        // plaid_account_id). Only the linked account should be resolvable.
+        let map = get_account_id_plaid_id(&pool).await?;
+
+        assert_eq!(map.len(), 1);
+        assert_eq!(map.get("plaid-acct-1"), Some(&1));
         Ok(())
     }
 }

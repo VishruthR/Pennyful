@@ -80,7 +80,7 @@ mod tests {
 
     #[sqlx::test]
     async fn insert_persists_item_fields(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
-        let affected = insert_plaid_item_without_cursor(&pool, "item-1".to_owned(), &"access-1".to_owned()).await?;
+        let affected = insert_plaid_item_without_cursor(&pool, &"item-1".to_owned(), &"access-1".to_owned()).await?;
         assert_eq!(affected, 1);
 
         let rows: Vec<(String, String)> =
@@ -93,8 +93,8 @@ mod tests {
 
     #[sqlx::test]
     async fn insert_appends_additional_items(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
-        insert_plaid_item_without_cursor(&pool, "a".to_owned(), &"t1".to_owned()).await?;
-        insert_plaid_item_without_cursor(&pool, "b".to_owned(), &"t2".to_owned()).await?;
+        insert_plaid_item_without_cursor(&pool, &"a".to_owned(), &"t1".to_owned()).await?;
+        insert_plaid_item_without_cursor(&pool, &"b".to_owned(), &"t2".to_owned()).await?;
 
         let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM plaid_item")
             .fetch_one(&pool)

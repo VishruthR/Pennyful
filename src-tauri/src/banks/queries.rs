@@ -45,3 +45,49 @@ pub async fn get_bank_by_item_id(
 
     Ok(bank)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn plaid_item(item_id: &str, institution_id: &str, institution_name: &str) -> HashMap<String, Value> {
+        HashMap::from([
+            ("item_id".to_owned(), json!(item_id)),
+            ("institution_id".to_owned(), json!(institution_id)),
+            ("institution_name".to_owned(), json!(institution_name)),
+        ])
+    }
+
+    #[sqlx::test]
+    async fn upsert_stores_lookupable_item_id(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        upsert_item_from_plaid(&pool, &plaid_item("item-abc", "ins_1", "Bank of America")).await?;
+
+        // Behavior: the bank is retrievable by the *raw* item_id. This fails if the
+        // JSON Value was serialized (stored with surrounding quotes) instead of read
+        // as a string.
+        let bank = get_bank_by_item_id(&pool, &"item-abc".to_owned()).await?;
+        assert_eq!(bank.plaid_item_id(), &Some("item-abc".to_owned()));
+
+        let bank_name: String = sqlx::query_scalar("SELECT bank_name FROM bank WHERE plaid_item_id = ?")
+            .bind("item-abc")
+            .fetch_one(&pool)
+            .await?;
+        assert_eq!(bank_name, "Bank of America");
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn upsert_is_idempotent_on_item_id(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        let item = plaid_item("item-abc", "ins_1", "Bank of America");
+        assert_eq!(upsert_item_from_plaid(&pool, &item).await?, 1);
+        // Re-linking the same item is a no-op rather than a duplicate bank.
+        assert_eq!(upsert_item_from_plaid(&pool, &item).await?, 0);
+
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM bank")
+            .fetch_one(&pool)
+            .await?;
+        assert_eq!(count, 1);
+        Ok(())
+    }
+}

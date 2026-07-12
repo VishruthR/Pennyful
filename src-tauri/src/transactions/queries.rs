@@ -3,7 +3,7 @@ use crate::types::{PlaidTransaction, Transaction};
 use ::plaid::model::RemovedTransaction;
 
 pub async fn get_transactions(pool: &Pool<Sqlite>, limit: Option<i64>) -> Result<Vec<Transaction>, sqlx::Error> {
-    let query = "SELECT id, name, amount_cents, date, account_id, category_id FROM 'transaction' WHERE deleted_at IS NULL ORDER BY date, id LIMIT $1";
+    let query = "SELECT id, plaid_transaction_id, name, merchant_entity_id, amount_cents, date, pending, deleted_at, plaid_account_id, account_id, category_id FROM 'transaction' WHERE deleted_at IS NULL ORDER BY date, id LIMIT $1";
 
     // Negative value returns all rows
     let lim = limit.unwrap_or(-1);
@@ -56,7 +56,8 @@ pub async fn modify_plaid_transactions(conn: &mut SqliteConnection, modified_tra
         SET amount_cents=?,
             date=?,
             name=?,
-            merchant_entity_id=?
+            merchant_entity_id=?,
+            pending=?
         WHERE plaid_transaction_id=?
     "#;
 
@@ -66,6 +67,7 @@ pub async fn modify_plaid_transactions(conn: &mut SqliteConnection, modified_tra
             .bind(t.date)
             .bind(t.name)
             .bind(t.merchant_entity_id)
+            .bind(t.pending)
             .bind(t.plaid_transaction_id)
             .execute(&mut *conn)
             .await?;
@@ -148,8 +150,116 @@ mod tests {
     #[sqlx::test(fixtures(path="../fixtures", scripts("transactions")))]
     async fn test_get_transactions_limit(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
         let transactions = get_transactions(&pool, Some(2)).await?;
-        
+
         assert_eq!(transactions, get_expected_transactions()[..2]);
+        Ok(())
+    }
+
+    // account 1 exists in the plaid_sync fixture with plaid_account_id "plaid-acct-1".
+    fn plaid_txn(plaid_id: &str, name: &str, amount_dollars: f64, pending: bool) -> PlaidTransaction {
+        PlaidTransaction::new(
+            Some(plaid_id.to_owned()),
+            Some(name.to_owned()),
+            None,
+            Cents::from_dollars_f64(amount_dollars).unwrap(),
+            NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
+            pending,
+            "plaid-acct-1".to_owned(),
+            Some(1),
+            None,
+        )
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("plaid_sync")))]
+    async fn add_persists_new_transactions(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut conn = pool.acquire().await?;
+        let skipped = add_plaid_transactions(&mut conn, vec![
+            plaid_txn("txn-1", "Coffee", -4.50, false),
+            plaid_txn("txn-2", "Books", -20.00, false),
+        ]).await?;
+        assert_eq!(skipped, 0);
+
+        let transactions = get_transactions(&pool, None).await?;
+        assert_eq!(transactions.iter().filter(|t| t.plaid_transaction_id().is_some()).count(), 2);
+
+        let coffee = transactions.iter()
+            .find(|t| t.plaid_transaction_id().as_deref() == Some("txn-1"))
+            .expect("added transaction should be queryable");
+        assert_eq!(coffee.name, "Coffee");
+        assert_eq!(coffee.amount, Cents::from_dollars_f64(-4.50).unwrap());
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("plaid_sync")))]
+    async fn add_skips_duplicate_plaid_transaction_ids(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut conn = pool.acquire().await?;
+        let first = add_plaid_transactions(&mut conn, vec![plaid_txn("txn-1", "Coffee", -4.50, false)]).await?;
+        assert_eq!(first, 0);
+
+        // Re-syncing the same transaction (Plaid resends) must not duplicate it, and
+        // the whole batch is reported as skipped.
+        let second = add_plaid_transactions(&mut conn, vec![plaid_txn("txn-1", "Coffee CHANGED", -9.99, false)]).await?;
+        assert_eq!(second, 1);
+
+        let transactions = get_transactions(&pool, None).await?;
+        let matching: Vec<_> = transactions.iter()
+            .filter(|t| t.plaid_transaction_id().as_deref() == Some("txn-1"))
+            .collect();
+        assert_eq!(matching.len(), 1, "duplicate should not create a second row");
+        assert_eq!(matching[0].name, "Coffee", "existing row should be left untouched");
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn add_empty_returns_zero(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut conn = pool.acquire().await?;
+        assert_eq!(add_plaid_transactions(&mut conn, vec![]).await?, 0);
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("plaid_sync")))]
+    async fn modify_updates_matching_transaction(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut conn = pool.acquire().await?;
+        add_plaid_transactions(&mut conn, vec![plaid_txn("txn-1", "Pending Coffee", -4.50, true)]).await?;
+
+        // Plaid sends the posted version: new amount/name/date and pending -> false.
+        let mut posted = plaid_txn("txn-1", "Posted Coffee", -5.25, false);
+        posted.date = NaiveDate::from_ymd_opt(2026, 1, 20).unwrap();
+        modify_plaid_transactions(&mut conn, vec![posted]).await?;
+
+        let transactions = get_transactions(&pool, None).await?;
+        let txn = transactions.iter()
+            .find(|t| t.plaid_transaction_id().as_deref() == Some("txn-1"))
+            .expect("transaction should exist");
+        assert_eq!(txn.name, "Posted Coffee");
+        assert_eq!(txn.amount, Cents::from_dollars_f64(-5.25).unwrap());
+        assert_eq!(txn.date, NaiveDate::from_ymd_opt(2026, 1, 20).unwrap());
+        assert!(!txn.pending, "pending should flip to posted");
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("plaid_sync")))]
+    async fn remove_soft_deletes_and_hides_transaction(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut conn = pool.acquire().await?;
+        add_plaid_transactions(&mut conn, vec![plaid_txn("txn-1", "Coffee", -4.50, false)]).await?;
+
+        remove_plaid_transactions(&mut conn, vec![RemovedTransaction {
+            transaction_id: "txn-1".to_owned(),
+            ..Default::default()
+        }]).await?;
+
+        // Removed transactions disappear from listings...
+        let transactions = get_transactions(&pool, None).await?;
+        assert!(
+            transactions.iter().all(|t| t.plaid_transaction_id().as_deref() != Some("txn-1")),
+            "removed transaction should not appear in get_transactions"
+        );
+
+        // ...but are soft-deleted, not physically removed.
+        let deleted_at: Option<String> = sqlx::query_scalar(
+            "SELECT deleted_at FROM 'transaction' WHERE plaid_transaction_id = ?"
+        ).bind("txn-1").fetch_one(&pool).await?;
+        assert!(deleted_at.is_some(), "row should still exist with deleted_at set");
         Ok(())
     }
 }
