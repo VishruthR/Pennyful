@@ -8,6 +8,8 @@
   import { openUrl } from "@tauri-apps/plugin-opener";
   import Button from "$lib/components/Button.svelte";
 
+  let { item_id = $bindable() } = $props();
+
   let error = $state<string | null>(null);
   let loading = $state(false);
 
@@ -31,7 +33,7 @@
     error = null;
 
     try {
-      await plaidApi.generateAccessTokenFromHostedLink();
+      item_id = await plaidApi.generateAccessTokenFromHostedLink();
     } catch (err) {
       error = err as string
       console.log(error);
@@ -43,7 +45,7 @@
 
 <div class="container">
   <Button onclick={handleLink}>
-    {loading ? "Loading…" : "Link"}
+    {loading ? "Loading…" : "Link thru Plaid"}
   </Button>
   {#if import.meta.env.DEV}
     <!-- Dev-only: in `tauri dev` the pennyful:// deep link can't reach us, so

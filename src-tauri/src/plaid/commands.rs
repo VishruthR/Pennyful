@@ -1,5 +1,5 @@
 use crate::{AppState, accounts::queries::upsert_accounts_of_item_from_plaid};
-use ::plaid::{PlaidAuth, PlaidClient, model::{CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, PlaidError, Products, RemovedTransaction, Transaction, TransactionsSyncRequestOptions}, request::link_token_create::LinkTokenCreateRequired};
+use ::plaid::{PlaidAuth, PlaidClient, model::{AccountsGetResponse, CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, PlaidError, Products, RemovedTransaction, Transaction, TransactionsSyncRequestOptions}, request::link_token_create::LinkTokenCreateRequired};
 use crate::plaid;
 use crate::banks;
 use crate::accounts;
@@ -19,7 +19,7 @@ fn plaid_client() -> PlaidClient {
 }
 
 #[tauri::command]
-pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: String, days_requested: Option<i64>) -> Result<u64, String> {
+pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: String, days_requested: Option<i64>) -> Result<usize, String> {
     let client = plaid_client();
     let db = &state.db;
     let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
@@ -37,6 +37,10 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
         days_requested,
         None
     ).await?;
+
+    let num_added = synced_transactions.added.len();
+    let num_modified = synced_transactions.modified.len();
+    let num_removed = synced_transactions.removed.len();
 
     // Only added transactions need account_ids populated. Transactions for an
     // account we don't have locally (e.g. user chose to ignore that bank) are skipped.
@@ -80,7 +84,7 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
         .await
         .map_err(|e| format!("Failed to commit transaction: {e}"))?;
 
-    Ok(1)
+    Ok(num_added + num_modified + num_removed)
 }
 
 fn plaid_transaction_to_new_transaction(plaid_transaction: Transaction) -> Result<PlaidTransaction, String> {
@@ -308,7 +312,27 @@ pub async fn complete_hosted_link(state: &AppState) -> Result<(String, u64), Str
 pub async fn generate_access_token_from_hosted_link(state: tauri::State<'_, AppState>) -> Result<String, String> {
     let (item_id, _rows_affected) = complete_hosted_link(state.inner()).await?;
 
+    fetch_item_and_upsert(&state, &item_id)
+        .await?;
+
     Ok(item_id)
+}
+
+#[tauri::command]
+pub async fn get_accounts_of_item(state: tauri::State<'_, AppState>, item_id: String) -> Result<AccountsGetResponse, String> {
+    let db = &state.db;
+    let client = plaid_client();
+
+    let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
+        .await
+        .map_err(|e| format!("Failed to get plaid_item: {e}"))?;
+    
+    let accounts_get_resp = client
+        .accounts_get(plaid_item.access_token())
+        .await
+        .map_err(|e| format!("Failed to get accounts: {e}"))?;
+
+    Ok(accounts_get_resp)
 }
 
 #[tauri::command]

@@ -1,21 +1,11 @@
 <script lang="ts">
-    import { plaidApi } from "$lib/api/plaid";
   import Button from "$lib/components/Button.svelte";
-  import PlaidLink from "$lib/components/PlaidLink.svelte";
-  import { PUBLIC_ITEM_ID } from '$env/static/public';
-
-  const syncTransactions = async () => {
-    console.log(await plaidApi.fetchItemAndAccounts(PUBLIC_ITEM_ID))
-    console.log(await plaidApi.syncTransactions(PUBLIC_ITEM_ID))
-  };
-</script>
+ </script>
 
 <main class="container">
-  <a href="/import/batch" class="batch-link">
-    <Button>Batch Add Transactions</Button>
+  <a href="/plaid/link" class="batch-link">
+    <Button>Add Plaid Account</Button>
   </a>
-  <PlaidLink />
-  <Button onclick={syncTransactions}>Sync Transactions</Button>
 </main>
 
 <style>

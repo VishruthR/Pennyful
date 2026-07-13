@@ -25,6 +25,31 @@ enum AccountType {
     Checkings = "Checkings",
 }
 
+interface PlaidAccount {
+  account_id: string;
+  balances: {
+    available: number;
+    current: number;
+    limit: number;
+  };
+  mask: string | null;
+  name: string;
+  official_name: string | null;
+  type: string;
+  subtype: string | null;
+}
+
+interface PlaidItem {
+  item_id: string;
+  institution_id: string | null;
+  institution_name: string | null;
+}
+
+interface AccountsGetResponse {
+  accounts: PlaidAccount[];
+  item: PlaidItem;
+}
+
 interface Account {
     id: number;
     name: string;
@@ -40,4 +65,4 @@ interface DropdownOption {
     content: Snippet;
 }
 
-export type { Category, CategoryDetails, Transaction, TransactionImport, AccountType, Account, DropdownOption };
+export type { Category, CategoryDetails, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse };
