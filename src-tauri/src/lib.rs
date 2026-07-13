@@ -102,7 +102,6 @@ pub fn run() {
             importers::commands::import_transactions,
             plaid::commands::generate_link_token,
             plaid::commands::generate_access_token_from_hosted_link,
-            plaid::commands::fetch_item_and_accounts,
             plaid::commands::sync_transactions,
             plaid::commands::add_new_plaid_accounts,
             plaid::commands::get_accounts_of_item

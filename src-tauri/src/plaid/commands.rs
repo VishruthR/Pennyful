@@ -350,17 +350,6 @@ pub async fn add_new_plaid_accounts(state: tauri::State<'_, AppState>, new_accou
     Ok(succesfully_inserted)
 }
 
-#[tauri::command]
-pub async fn fetch_item_and_accounts(state: tauri::State<'_, AppState>, item_id: String) -> Result<u64, String> {
-    fetch_item_and_upsert(&state, &item_id)
-        .await?;
-
-    fetch_accounts_of_item_and_upsert(&state, &item_id)
-        .await?;
-
-    Ok(1)
-}
-
 async fn fetch_item_and_upsert(state: &tauri::State<'_, AppState>, item_id: &String) -> Result<(), String> {
     let db = &state.db;
     let client = plaid_client();
@@ -380,29 +369,6 @@ async fn fetch_item_and_upsert(state: &tauri::State<'_, AppState>, item_id: &Str
         .map_err(|e| format!("Error upserting account from plaid: {e}"))?;
     
     Ok(())
-}
-
-pub async fn fetch_accounts_of_item_and_upsert(state: &tauri::State<'_, AppState>, item_id: &String) -> Result<u64, String> {
-    let db = &state.db;
-    let client = plaid_client();
-
-    let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
-        .await
-        .map_err(|e| format!("Failed to get plaid_item: {e}"))?;
-
-    let bank = banks::queries::get_bank_by_item_id(&db.0, &item_id)
-        .await
-        .map_err(|e| format!("Failed to get bank: {e}"))?;
-
-    let accounts_get_resp = client
-        .accounts_get(plaid_item.access_token())
-        .await
-        .map_err(|e| format!("Failed to get accounts: {e}"))?;
-
-    // accounts::queries::upsert_accounts_of_item_from_plaid(&db.0, bank, accounts_get_resp)
-    //     .await?;
-
-    Ok(1)
 }
 
 #[cfg(test)]
