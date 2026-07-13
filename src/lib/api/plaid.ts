@@ -1,4 +1,4 @@
-import type { AccountsGetResponse } from "$lib/types";
+import type { AccountsGetResponse, PlaidAccount } from "$lib/types";
 import { invoke } from "@tauri-apps/api/core";
 
 const generateLinkToken = async (): Promise<string> => {
@@ -21,6 +21,13 @@ const fetchItemAndAccounts = async (item_id: string): Promise<string> => {
   })) as string;
 }
 
+const addNewPlaidAccounts = async (accounts: PlaidAccount[], item_id: string): Promise<number> => {
+  return (await invoke("add_new_plaid_accounts", {
+    newAccounts: accounts,
+    itemId: item_id
+  }))
+}
+
 const syncTransactions = async (item_id: string): Promise<number> => {
   return (await invoke("sync_transactions", {
     itemId: item_id,
@@ -33,5 +40,6 @@ export const plaidApi = {
     generateAccessTokenFromHostedLink,
     fetchItemAndAccounts,
     syncTransactions,
-    getAccountsOfItem
+    getAccountsOfItem,
+    addNewPlaidAccounts
 };

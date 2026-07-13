@@ -1,10 +1,11 @@
-use crate::{AppState, accounts::queries::upsert_accounts_of_item_from_plaid};
-use ::plaid::{PlaidAuth, PlaidClient, model::{AccountsGetResponse, CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, PlaidError, Products, RemovedTransaction, Transaction, TransactionsSyncRequestOptions}, request::link_token_create::LinkTokenCreateRequired};
+use crate::{AppState};
+use ::plaid::{PlaidAuth, PlaidClient, model::{AccountBase, AccountsGetResponse, CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, PlaidError, Products, RemovedTransaction, Transaction, TransactionsSyncRequestOptions}, request::link_token_create::LinkTokenCreateRequired};
 use crate::plaid;
 use crate::banks;
 use crate::accounts;
 use crate::transactions;
-use crate::types::{Cents, PlaidTransaction};
+use crate::types::{Cents};
+use crate::plaid::types::{PlaidTransaction};
 use dotenvy_macro::dotenv;
 use httpclient::{Client, InMemoryResponseExt};
 
@@ -336,6 +337,20 @@ pub async fn get_accounts_of_item(state: tauri::State<'_, AppState>, item_id: St
 }
 
 #[tauri::command]
+pub async fn add_new_plaid_accounts(state: tauri::State<'_, AppState>, new_accounts: Vec<AccountBase>, item_id: String) -> Result<u32, String> {
+    let db = &state.db;
+    
+    let bank = banks::queries::get_bank_by_item_id(&db.0, &item_id)
+        .await
+        .map_err(|e| format!("Failed to get bank: {e}"))?;
+    
+    let succesfully_inserted = accounts::queries::upsert_new_plaid_accounts(&db.0, bank, new_accounts)
+        .await?;
+
+    Ok(succesfully_inserted)
+}
+
+#[tauri::command]
 pub async fn fetch_item_and_accounts(state: tauri::State<'_, AppState>, item_id: String) -> Result<u64, String> {
     fetch_item_and_upsert(&state, &item_id)
         .await?;
@@ -384,8 +399,8 @@ pub async fn fetch_accounts_of_item_and_upsert(state: &tauri::State<'_, AppState
         .await
         .map_err(|e| format!("Failed to get accounts: {e}"))?;
 
-    upsert_accounts_of_item_from_plaid(&db.0, bank, accounts_get_resp)
-        .await?;
+    // accounts::queries::upsert_accounts_of_item_from_plaid(&db.0, bank, accounts_get_resp)
+    //     .await?;
 
     Ok(1)
 }

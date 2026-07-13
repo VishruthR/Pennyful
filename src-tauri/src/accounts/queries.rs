@@ -1,14 +1,14 @@
 use std::collections::HashMap;
-use plaid::model::{AccountSubtype, AccountType, AccountsGetResponse};
+use plaid::model::{AccountBase, AccountSubtype, AccountType};
 use sqlx::{Pool, Sqlite};
 use crate::types::{Bank, FullAccount};
 use crate::types;
 
-pub async fn upsert_accounts_of_item_from_plaid(
+pub async fn upsert_new_plaid_accounts(
     pool: &Pool<Sqlite>,
     bank: Bank,
-    accounts_get_resp: AccountsGetResponse
-) -> Result<(), String> {
+    accounts: Vec<AccountBase>
+) -> Result<u32, String> {
     let query = r#"
         INSERT INTO account (
             plaid_account_id,
@@ -25,7 +25,9 @@ pub async fn upsert_accounts_of_item_from_plaid(
         ON CONFLICT(plaid_account_id) WHERE plaid_account_id IS NOT NULL DO NOTHING
     "#;
 
-    for account in accounts_get_resp.accounts {
+    let mut succesfully_inserted: u32 = 0;
+
+    for account in accounts {
         let account_type = match account.type_ {
             AccountType::Depository => {
                 match account.subtype.ok_or(format!("Account subtype doesn't exist"))? {
@@ -60,9 +62,11 @@ pub async fn upsert_accounts_of_item_from_plaid(
             .execute(pool)
             .await
             .map_err(|e| format!("Failed to upsert {e}"))?;
+
+        succesfully_inserted += 1;
     }
 
-    Ok(())
+    Ok(succesfully_inserted)
 }
 
 pub async fn get_account_id_by_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<String, i64>, sqlx::Error> {

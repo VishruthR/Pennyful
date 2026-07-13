@@ -12,7 +12,7 @@
   let currentStep = $state(0);
 
   // Step 1 state
-  let item_id: string = $state("");
+  let item_id: string = $state("dky4nJNeBDhvPEe8YRJwTdEAxVMRxbU0jYn87");
 
   // Step 2 state
   let accounts: AccountsGetResponse | null = $state(null);
@@ -20,10 +20,6 @@
 
   // Step 3 state
   let numTransactions: number | null = $state(null);
-
-  const updateAccounts = async () => {
-    accounts = await plaidApi.getAccountsOfItem(item_id);
-  }
 
   const syncTransactions = async () => {
     numTransactions = await plaidApi.syncTransactions(item_id);
@@ -33,10 +29,10 @@
     {
       name: "Link an institution",
       content: step1Content,
-      onNext: () => {
+      onNext: async () => {
         currentStep = 1;
 
-        updateAccounts();
+        accounts = await plaidApi.getAccountsOfItem(item_id);
       },
     },
     {
@@ -45,6 +41,15 @@
       canProceed: () => selectedAccounts.length > 0,
       onNext: async () => {
         currentStep = 2;
+
+        if (accounts === null) {
+          return;
+        }
+
+        await plaidApi.addNewPlaidAccounts(
+          accounts.accounts.filter((_, idx) => idx in selectedAccounts),
+          item_id
+        )
       },
       onBack: () => {
         currentStep = 0;

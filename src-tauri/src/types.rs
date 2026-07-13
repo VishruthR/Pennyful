@@ -120,64 +120,6 @@ impl fmt::Display for Transaction {
     }
 }
 
-/// A transaction not yet persisted. Has no id, since that is assigned by the DB
-/// on insert. Used to hold data returned from Plaid before it is written.
-#[derive(PartialEq, Debug)]
-pub struct PlaidTransaction {
-    pub plaid_transaction_id: Option<String>,
-    pub name: Option<String>,
-    pub merchant_entity_id: Option<String>,
-    pub amount: Cents,
-    pub date: NaiveDate,
-    pub pending: bool,
-    plaid_account_id: String,
-    account_id: Option<i64>,
-    category_id: Option<i64>,
-}
-
-impl PlaidTransaction {
-    pub fn plaid_account_id(&self) -> &String {
-        &self.plaid_account_id
-    }
-
-    pub fn category_id(&self) -> &Option<i64> {
-        &self.category_id
-    }
-
-    pub fn account_id(&self) -> &Option<i64> {
-        &self.account_id
-    }
-
-    pub fn new(
-        plaid_transaction_id: Option<String>,
-        name: Option<String>,
-        merchant_entity_id: Option<String>,
-        amount: Cents,
-        date: NaiveDate,
-        pending: bool,
-        plaid_account_id: String,
-        account_id: Option<i64>,
-        category_id: Option<i64>,
-    ) -> Self {
-        PlaidTransaction {
-            plaid_transaction_id,
-            name,
-            merchant_entity_id,
-            amount,
-            date,
-            pending,
-            plaid_account_id,
-            account_id,
-            category_id,
-        }
-    }
-
-    pub fn update_account_id(mut self, account_id: i64) -> Self {
-        self.account_id = Some(account_id);
-        self
-    }
-}
-
 #[derive(sqlx::FromRow, Eq, PartialEq, Debug, Clone, serde::Serialize)]
 pub struct Category {
     id: i64,

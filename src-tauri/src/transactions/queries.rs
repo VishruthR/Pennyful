@@ -1,5 +1,6 @@
 use sqlx::{Pool, QueryBuilder, Sqlite, SqliteConnection};
-use crate::types::{PlaidTransaction, Transaction};
+use crate::types::{Transaction};
+use crate::plaid::types::{PlaidTransaction};
 use ::plaid::model::RemovedTransaction;
 
 pub async fn get_transactions(pool: &Pool<Sqlite>, limit: Option<i64>) -> Result<Vec<Transaction>, sqlx::Error> {
