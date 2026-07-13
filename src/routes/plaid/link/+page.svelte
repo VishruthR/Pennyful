@@ -1,7 +1,7 @@
 <script lang="ts">
   import Stepper from "$lib/components/Stepper.svelte";
   import AccountCard from "$lib/components/AccountCard.svelte";
-  import type { AccountsGetResponse } from "$lib/types";
+  import type { AccountsGetResponse, PlaidAccount, PlaidItem } from "$lib/types";
   import PlaidLink from "$lib/components/PlaidLink.svelte";
     import { plaidApi } from "$lib/api/plaid";
     import Button from "$lib/components/Button.svelte";
@@ -12,7 +12,7 @@
   let currentStep = $state(0);
 
   // Step 1 state
-  let item_id: string = $state("dky4nJNeBDhvPEe8YRJwTdEAxVMRxbU0jYn87");
+  let item_id: string = $state("");
 
   // Step 2 state
   let accounts: AccountsGetResponse | null = $state(null);
@@ -23,6 +23,14 @@
 
   const syncTransactions = async () => {
     numTransactions = await plaidApi.syncTransactions(item_id);
+  }
+
+  const getAccountSubname = (account: PlaidAccount, item: PlaidItem) => {
+    if (account.official_name == account.name) {
+      return item.institution_name ?? "Account";
+    }
+
+    return account.official_name ?? item.institution_name ?? "Account"
   }
 
   const steps = [
@@ -95,7 +103,7 @@
           <AccountCard
             icon="mdi:bank"
             name={account.name}
-            provider={account.official_name ?? accounts.item.institution_name ?? "Account"}
+            subname={getAccountSubname(account, (accounts as AccountsGetResponse).item)}
             accountType={account.type}
             balance={account.balances.current}
             selected={idx in selectedAccounts}
@@ -121,7 +129,7 @@
       <h2 class="h2 step-title">Sync Transactions</h2>
       <p class="paragraph step-description">Sync transactions from the past 30 days with the button below.</p>
       <p class="paragraph step-description">For Plaid to sync transactions, it must get permission from the financial institution which can take up to 30 minutes. If you don't see any transactions synced, come back to Pennyful in a bit and try again.</p>
-      <p class="paragraph step-description">Plaid pulls transaction data frome its linked institutions between 1 to 4 times per day, so transactions displayed here may be up to a day behind.</p>
+      <p class="paragraph step-description">Plaid pulls transaction data from its linked institutions between 1 to 4 times per day, so transactions displayed here may be up to a day behind.</p>
     </div>
     <Button onclick={syncTransactions}>Sync transactions</Button>
     {#if numTransactions !== null}
@@ -150,7 +158,7 @@
 
   .stepper-container {
     width: 100%;
-    max-width: 700px;
+    max-width: 800px;
   }
 
   .page-title {
@@ -167,20 +175,14 @@
 
   .step-text-container {
     width: 100%;
-    margin-bottom: 36px;
-  }
-
-  .step-title {
-    margin: 0px;
+    margin-bottom: 24px;
   }
 
   .step-description {
-    margin: 0px;
     color: var(--grey-300);
   }
 
   .step-note {
-    margin: 0px;
     font-size: 12px;
     color: var(--grey-200);
   }
@@ -191,28 +193,10 @@
     color: var(--profit-green)
   }
 
-  /* Step 1: Account selection */
   .accounts-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
     width: 100%;
-  }
-
-  /* Step 2: File upload */
-  .file-drop-container {
-    width: 100%;
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-  }
-
-  /* Step 3: Review */
-  .review-container {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    max-width: 450px;
-    margin-top: 16px;
   }
 </style>
