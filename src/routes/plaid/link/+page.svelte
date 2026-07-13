@@ -77,6 +77,7 @@
   ];
 
   $inspect(item_id);
+  $inspect(selectedAccounts);
 </script>
 
 {#snippet step1Content()}
@@ -106,10 +107,11 @@
             subname={getAccountSubname(account, (accounts as AccountsGetResponse).item)}
             accountType={account.type}
             balance={account.balances.current}
-            selected={idx in selectedAccounts}
+            selected={selectedAccounts.includes(idx)}
             onClick={() => {
-              if (idx in selectedAccounts) {
-                selectedAccounts = selectedAccounts.filter(a => a !== idx);
+              console.log("clicked: ", idx);
+              if (selectedAccounts.includes(idx)) {
+                selectedAccounts = selectedAccounts.filter((i) => i !== idx);
               } else {
                 selectedAccounts.push(idx)
               }
