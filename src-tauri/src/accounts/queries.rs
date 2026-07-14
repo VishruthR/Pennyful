@@ -4,7 +4,7 @@ use plaid::model::{AccountBase, AccountSubtype, AccountType};
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 
-pub async fn upsert_new_plaid_accounts(
+pub async fn insert_new_plaid_accounts(
     pool: &Pool<Sqlite>,
     bank: Bank,
     accounts: Vec<AccountBase>,
@@ -25,7 +25,7 @@ pub async fn upsert_new_plaid_accounts(
         ON CONFLICT(plaid_account_id) WHERE plaid_account_id IS NOT NULL DO NOTHING
     "#;
 
-    let mut succesfully_inserted: u32 = 0;
+    let mut successfully_inserted: u32 = 0;
 
     for account in accounts {
         let account_type = match account.type_ {
@@ -54,7 +54,7 @@ pub async fn upsert_new_plaid_accounts(
             .and_then(types::Cents::from_dollars_f64)
             .unwrap_or_default();
 
-        sqlx::query(query)
+        let res = sqlx::query(query)
             .bind(account.account_id)
             .bind(account.name)
             .bind(account.official_name)
@@ -66,12 +66,12 @@ pub async fn upsert_new_plaid_accounts(
             .bind(current_balance)
             .execute(pool)
             .await
-            .map_err(|e| format!("Failed to upsert {e}"))?;
+            .map_err(|e| format!("Failed to insert {e}"))?;
 
-        succesfully_inserted += 1;
+        successfully_inserted += res.rows_affected() as u32;
     }
 
-    Ok(succesfully_inserted)
+    Ok(successfully_inserted)
 }
 
 pub async fn get_account_id_by_plaid_id(
@@ -143,6 +143,18 @@ mod tests {
     use super::*;
     use crate::types::{AccountType, Cents};
     use rust_decimal::dec;
+    use serde_json::json;
+
+    fn plaid_account(account_id: &str, type_: &str, subtype: Option<&str>) -> AccountBase {
+        serde_json::from_value(json!({
+            "account_id": account_id,
+            "balances": { "available": 100.0, "current": 150.0 },
+            "name": account_id,
+            "type": type_,
+            "subtype": subtype,
+        }))
+        .expect("valid AccountBase")
+    }
 
     fn get_expected_full_accounts() -> Vec<FullAccount> {
         vec![
@@ -194,6 +206,138 @@ mod tests {
 
         assert_eq!(map.len(), 1);
         assert_eq!(map.get("plaid-acct-1"), Some(&1));
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("accounts_of_item")))]
+    async fn get_accounts_of_item_returns_only_that_items_accounts(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let accounts = get_accounts_of_item(&pool, &"item-1".to_owned()).await?;
+
+        let ids: Vec<i64> = accounts.iter().map(|a| a.id).collect();
+        assert_eq!(ids, vec![1, 2]);
+        assert!(accounts
+            .iter()
+            .all(|a| a.plaid_item_id == Some("item-1".to_owned())));
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("accounts_of_item")))]
+    async fn get_accounts_of_item_is_empty_for_unknown_item(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let accounts = get_accounts_of_item(&pool, &"does-not-exist".to_owned()).await?;
+
+        assert!(accounts.is_empty());
+        Ok(())
+    }
+
+    async fn seed_bank(pool: &Pool<Sqlite>) -> Bank {
+        sqlx::query("INSERT INTO bank (id, plaid_item_id, bank_name) VALUES (1, 'item-1', 'Test Bank')")
+            .execute(pool)
+            .await
+            .expect("seed bank");
+        Bank::new(1, Some("item-1".to_owned()), None, "Test Bank".to_owned())
+    }
+
+    #[sqlx::test]
+    async fn insert_maps_plaid_types_to_account_types(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let bank = seed_bank(&pool).await;
+
+        let inserted = insert_new_plaid_accounts(
+            &pool,
+            bank,
+            vec![
+                plaid_account("acct-check", "depository", Some("checking")),
+                plaid_account("acct-save", "depository", Some("savings")),
+                plaid_account("acct-credit", "credit", None),
+            ],
+        )
+        .await?;
+        assert_eq!(inserted, 3);
+
+        let rows: Vec<(String, String)> = sqlx::query_as(
+            "SELECT plaid_account_id, account_type FROM account ORDER BY plaid_account_id",
+        )
+        .fetch_all(&pool)
+        .await?;
+        assert_eq!(
+            rows,
+            vec![
+                ("acct-check".to_owned(), "CHECKINGS".to_owned()),
+                ("acct-credit".to_owned(), "CREDIT".to_owned()),
+                ("acct-save".to_owned(), "SAVINGS".to_owned()),
+            ]
+        );
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn insert_skips_already_linked_accounts(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let bank = seed_bank(&pool).await;
+
+        let first = insert_new_plaid_accounts(
+            &pool,
+            Bank::new(1, Some("item-1".to_owned()), None, "Test Bank".to_owned()),
+            vec![plaid_account("acct-1", "depository", Some("checking"))],
+        )
+        .await?;
+        assert_eq!(first, 1);
+
+        // Re-linking the same account must not duplicate it or count as inserted.
+        let second = insert_new_plaid_accounts(
+            &pool,
+            bank,
+            vec![plaid_account("acct-1", "depository", Some("checking"))],
+        )
+        .await?;
+        assert_eq!(second, 0);
+
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM account")
+            .fetch_one(&pool)
+            .await?;
+        assert_eq!(count, 1);
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn insert_rejects_unsupported_account_shapes(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let bank = || Bank::new(1, Some("item-1".to_owned()), None, "Test Bank".to_owned());
+        seed_bank(&pool).await;
+
+        // Depository account with no subtype cannot be classified.
+        assert!(insert_new_plaid_accounts(
+            &pool,
+            bank(),
+            vec![plaid_account("acct-1", "depository", None)],
+        )
+        .await
+        .is_err());
+
+        // Depository subtype that is neither checking nor savings is unsupported.
+        assert!(insert_new_plaid_accounts(
+            &pool,
+            bank(),
+            vec![plaid_account("acct-2", "depository", Some("cd"))],
+        )
+        .await
+        .is_err());
+
+        // Account types other than depository/credit are unsupported.
+        assert!(insert_new_plaid_accounts(
+            &pool,
+            bank(),
+            vec![plaid_account("acct-3", "loan", None)],
+        )
+        .await
+        .is_err());
         Ok(())
     }
 }

@@ -57,7 +57,6 @@ pub async fn save_plaid_credentials(
     let username = store.get("username")
         .ok_or("Error fetching username from store")?
         .to_string();
-    println!("{username}");
 
     let client_id_entry = Entry::new("plaid_client_id", &username)
         .map_err(|e| format!("Error creating client_id_entry {e}"))?;
@@ -436,10 +435,10 @@ pub async fn add_new_plaid_accounts(
         .await
         .map_err(|e| format!("Failed to get bank: {e}"))?;
 
-    let succesfully_inserted =
-        accounts::queries::upsert_new_plaid_accounts(&db.0, bank, new_accounts).await?;
+    let successfully_inserted =
+        accounts::queries::insert_new_plaid_accounts(&db.0, bank, new_accounts).await?;
 
-    Ok(succesfully_inserted)
+    Ok(successfully_inserted)
 }
 
 async fn fetch_item_and_upsert(

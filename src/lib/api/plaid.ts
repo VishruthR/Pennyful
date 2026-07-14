@@ -28,12 +28,6 @@ const getAccountsOfItemFromPlaid = async (item_id: string): Promise<AccountsGetR
   })) as AccountsGetResponse;
 }
 
-const fetchItemAndAccounts = async (item_id: string): Promise<string> => {
-  return (await invoke("fetch_item_and_accounts", {
-    itemId: item_id
-  })) as string;
-}
-
 const addNewPlaidAccounts = async (accounts: PlaidAccount[], item_id: string): Promise<number> => {
   return (await invoke("add_new_plaid_accounts", {
     newAccounts: accounts,
@@ -52,7 +46,6 @@ export const plaidApi = {
     savePlaidCredentials,
     generateLinkToken,
     generateAccessTokenFromHostedLink,
-    fetchItemAndAccounts,
     syncTransactions,
     getAccountsOfItem,
     getAccountsOfItemFromPlaid,

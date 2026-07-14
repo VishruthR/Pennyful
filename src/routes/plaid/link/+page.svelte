@@ -6,13 +6,11 @@
     import { plaidApi } from "$lib/api/plaid";
     import Button from "$lib/components/Button.svelte";
     import { goto } from "$app/navigation";
-    import { PUBLIC_ITEM_ID } from "$env/static/public";
 
   // TODO: Handle errors
 
   // Step 1 state
-  // let item_id: string = $state("");
-  let item_id: string = $state(PUBLIC_ITEM_ID);
+  let item_id: string = $state("");
 
   // Step 2 state
   let alreadyAddedAccounts: (string | null)[] = $state([]);
@@ -53,7 +51,7 @@
         }
 
         await plaidApi.addNewPlaidAccounts(
-          accounts.accounts.filter((_, idx) => idx in selectedAccounts),
+          accountsToSelect.filter((_, idx) => selectedAccounts.includes(idx)),
           item_id
         )
       },
@@ -62,7 +60,7 @@
     {
       name: "Sync Transactions",
       content: step3Content,
-      canProced: () => numTransactions !== null,
+      canProceed: () => numTransactions !== null,
       onNext: async () => {
         goto("/")
       },
@@ -70,8 +68,6 @@
     },
   ];
 
-  $inspect(accounts);
-  $inspect(alreadyAddedAccounts);
   const accountsToSelect: PlaidAccount[] = $derived.by(() => {
      return accounts !== null 
       ? accounts.accounts.filter(a => !alreadyAddedAccounts.includes(a.account_id))

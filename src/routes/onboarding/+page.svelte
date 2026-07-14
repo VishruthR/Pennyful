@@ -58,7 +58,7 @@
       return;
     }
 
-    console.log(await plaidApi.savePlaidCredentials(clientId, secret));
+    await plaidApi.savePlaidCredentials(clientId, secret);
     goto("/");
   };
 
@@ -168,6 +168,12 @@
           </div>
         </div>
       </div>
+
+      <div class="body">
+        <p class="paragraph step-note">
+          Note: Since Pennyful stores credentials securely on your device's keychain, your device may prompt you for the device password whenever Pennyful tries to use these credentials. We recommend selecting "Always Allow" when your device prompts you for the password.
+        </p>
+      </div>
     {/if}
   </div>
 
@@ -242,6 +248,11 @@
     cursor: pointer;
   }
 
+  .step-note {
+    font-size: 12px;
+    color: var(--grey-200);
+  }
+
   /* Step 1: username */
   .username-row {
     display: flex;
@@ -282,7 +293,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    margin-top: 48px;
+    margin: 24px;
   }
 
   .field {
