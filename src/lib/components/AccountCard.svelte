@@ -13,16 +13,24 @@
     accountType: string;
     subname: string;
     balance: number;
+    disabled?: boolean;
     selected?: boolean;
     onClick: () => void;
   }
+  let { icon, name, accountType, subname, balance, disabled = false, selected = false, onClick }: Props = $props();
 
-  let { icon, name, accountType, subname, balance, selected = false, onClick }: Props = $props();
+  const handleClick = () => {
+    if (disabled) {
+      return;
+    }
+
+    onClick();
+  }
 
   const isNegative = $derived(balance < 0);
 </script>
 
-<button class="bank-account-card" class:selected onclick={onClick}>
+<button class="bank-account-card" class:disabled class:selected onclick={handleClick}>
   <div class="card-header">
     <Icon {icon} width={24} height={24} />
     <span class="account-name h3">{name}</span>
@@ -45,7 +53,7 @@
     width: 100%;
     padding: 16px 20px;
     border-radius: 10px;
-    border: 2px solid var(--grey-300);
+    border: 2px solid var(--grey-200);
     background-color: var(--pure-white);
     cursor: pointer;
     transition: background-color 0.15s ease;
@@ -53,9 +61,16 @@
     font-family: inherit;
   }
 
-  .bank-account-card:hover,
-  .bank-account-card.selected {
+  .bank-account-card:hover {
     background-color: var(--blue-50);
+  }
+
+  .bank-account-card.selected {
+    border: 2px solid var(--grey-300);
+  }
+
+  .bank-account-card.disabled {
+    background-color: var(--grey-100);
   }
 
   .bank-account-card:focus-visible {

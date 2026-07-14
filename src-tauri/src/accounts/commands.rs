@@ -1,12 +1,23 @@
 use crate::AppState;
-use crate::types::FullAccount;
-use crate::accounts::queries::get_full_accounts;
+use crate::types::{Account, FullAccount};
+use crate::accounts::queries;
 
 #[tauri::command]
 pub async fn get_all_accounts(state: tauri::State<'_, AppState>) -> Result<Vec<FullAccount>, String> {
     let db = &state.db;
 
-    let accounts = get_full_accounts(&db.0)
+    let accounts = queries::get_full_accounts(&db.0)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(accounts)
+}
+
+#[tauri::command]
+pub async fn get_accounts_of_item(state: tauri::State<'_, AppState>, item_id: String) -> Result<Vec<Account>, String> {
+    let db = &state.db;
+
+    let accounts = queries::get_accounts_of_item(&db.0, &item_id)
         .await
         .map_err(|e| e.to_string())?;
 

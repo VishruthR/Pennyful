@@ -320,7 +320,7 @@ pub async fn generate_access_token_from_hosted_link(state: tauri::State<'_, AppS
 }
 
 #[tauri::command]
-pub async fn get_accounts_of_item(state: tauri::State<'_, AppState>, item_id: String) -> Result<AccountsGetResponse, String> {
+pub async fn get_accounts_of_item_from_plaid(state: tauri::State<'_, AppState>, item_id: String) -> Result<AccountsGetResponse, String> {
     let db = &state.db;
     let client = plaid_client();
 

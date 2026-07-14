@@ -1,20 +1,21 @@
 <script lang="ts">
   import Stepper from "$lib/components/Stepper.svelte";
   import AccountCard from "$lib/components/AccountCard.svelte";
-  import type { AccountsGetResponse, PlaidAccount, PlaidItem } from "$lib/types";
+  import type { Account, AccountsGetResponse, PlaidAccount, PlaidItem } from "$lib/types";
   import PlaidLink from "$lib/components/PlaidLink.svelte";
     import { plaidApi } from "$lib/api/plaid";
     import Button from "$lib/components/Button.svelte";
     import { goto } from "$app/navigation";
+    import { PUBLIC_ITEM_ID } from "$env/static/public";
 
   // TODO: Handle errors
 
-  let currentStep = $state(0);
-
   // Step 1 state
-  let item_id: string = $state("");
+  // let item_id: string = $state("");
+  let item_id: string = $state(PUBLIC_ITEM_ID);
 
   // Step 2 state
+  let alreadyAddedAccounts: (string | null)[] = $state([]);
   let accounts: AccountsGetResponse | null = $state(null);
   let selectedAccounts: number[] = $state([]);
 
@@ -40,7 +41,8 @@
       onNext: async () => {
         currentStep = 1;
 
-        accounts = await plaidApi.getAccountsOfItem(item_id);
+        alreadyAddedAccounts = (await plaidApi.getAccountsOfItem(item_id)).map((a) => a.plaid_account_id);
+        accounts = await plaidApi.getAccountsOfItemFromPlaid(item_id);
       },
     },
     {
@@ -76,8 +78,18 @@
     },
   ];
 
-  $inspect(item_id);
-  $inspect(selectedAccounts);
+  $inspect(accounts);
+  $inspect(alreadyAddedAccounts);
+  const accountsToSelect: PlaidAccount[] = $derived.by(() => {
+     return accounts !== null 
+      ? accounts.accounts.filter(a => !alreadyAddedAccounts.includes(a.account_id))
+      : [];
+  });
+  const accountsAlreadyAdded: PlaidAccount[] = $derived.by(() => {
+    return accounts !== null
+      ? accounts.accounts.filter(a => alreadyAddedAccounts.includes(a.account_id))
+      : [];
+  })
 </script>
 
 {#snippet step1Content()}
@@ -94,34 +106,55 @@
 {#snippet step2Content()}
   <div class="step-container">
     <div class="step-text-container">
-      <h2 class="h2 step-title">Select bank accounts</h2>
+      <h2 class="h2">Select bank accounts</h2>
       <p class="paragraph step-description">Select which accounts you want to add to Pennyful</p>
     </div>
    
-    <div class="accounts-grid">
-      {#if accounts !== null}
-        {#each accounts.accounts as account, idx}
-          <AccountCard
-            icon="mdi:bank"
-            name={account.name}
-            subname={getAccountSubname(account, (accounts as AccountsGetResponse).item)}
-            accountType={account.type}
-            balance={account.balances.current}
-            selected={selectedAccounts.includes(idx)}
-            onClick={() => {
-              console.log("clicked: ", idx);
-              if (selectedAccounts.includes(idx)) {
-                selectedAccounts = selectedAccounts.filter((i) => i !== idx);
-              } else {
-                selectedAccounts.push(idx)
-              }
-            }}
-          />
-        {/each}
+    {#if accounts !== null && alreadyAddedAccounts !== null}
+      {#if accountsToSelect.length > 0}
+        <div class="accounts-grid">
+          {#each accountsToSelect as account, idx}
+            <AccountCard
+              icon="mdi:bank"
+              name={account.name}
+              subname={getAccountSubname(account, (accounts as AccountsGetResponse).item)}
+              accountType={account.type}
+              balance={account.balances.current}
+              selected={selectedAccounts.includes(idx)}
+              onClick={() => {
+                if (selectedAccounts.includes(idx)) {
+                  selectedAccounts = selectedAccounts.filter((i) => i !== idx);
+                } else {
+                  selectedAccounts.push(idx)
+                }
+              }}
+            />
+          {/each}
+        </div>
       {:else}
-        <p>Loading...</p>
+        <p class="paragraph step-description">No accounts found from this institution.</p>
       {/if}
-    </div>
+      {#if accountsAlreadyAdded.length > 0}
+        <div class="step-text-container">
+          <h3 class="h3 step-subtitle">Already added</h3>
+        </div>
+        <div class="accounts-grid">
+          {#each accountsAlreadyAdded as account}
+            <AccountCard
+              icon="mdi:bank"
+              name={account.name}
+              subname={getAccountSubname(account, (accounts as AccountsGetResponse).item)}
+              accountType={account.type}
+              balance={account.balances.current}
+              disabled
+              onClick={() => {}}
+            />
+          {/each}
+        </div>
+      {/if}
+    {:else}
+      <p>Loading...</p>
+    {/if}
   </div>
 {/snippet}
 
@@ -178,6 +211,10 @@
   .step-text-container {
     width: 100%;
     margin-bottom: 24px;
+  }
+
+  .step-subtitle {
+    margin-bottom: 0px;
   }
 
   .step-description {

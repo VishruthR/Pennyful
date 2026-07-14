@@ -104,7 +104,8 @@ pub fn run() {
             plaid::commands::generate_access_token_from_hosted_link,
             plaid::commands::sync_transactions,
             plaid::commands::add_new_plaid_accounts,
-            plaid::commands::get_accounts_of_item
+            plaid::commands::get_accounts_of_item_from_plaid,
+            accounts::commands::get_accounts_of_item
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -24,6 +24,7 @@ impl PlaidAccount {
     pub fn account_id(&self) -> &String {
         &self.account_id
     }
+
     pub fn new(
         account_id: String,
         balances: Balances,

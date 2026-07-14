@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use plaid::model::{AccountBase, AccountSubtype, AccountType};
 use sqlx::{Pool, Sqlite};
-use crate::types::{Bank, FullAccount};
+use crate::types::{Account, Bank, FullAccount};
 use crate::types;
 
 pub async fn upsert_new_plaid_accounts(
@@ -84,6 +84,32 @@ pub async fn get_account_id_by_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<S
         .await?;
 
     Ok(accounts.into_iter().collect())
+}
+
+pub async fn get_accounts_of_item(pool: &Pool<Sqlite>, item_id: &String) -> Result<Vec<Account>, sqlx::Error> {
+    let query = r#"
+        SELECT
+            a.id,
+            a.plaid_account_id,
+            a.name,
+            a.official_name,
+            a.bank_id,
+            a.plaid_item_id,
+            a.account_type,
+            a.initial_balance_cents,
+            a.available_balance_cents,
+            a.current_balance_cents
+        FROM account a
+        WHERE a.plaid_item_id=?
+        ORDER BY a.id
+    "#;
+
+    let accounts: Vec<Account> = sqlx::query_as(query)
+        .bind(item_id)
+        .fetch_all(pool)
+        .await?;
+
+    Ok(accounts)
 }
 
 pub async fn get_full_accounts(pool: &Pool<Sqlite>) -> Result<Vec<FullAccount>, sqlx::Error> {
