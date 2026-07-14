@@ -1,31 +1,89 @@
-use crate::{AppState};
-use ::plaid::{PlaidAuth, PlaidClient, model::{AccountBase, AccountsGetResponse, CountryCode, LinkTokenCreateHostedLink, LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, PlaidError, Products, RemovedTransaction, Transaction, TransactionsSyncRequestOptions}, request::link_token_create::LinkTokenCreateRequired};
-use crate::plaid;
-use crate::banks;
 use crate::accounts;
+use crate::banks;
+use crate::plaid;
+use crate::plaid::types::PlaidTransaction;
 use crate::transactions;
-use crate::types::{Cents};
-use crate::plaid::types::{PlaidTransaction};
+use crate::types::Cents;
+use crate::AppState;
+use keyring::Entry;
+use ::plaid::{
+    model::{
+        AccountBase, AccountsGetResponse, CountryCode, LinkTokenCreateHostedLink,
+        LinkTokenCreateRequestUser, LinkTokenGetSessionsResponse, PlaidError, Products,
+        RemovedTransaction, Transaction, TransactionsSyncRequestOptions,
+    },
+    request::link_token_create::LinkTokenCreateRequired,
+    PlaidAuth, PlaidClient,
+};
 use dotenvy_macro::dotenv;
 use httpclient::{Client, InMemoryResponseExt};
+use tauri_plugin_store::StoreExt;
 
-fn plaid_client() -> PlaidClient {
+fn plaid_client(app_handle: &tauri::AppHandle) -> Result<PlaidClient, String> {
     let http_client = Client::new().base_url(dotenv!("PLAID_ENV"));
+
+    let store = app_handle.store("store.json")
+        .map_err(|e| format!("Error getting store: {e}"))?;
+    let username = store.get("username")
+        .ok_or("Error fetching username from store")?
+        .to_string();
+    
+    let client_id_entry = Entry::new("plaid_client_id", &username)
+        .map_err(|e| format!("Error creating client_id_entry {e}"))?;
+    let client_id = client_id_entry.get_password()
+        .map_err(|e| format!("Error getting client_id_entry password {e}"))?;
+
+    let secret_entry = Entry::new("plaid_secret", &username)
+        .map_err(|e| format!("Error creating secret_entry {e}"))?;
+    let secret = secret_entry.get_password()
+        .map_err(|e| format!("Error getting secret_entry password {e}"))?;
+
     let auth = PlaidAuth::ClientId {
-        client_id: dotenv!("PLAID_CLIENT_ID").to_string(),
-        secret: dotenv!("PLAID_SECRET").to_string(),
+        client_id: client_id,
+        secret: secret,
         version: dotenv!("PLAID_VERSION").to_string(),
     };
-    PlaidClient::new(http_client, auth)
+    Ok(PlaidClient::new(http_client, auth))
 }
 
 #[tauri::command]
-pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: String, days_requested: Option<i64>) -> Result<usize, String> {
-    let client = plaid_client();
+pub async fn save_plaid_credentials(
+    app_handle: tauri::AppHandle, 
+    client_id: String, 
+    secret: String
+) -> Result<(), String> {
+    let store = app_handle.store("store.json")
+        .map_err(|e| format!("Error getting store: {e}"))?;
+    let username = store.get("username")
+        .ok_or("Error fetching username from store")?
+        .to_string();
+    println!("{username}");
+
+    let client_id_entry = Entry::new("plaid_client_id", &username)
+        .map_err(|e| format!("Error creating client_id_entry {e}"))?;
+    client_id_entry.set_password(&client_id)
+        .map_err(|e| format!("Error setting client_id_entry password {e}"))?;
+
+    let secret_entry = Entry::new("plaid_secret", &username)
+        .map_err(|e| format!("Error creating secret_entry {e}"))?;
+    secret_entry.set_password(&secret)
+        .map_err(|e| format!("Error setting secret_entry password {e}"))?;
+
+    Ok(()) 
+}
+
+#[tauri::command]
+pub async fn sync_transactions(
+    app_handle: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    item_id: String,
+    days_requested: Option<i64>,
+) -> Result<usize, String> {
+    let client = plaid_client(&app_handle)?;
     let db = &state.db;
     let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
         .await
-        .map_err(|e| format!("Error with fetching plaid_item: {e}"))?; 
+        .map_err(|e| format!("Error with fetching plaid_item: {e}"))?;
 
     let plaid_account_id_to_account_id = accounts::queries::get_account_id_by_plaid_id(&db.0)
         .await
@@ -36,8 +94,9 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
         plaid_item.access_token(),
         plaid_item.cursor(),
         days_requested,
-        None
-    ).await?;
+        None,
+    )
+    .await?;
 
     let num_added = synced_transactions.added.len();
     let num_modified = synced_transactions.modified.len();
@@ -48,28 +107,34 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
     let added: Vec<PlaidTransaction> = synced_transactions
         .added
         .into_iter()
-        .filter_map(|t| match plaid_account_id_to_account_id.get(t.plaid_account_id()) {
-            Some(&account_id) => Some(t.update_account_id(account_id)),
-            None => {
-                eprintln!(
-                    "Skipping added transaction {:?}: no local account for plaid_account_id {}",
-                    t.plaid_transaction_id, t.plaid_account_id()
-                );
-                None
-            }
-        })
+        .filter_map(
+            |t| match plaid_account_id_to_account_id.get(t.plaid_account_id()) {
+                Some(&account_id) => Some(t.update_account_id(account_id)),
+                None => {
+                    eprintln!(
+                        "Skipping added transaction {:?}: no local account for plaid_account_id {}",
+                        t.plaid_transaction_id,
+                        t.plaid_account_id()
+                    );
+                    None
+                }
+            },
+        )
         .collect();
 
     // Apply all writes (and the cursor advance) in one transaction so a partial
     // failure rolls back and the sync cleanly re-runs from the same cursor.
-    let mut tx = db.0.begin()
-        .await
-        .map_err(|e| format!("Failed to begin transaction: {e}"))?;
+    let mut tx =
+        db.0.begin()
+            .await
+            .map_err(|e| format!("Failed to begin transaction: {e}"))?;
 
     let skipped_duplicates = transactions::queries::add_plaid_transactions(&mut tx, added)
         .await
         .map_err(|e| format!("Failed to add plaid transactions: {e}"))?;
-    println!("Skipped {skipped_duplicates} already-synced transactions (plaid_transaction_id conflicts)");
+    println!(
+        "Skipped {skipped_duplicates} already-synced transactions (plaid_transaction_id conflicts)"
+    );
     transactions::queries::modify_plaid_transactions(&mut tx, synced_transactions.modified)
         .await
         .map_err(|e| format!("Failed to modify plaid transactions: {e}"))?;
@@ -88,17 +153,20 @@ pub async fn sync_transactions(state: tauri::State<'_, AppState>, item_id: Strin
     Ok(num_added + num_modified + num_removed)
 }
 
-fn plaid_transaction_to_new_transaction(plaid_transaction: Transaction) -> Result<PlaidTransaction, String> {
+fn plaid_transaction_to_new_transaction(
+    plaid_transaction: Transaction,
+) -> Result<PlaidTransaction, String> {
     let plaid_transaction_id = plaid_transaction.transaction_id.clone();
-    let amount = Cents::from_dollars_f64(plaid_transaction.amount)
-        .ok_or(format!("transaction {plaid_transaction_id} does not have a valid amount"))?;
+    let amount = Cents::from_dollars_f64(plaid_transaction.amount).ok_or(format!(
+        "transaction {plaid_transaction_id} does not have a valid amount"
+    ))?;
     // The name field of Transaction is non-nullable so using a default value here is fine
-    let name = plaid_transaction.merchant_name.clone()
-        .unwrap_or(plaid_transaction.original_description.clone()
-            .unwrap_or(plaid_transaction.name.clone()
-                .unwrap_or("".to_string())
-            )
-        );
+    let name = plaid_transaction.merchant_name.clone().unwrap_or(
+        plaid_transaction
+            .original_description
+            .clone()
+            .unwrap_or(plaid_transaction.name.clone().unwrap_or("".to_string())),
+    );
 
     Ok(PlaidTransaction::new(
         Some(plaid_transaction_id),
@@ -116,15 +184,15 @@ fn plaid_transaction_to_new_transaction(plaid_transaction: Transaction) -> Resul
 struct SyncedTransactions {
     added: Vec<PlaidTransaction>,
     modified: Vec<PlaidTransaction>,
-    removed: Vec<RemovedTransaction>
+    removed: Vec<RemovedTransaction>,
 }
 
 async fn sync_transactions_with_retry(
-    client: PlaidClient, 
-    access_token: &String, 
-    original_cursor: &Option<String>, 
-    days_requested: Option<i64>, 
-    retries_left: Option<u8>
+    client: PlaidClient,
+    access_token: &String,
+    original_cursor: &Option<String>,
+    days_requested: Option<i64>,
+    retries_left: Option<u8>,
 ) -> Result<(SyncedTransactions, Option<String>), String> {
     let retries_left = retries_left.unwrap_or(3);
     if retries_left == 0 {
@@ -135,18 +203,19 @@ async fn sync_transactions_with_retry(
     let mut all_data = SyncedTransactions {
         added: vec![],
         modified: vec![],
-        removed: vec![]
+        removed: vec![],
     };
 
     loop {
-        let mut transactions_sync_request = client
-            .transactions_sync(access_token)
-            .options(TransactionsSyncRequestOptions {
-                days_requested,
-                include_logo_and_counterparty_beta: Some(false),
-                include_original_description: Some(true),
-                include_personal_finance_category: Some(true)
-            });
+        let mut transactions_sync_request =
+            client
+                .transactions_sync(access_token)
+                .options(TransactionsSyncRequestOptions {
+                    days_requested,
+                    include_logo_and_counterparty_beta: Some(false),
+                    include_original_description: Some(true),
+                    include_personal_finance_category: Some(true),
+                });
         if let Some(ref cursor) = cursor {
             transactions_sync_request = transactions_sync_request.cursor(cursor);
         }
@@ -160,8 +229,9 @@ async fn sync_transactions_with_retry(
                 return Err(format!("transactions_sync failed: {p}"));
             }
             Err(httpclient::Error::HttpError(resp)) => {
-                let plaid_error = resp.json::<PlaidError>()
-                    .map_err(|e| format!("transactions_sync failed, unparseable error body: {e}"))?;
+                let plaid_error = resp.json::<PlaidError>().map_err(|e| {
+                    format!("transactions_sync failed, unparseable error body: {e}")
+                })?;
                 if plaid_error.error_code == "SYNC_MUTATION_ERROR_DURING_PAGINATION" {
                     // The underlying data changed while we were paginating. Plaid asks
                     // us to discard this partial run and restart from the cursor we
@@ -172,7 +242,8 @@ async fn sync_transactions_with_retry(
                         original_cursor,
                         days_requested,
                         Some(retries_left - 1),
-                    )).await;
+                    ))
+                    .await;
                 }
                 return Err(format!(
                     "transactions_sync failed: {} ({})",
@@ -183,27 +254,21 @@ async fn sync_transactions_with_retry(
 
         // If a transaction fails to fit our data model (probably due to amount conversion) then it
         // will be logged and filtered here
-        all_data.added.extend(
-            transactions
-                .added
-                .into_iter()
-                .filter_map(|t| plaid_transaction_to_new_transaction(t)
+        all_data
+            .added
+            .extend(transactions.added.into_iter().filter_map(|t| {
+                plaid_transaction_to_new_transaction(t)
                     .map_err(|e| eprintln!("Skipping added transaction: {e}"))
-                    .ok())
-        );
-        all_data.modified.extend(
-            transactions
-                .modified
-                .into_iter()
-                .filter_map(|t| plaid_transaction_to_new_transaction(t)
+                    .ok()
+            }));
+        all_data
+            .modified
+            .extend(transactions.modified.into_iter().filter_map(|t| {
+                plaid_transaction_to_new_transaction(t)
                     .map_err(|e| eprintln!("Skipping modified transaction: {e}"))
-                    .ok())
-        );
-        all_data.removed.extend(
-            transactions
-                .removed
-                .into_iter()
-        );
+                    .ok()
+            }));
+        all_data.removed.extend(transactions.removed.into_iter());
 
         cursor = Some(transactions.next_cursor);
 
@@ -243,8 +308,11 @@ fn extract_public_token(
 }
 
 #[tauri::command]
-pub async fn generate_link_token(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    let client = plaid_client();
+pub async fn generate_link_token(
+    app_handle: tauri::AppHandle, 
+    state: tauri::State<'_, AppState>
+) -> Result<String, String> {
+    let client = plaid_client(&app_handle)?;
     let completion_redirect_uri = completion_redirect_uri_for(tauri::is_dev());
 
     let client_name = "Pennyful";
@@ -264,7 +332,8 @@ pub async fn generate_link_token(state: tauri::State<'_, AppState>) -> Result<St
         ssn: None,
     };
 
-    let link_token_create_resp = client.link_token_create(LinkTokenCreateRequired {
+    let link_token_create_resp = client
+        .link_token_create(LinkTokenCreateRequired {
             client_name,
             country_codes,
             language,
@@ -282,52 +351,71 @@ pub async fn generate_link_token(state: tauri::State<'_, AppState>) -> Result<St
 
     let mut link_token = state.link_token.lock().await;
     *link_token = Some(link_token_create_resp.link_token.clone());
-    Ok(link_token_create_resp.hosted_link_url.ok_or("no hosted_link_url returned")?)
+    Ok(link_token_create_resp
+        .hosted_link_url
+        .ok_or("no hosted_link_url returned")?)
 }
 
-pub async fn complete_hosted_link(state: &AppState) -> Result<(String, u64), String> {
+pub async fn complete_hosted_link(
+    app_handle: &tauri::AppHandle, 
+    state: &AppState
+) -> Result<(String, u64), String> {
     let db = &state.db;
-    let client = plaid_client();
+    let client = plaid_client(app_handle)?;
 
     let link_token = state.link_token.lock().await;
     let Some(ref link_token) = *link_token else {
         return Err("Link token not set".to_owned());
     };
 
-    let link_token_resp = client.link_token_get(&link_token)
+    let link_token_resp = client
+        .link_token_get(&link_token)
         .await
         .map_err(|e| format!("link_token_get failed: {e}"))?;
 
     let public_token = extract_public_token(link_token_resp.link_sessions)?;
 
-    let response = client.item_public_token_exchange(&public_token).await.map_err(|e| format!("token exchange failed: {e}"))?;
-
-    let rows_affected = plaid::queries::insert_plaid_item_without_cursor(&db.0, &response.item_id, &response.access_token)
+    let response = client
+        .item_public_token_exchange(&public_token)
         .await
-        .map_err(|e| e.to_string());
+        .map_err(|e| format!("token exchange failed: {e}"))?;
+
+    let rows_affected = plaid::queries::insert_plaid_item_without_cursor(
+        &db.0,
+        &response.item_id,
+        &response.access_token,
+    )
+    .await
+    .map_err(|e| e.to_string());
 
     Ok((response.item_id, rows_affected?))
 }
 
 #[tauri::command]
-pub async fn generate_access_token_from_hosted_link(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    let (item_id, _rows_affected) = complete_hosted_link(state.inner()).await?;
+pub async fn generate_access_token_from_hosted_link(
+    app_handle: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
+    let (item_id, _rows_affected) = complete_hosted_link(&app_handle, state.inner()).await?;
 
-    fetch_item_and_upsert(&state, &item_id)
-        .await?;
+    fetch_item_and_upsert(&app_handle, &state, &item_id).await?;
 
     Ok(item_id)
 }
 
 #[tauri::command]
-pub async fn get_accounts_of_item_from_plaid(state: tauri::State<'_, AppState>, item_id: String) -> Result<AccountsGetResponse, String> {
+pub async fn get_accounts_of_item_from_plaid(
+    app_handle: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    item_id: String,
+) -> Result<AccountsGetResponse, String> {
     let db = &state.db;
-    let client = plaid_client();
+    let client = plaid_client(&app_handle)?;
 
     let plaid_item = plaid::queries::get_plaid_item(&db.0, &item_id)
         .await
         .map_err(|e| format!("Failed to get plaid_item: {e}"))?;
-    
+
     let accounts_get_resp = client
         .accounts_get(plaid_item.access_token())
         .await
@@ -337,22 +425,30 @@ pub async fn get_accounts_of_item_from_plaid(state: tauri::State<'_, AppState>, 
 }
 
 #[tauri::command]
-pub async fn add_new_plaid_accounts(state: tauri::State<'_, AppState>, new_accounts: Vec<AccountBase>, item_id: String) -> Result<u32, String> {
+pub async fn add_new_plaid_accounts(
+    state: tauri::State<'_, AppState>,
+    new_accounts: Vec<AccountBase>,
+    item_id: String,
+) -> Result<u32, String> {
     let db = &state.db;
-    
+
     let bank = banks::queries::get_bank_by_item_id(&db.0, &item_id)
         .await
         .map_err(|e| format!("Failed to get bank: {e}"))?;
-    
-    let succesfully_inserted = accounts::queries::upsert_new_plaid_accounts(&db.0, bank, new_accounts)
-        .await?;
+
+    let succesfully_inserted =
+        accounts::queries::upsert_new_plaid_accounts(&db.0, bank, new_accounts).await?;
 
     Ok(succesfully_inserted)
 }
 
-async fn fetch_item_and_upsert(state: &tauri::State<'_, AppState>, item_id: &String) -> Result<(), String> {
+async fn fetch_item_and_upsert(
+    app_handle: &tauri::AppHandle,
+    state: &tauri::State<'_, AppState>,
+    item_id: &String,
+) -> Result<(), String> {
     let db = &state.db;
-    let client = plaid_client();
+    let client = plaid_client(app_handle)?;
 
     let plaid_item = plaid::queries::get_plaid_item(&db.0, item_id)
         .await
@@ -367,7 +463,7 @@ async fn fetch_item_and_upsert(state: &tauri::State<'_, AppState>, item_id: &Str
     banks::queries::upsert_item_from_plaid(&db.0, &item)
         .await
         .map_err(|e| format!("Error upserting account from plaid: {e}"))?;
-    
+
     Ok(())
 }
 
@@ -376,7 +472,8 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    #[test] fn dev_build_omits_completion_redirect() {
+    #[test]
+    fn dev_build_omits_completion_redirect() {
         // In dev we can't receive the deep link, so Plaid should not redirect.
         assert_eq!(completion_redirect_uri_for(true), None);
     }

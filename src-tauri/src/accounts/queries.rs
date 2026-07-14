@@ -1,13 +1,13 @@
-use std::collections::HashMap;
+use crate::types;
+use crate::types::{Account, Bank, FullAccount};
 use plaid::model::{AccountBase, AccountSubtype, AccountType};
 use sqlx::{Pool, Sqlite};
-use crate::types::{Account, Bank, FullAccount};
-use crate::types;
+use std::collections::HashMap;
 
 pub async fn upsert_new_plaid_accounts(
     pool: &Pool<Sqlite>,
     bank: Bank,
-    accounts: Vec<AccountBase>
+    accounts: Vec<AccountBase>,
 ) -> Result<u32, String> {
     let query = r#"
         INSERT INTO account (
@@ -30,22 +30,27 @@ pub async fn upsert_new_plaid_accounts(
     for account in accounts {
         let account_type = match account.type_ {
             AccountType::Depository => {
-                match account.subtype.ok_or(format!("Account subtype doesn't exist"))? {
-                AccountSubtype::Savings => Ok(types::AccountType::Savings),
-                AccountSubtype::Checking => Ok(types::AccountType::Checkings),
-                _ => Err("Invalid account subtype")
+                match account
+                    .subtype
+                    .ok_or(format!("Account subtype doesn't exist"))?
+                {
+                    AccountSubtype::Savings => Ok(types::AccountType::Savings),
+                    AccountSubtype::Checking => Ok(types::AccountType::Checkings),
+                    _ => Err("Invalid account subtype"),
                 }
-            },
+            }
             AccountType::Credit => Ok(types::AccountType::Credit),
-            _ => return Err("Invalid account type".to_string())
+            _ => return Err("Invalid account type".to_string()),
         }?;
 
-        
-
-        let current_balance = account.balances.current
+        let current_balance = account
+            .balances
+            .current
             .and_then(types::Cents::from_dollars_f64)
             .unwrap_or_default();
-        let available_balance = account.balances.available
+        let available_balance = account
+            .balances
+            .available
             .and_then(types::Cents::from_dollars_f64)
             .unwrap_or_default();
 
@@ -69,7 +74,9 @@ pub async fn upsert_new_plaid_accounts(
     Ok(succesfully_inserted)
 }
 
-pub async fn get_account_id_by_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<String, i64>, sqlx::Error> {
+pub async fn get_account_id_by_plaid_id(
+    pool: &Pool<Sqlite>,
+) -> Result<HashMap<String, i64>, sqlx::Error> {
     let query = r#"
         SELECT
             a.plaid_account_id,
@@ -79,14 +86,15 @@ pub async fn get_account_id_by_plaid_id(pool: &Pool<Sqlite>) -> Result<HashMap<S
         ORDER BY a.id
     "#;
 
-    let accounts: Vec<(String, i64)> = sqlx::query_as(query)
-        .fetch_all(pool)
-        .await?;
+    let accounts: Vec<(String, i64)> = sqlx::query_as(query).fetch_all(pool).await?;
 
     Ok(accounts.into_iter().collect())
 }
 
-pub async fn get_accounts_of_item(pool: &Pool<Sqlite>, item_id: &String) -> Result<Vec<Account>, sqlx::Error> {
+pub async fn get_accounts_of_item(
+    pool: &Pool<Sqlite>,
+    item_id: &String,
+) -> Result<Vec<Account>, sqlx::Error> {
     let query = r#"
         SELECT
             a.id,
@@ -104,10 +112,7 @@ pub async fn get_accounts_of_item(pool: &Pool<Sqlite>, item_id: &String) -> Resu
         ORDER BY a.id
     "#;
 
-    let accounts: Vec<Account> = sqlx::query_as(query)
-        .bind(item_id)
-        .fetch_all(pool)
-        .await?;
+    let accounts: Vec<Account> = sqlx::query_as(query).bind(item_id).fetch_all(pool).await?;
 
     Ok(accounts)
 }
@@ -128,9 +133,7 @@ pub async fn get_full_accounts(pool: &Pool<Sqlite>) -> Result<Vec<FullAccount>, 
         ORDER BY a.id
     "#;
 
-    let accounts: Vec<FullAccount> = sqlx::query_as(query)
-        .fetch_all(pool)
-        .await?;
+    let accounts: Vec<FullAccount> = sqlx::query_as(query).fetch_all(pool).await?;
 
     Ok(accounts)
 }
@@ -138,8 +141,8 @@ pub async fn get_full_accounts(pool: &Pool<Sqlite>) -> Result<Vec<FullAccount>, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_decimal::dec;
     use crate::types::{AccountType, Cents};
+    use rust_decimal::dec;
 
     fn get_expected_full_accounts() -> Vec<FullAccount> {
         vec![
@@ -182,7 +185,9 @@ mod tests {
     }
 
     #[sqlx::test(fixtures(path = "../fixtures", scripts("plaid_sync")))]
-    async fn account_map_excludes_manual_accounts(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+    async fn account_map_excludes_manual_accounts(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // The fixture has a Plaid-linked account (id 1) and a manual one (id 2, no
         // plaid_account_id). Only the linked account should be resolvable.
         let map = get_account_id_by_plaid_id(&pool).await?;

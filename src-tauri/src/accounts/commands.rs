@@ -1,9 +1,11 @@
-use crate::AppState;
-use crate::types::{Account, FullAccount};
 use crate::accounts::queries;
+use crate::types::{Account, FullAccount};
+use crate::AppState;
 
 #[tauri::command]
-pub async fn get_all_accounts(state: tauri::State<'_, AppState>) -> Result<Vec<FullAccount>, String> {
+pub async fn get_all_accounts(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<FullAccount>, String> {
     let db = &state.db;
 
     let accounts = queries::get_full_accounts(&db.0)
@@ -14,7 +16,10 @@ pub async fn get_all_accounts(state: tauri::State<'_, AppState>) -> Result<Vec<F
 }
 
 #[tauri::command]
-pub async fn get_accounts_of_item(state: tauri::State<'_, AppState>, item_id: String) -> Result<Vec<Account>, String> {
+pub async fn get_accounts_of_item(
+    state: tauri::State<'_, AppState>,
+    item_id: String,
+) -> Result<Vec<Account>, String> {
     let db = &state.db;
 
     let accounts = queries::get_accounts_of_item(&db.0, &item_id)
@@ -27,12 +32,12 @@ pub async fn get_accounts_of_item(state: tauri::State<'_, AppState>, item_id: St
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sqlx::{Pool, Sqlite};
-    use tauri::Manager;
-    use tauri::async_runtime::Mutex;
-    use rust_decimal::dec;
     use crate::db::DatabaseState;
     use crate::types::{AccountType, Cents};
+    use rust_decimal::dec;
+    use sqlx::{Pool, Sqlite};
+    use tauri::async_runtime::Mutex;
+    use tauri::Manager;
 
     fn get_expected_full_accounts() -> Vec<FullAccount> {
         vec![

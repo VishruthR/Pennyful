@@ -1,6 +1,13 @@
 import type { Account, AccountsGetResponse, PlaidAccount } from "$lib/types";
 import { invoke } from "@tauri-apps/api/core";
 
+const savePlaidCredentials = async (client_id: string, secret: string): Promise<string> => {
+  return (await invoke("save_plaid_credentials", {
+    clientId: client_id,
+    secret: secret
+  })) as string;
+}
+
 const generateLinkToken = async (): Promise<string> => {
   return (await invoke("generate_link_token")) as string;
 }
@@ -42,6 +49,7 @@ const syncTransactions = async (item_id: string): Promise<number> => {
 }
 
 export const plaidApi = {
+    savePlaidCredentials,
     generateLinkToken,
     generateAccessTokenFromHostedLink,
     fetchItemAndAccounts,

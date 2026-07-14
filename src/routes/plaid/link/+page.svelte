@@ -39,8 +39,6 @@
       name: "Link an institution",
       content: step1Content,
       onNext: async () => {
-        currentStep = 1;
-
         alreadyAddedAccounts = (await plaidApi.getAccountsOfItem(item_id)).map((a) => a.plaid_account_id);
         accounts = await plaidApi.getAccountsOfItemFromPlaid(item_id);
       },
@@ -50,8 +48,6 @@
       content: step2Content,
       canProceed: () => selectedAccounts.length > 0,
       onNext: async () => {
-        currentStep = 2;
-
         if (accounts === null) {
           return;
         }
@@ -61,9 +57,7 @@
           item_id
         )
       },
-      onBack: () => {
-        currentStep = 0;
-      },
+      onBack: () => {},
     },
     {
       name: "Sync Transactions",
@@ -72,9 +66,7 @@
       onNext: async () => {
         goto("/")
       },
-      onBack: () => {
-        currentStep = 1;
-      },
+      onBack: () => {},
     },
   ];
 

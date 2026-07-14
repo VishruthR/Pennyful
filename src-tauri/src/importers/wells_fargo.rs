@@ -1,13 +1,16 @@
-use std::path::Path;
 use crate::importers::types::TransactionImport;
 use csv::ReaderBuilder;
+use std::path::Path;
 
-pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<TransactionImport>, std::io::Error> {
+pub fn parse_csv_statement<P: AsRef<Path>>(
+    filename: P,
+) -> Result<Vec<TransactionImport>, std::io::Error> {
     let mut reader = ReaderBuilder::new()
         .has_headers(false)
         .from_path(filename)?;
 
-    let headers = csv::StringRecord::from(vec!["date", "amount", "not_used_1", "not_used_2", "name"]);
+    let headers =
+        csv::StringRecord::from(vec!["date", "amount", "not_used_1", "not_used_2", "name"]);
     // TODO: We filter out lines that may have errors, we should handle them explicitly, line 14
     let transactions = reader
         .records()
@@ -19,9 +22,9 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     use chrono::NaiveDate;
     use rust_decimal::dec;
+    use std::path::PathBuf;
 
     use super::*;
 

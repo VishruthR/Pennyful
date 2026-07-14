@@ -6,7 +6,7 @@ use crate::types::Cents;
 pub struct Balances {
     available: Cents,
     current: Cents,
-    limit: Cents
+    limit: Cents,
 }
 
 #[derive(PartialEq, Debug)]
@@ -41,7 +41,7 @@ impl PlaidAccount {
             name,
             official_name,
             type_,
-            subtype
+            subtype,
         }
     }
 }

@@ -3,6 +3,9 @@
  </script>
 
 <main class="container">
+  <a href="/onboarding" class="batch-link">
+    <Button>Onboarding</Button>
+  </a>
   <a href="/plaid/link" class="batch-link">
     <Button>Add Plaid Account</Button>
   </a>
