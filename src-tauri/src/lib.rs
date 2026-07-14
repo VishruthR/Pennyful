@@ -1,16 +1,18 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::{Manager, async_runtime::Mutex};
+use tauri::{async_runtime::Mutex, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
+use tauri_plugin_store::StoreExt;
 mod importers {
-    pub(crate) mod commands;
-    pub(crate) mod bank_of_america;
-    pub(crate) mod wells_fargo;
     pub(crate) mod american_express;
+    pub(crate) mod bank_of_america;
+    pub(crate) mod commands;
     pub(crate) mod types;
+    pub(crate) mod wells_fargo;
 }
 mod plaid {
     pub(crate) mod commands;
     pub(crate) mod queries;
+    pub(crate) mod types;
 }
 mod transactions {
     pub(crate) mod queries;
@@ -32,11 +34,12 @@ mod types;
 struct AppState {
     db: db::DatabaseState,
     category_details: Mutex<Option<Vec<types::Category>>>,
-    link_token: Mutex<Option<String>>
+    link_token: Mutex<Option<String>>,
 }
 
 fn is_plaid_completion_url(urls: &[tauri::Url]) -> bool {
-    urls.iter().any(|u| u.as_str().starts_with("pennyful://plaid-complete"))
+    urls.iter()
+        .any(|u| u.as_str().starts_with("pennyful://plaid-complete"))
 }
 
 fn handle_plaid_deep_link(handle: &tauri::AppHandle, urls: Vec<tauri::Url>) {
@@ -47,8 +50,8 @@ fn handle_plaid_deep_link(handle: &tauri::AppHandle, urls: Vec<tauri::Url>) {
     let handle = handle.clone();
     tauri::async_runtime::spawn(async move {
         let state = handle.state::<AppState>();
-        match plaid::commands::complete_hosted_link(state.inner()).await {
-            Ok(_access_token) => {},
+        match plaid::commands::complete_hosted_link(&handle, state.inner()).await {
+            Ok(_access_token) => {}
             Err(e) => eprintln!("Plaid completion failed: {e}"),
         }
     });
@@ -58,7 +61,9 @@ fn handle_plaid_deep_link(handle: &tauri::AppHandle, urls: Vec<tauri::Url>) {
 pub fn run() {
     // Add CrabNebula debugger to dev builds
     #[cfg(debug_assertions)]
-    let builder = tauri::Builder::default().plugin(tauri_plugin_devtools::init());
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_devtools::init());
     #[cfg(not(debug_assertions))]
     let builder = tauri::Builder::default();
 
@@ -68,7 +73,10 @@ pub fn run() {
                 .path()
                 .app_data_dir()
                 .expect("Could not find applications data directory");
-                
+            
+            /* Initialize persistent store */
+            let _store = app.store("store.json")?;
+
             /* Initialize DB */
             let database = tauri::async_runtime::block_on(db::Database::new(&app_data_dir))
                 .expect("Failed to initialize database");
@@ -76,7 +84,7 @@ pub fn run() {
             app.manage(AppState {
                 db: db::DatabaseState(database.pool),
                 category_details: Mutex::new(None),
-                link_token: Mutex::new(None)
+                link_token: Mutex::new(None),
             });
 
             /* Handle DeepLinks */
@@ -98,11 +106,14 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             categories::commands::get_category_details,
             accounts::commands::get_all_accounts,
+            accounts::commands::get_accounts_of_item,
             importers::commands::import_transactions,
             plaid::commands::generate_link_token,
             plaid::commands::generate_access_token_from_hosted_link,
-            plaid::commands::fetch_item_and_accounts,
-            plaid::commands::sync_transactions
+            plaid::commands::sync_transactions,
+            plaid::commands::add_new_plaid_accounts,
+            plaid::commands::get_accounts_of_item_from_plaid,
+            plaid::commands::save_plaid_credentials
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -114,12 +125,16 @@ mod tests {
     use tauri::Url;
 
     fn parse(list: &[&str]) -> Vec<Url> {
-        list.iter().map(|u| Url::parse(u).expect("valid url")).collect()
+        list.iter()
+            .map(|u| Url::parse(u).expect("valid url"))
+            .collect()
     }
 
     #[test]
     fn matches_completion_url() {
-        assert!(is_plaid_completion_url(&parse(&["pennyful://plaid-complete"])));
+        assert!(is_plaid_completion_url(&parse(&[
+            "pennyful://plaid-complete"
+        ])));
     }
 
     #[test]
@@ -139,8 +154,12 @@ mod tests {
 
     #[test]
     fn ignores_other_deep_links() {
-        assert!(!is_plaid_completion_url(&parse(&["pennyful://something-else"])));
-        assert!(!is_plaid_completion_url(&parse(&["https://plaid.com/plaid-complete"])));
+        assert!(!is_plaid_completion_url(&parse(&[
+            "pennyful://something-else"
+        ])));
+        assert!(!is_plaid_completion_url(&parse(&[
+            "https://plaid.com/plaid-complete"
+        ])));
     }
 
     #[test]

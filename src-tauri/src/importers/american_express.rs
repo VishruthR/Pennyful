@@ -1,20 +1,21 @@
-use std::path::Path;
-use crate::{importers::types::TransactionImport};
+use crate::importers::types::TransactionImport;
 use csv::ReaderBuilder;
+use std::path::Path;
 
-pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<TransactionImport>, std::io::Error> {
-    let mut reader = ReaderBuilder::new()
-        .flexible(true)
-        .from_path(filename)?;
+pub fn parse_csv_statement<P: AsRef<Path>>(
+    filename: P,
+) -> Result<Vec<TransactionImport>, std::io::Error> {
+    let mut reader = ReaderBuilder::new().flexible(true).from_path(filename)?;
 
-    let headers = csv::StringRecord::from(vec!["date", "name", "not_used_1", "not_used_2", "amount"]);
+    let headers =
+        csv::StringRecord::from(vec!["date", "name", "not_used_1", "not_used_2", "amount"]);
     // TODO: We filter out lines that may have errors, we should handle them explicitly, line 16, 22
     let transactions: Vec<TransactionImport> = reader
         .records()
         .filter_map(|item| item.ok())
         .filter_map(|transaction_record| transaction_record.deserialize(Some(&headers)).ok())
         // AmEx tracks increases/decreases to credit card balance so we invert the amount
-        .map(|transaction: TransactionImport| TransactionImport { 
+        .map(|transaction: TransactionImport| TransactionImport {
             amount: -transaction.amount,
             ..transaction
         })
@@ -25,9 +26,9 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     use chrono::NaiveDate;
     use rust_decimal::dec;
+    use std::path::PathBuf;
 
     use super::*;
 

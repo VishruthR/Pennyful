@@ -1,11 +1,18 @@
-use std::fmt;
 use chrono::NaiveDate;
-use rust_decimal::{prelude::{FromPrimitive, ToPrimitive}, Decimal};
-use sqlx::{Sqlite, decode::Decode, encode::{Encode, IsNull}, Type};
+use rust_decimal::{
+    prelude::{FromPrimitive, ToPrimitive},
+    Decimal,
+};
+use sqlx::{
+    decode::Decode,
+    encode::{Encode, IsNull},
+    Sqlite, Type,
+};
+use std::fmt;
 
 // Custom type to enable automatic encoding/decoding for sqlx
 #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd, serde::Serialize)]
-pub struct Cents (pub Decimal);
+pub struct Cents(pub Decimal);
 
 impl Type<Sqlite> for Cents {
     fn type_info() -> sqlx::sqlite::SqliteTypeInfo {
@@ -21,21 +28,21 @@ impl fmt::Display for Cents {
 
 impl<'q> Encode<'q, Sqlite> for Cents {
     fn encode_by_ref(
-        &self, 
-        args: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'q>>
+        &self,
+        args: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'q>>,
     ) -> Result<IsNull, Box<dyn std::error::Error + Send + Sync>> {
         // Multiply by 100 and convert to i64
         let cents = (self.0 * Decimal::from(100))
             .to_i64()
             .expect("Decimal overflow when converting to cents");
-        
+
         <i64 as Encode<Sqlite>>::encode(cents, args)
     }
 }
 
 impl<'r> Decode<'r, Sqlite> for Cents {
     fn decode(
-        value: sqlx::sqlite::SqliteValueRef<'r>
+        value: sqlx::sqlite::SqliteValueRef<'r>,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         // Convert back to Decimal and divide by 100
         let cents = <i64 as Decode<Sqlite>>::decode(value)?;
@@ -50,7 +57,6 @@ impl Cents {
         Decimal::from_f64(dollars).map(|d| Cents(d.round_dp(2)))
     }
 }
-
 
 #[derive(sqlx::FromRow, PartialEq, Debug)]
 pub struct Transaction {
@@ -95,7 +101,7 @@ impl Transaction {
         amount: Cents,
         date: NaiveDate,
         account_id: i64,
-        category_id: i64
+        category_id: i64,
     ) -> Self {
         Transaction {
             id,
@@ -115,66 +121,11 @@ impl Transaction {
 
 impl fmt::Display for Transaction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Transaction: {} {} {} {}, {:?}, {}",
-            self.id, self.date, self.name, self.amount, self.category_id, self.account_id)
-    }
-}
-
-/// A transaction not yet persisted. Has no id, since that is assigned by the DB
-/// on insert. Used to hold data returned from Plaid before it is written.
-#[derive(PartialEq, Debug)]
-pub struct PlaidTransaction {
-    pub plaid_transaction_id: Option<String>,
-    pub name: Option<String>,
-    pub merchant_entity_id: Option<String>,
-    pub amount: Cents,
-    pub date: NaiveDate,
-    pub pending: bool,
-    plaid_account_id: String,
-    account_id: Option<i64>,
-    category_id: Option<i64>,
-}
-
-impl PlaidTransaction {
-    pub fn plaid_account_id(&self) -> &String {
-        &self.plaid_account_id
-    }
-
-    pub fn category_id(&self) -> &Option<i64> {
-        &self.category_id
-    }
-
-    pub fn account_id(&self) -> &Option<i64> {
-        &self.account_id
-    }
-
-    pub fn new(
-        plaid_transaction_id: Option<String>,
-        name: Option<String>,
-        merchant_entity_id: Option<String>,
-        amount: Cents,
-        date: NaiveDate,
-        pending: bool,
-        plaid_account_id: String,
-        account_id: Option<i64>,
-        category_id: Option<i64>,
-    ) -> Self {
-        PlaidTransaction {
-            plaid_transaction_id,
-            name,
-            merchant_entity_id,
-            amount,
-            date,
-            pending,
-            plaid_account_id,
-            account_id,
-            category_id,
-        }
-    }
-
-    pub fn update_account_id(mut self, account_id: i64) -> Self {
-        self.account_id = Some(account_id);
-        self
+        write!(
+            f,
+            "Transaction: {} {} {} {}, {:?}, {}",
+            self.id, self.date, self.name, self.amount, self.category_id, self.account_id
+        )
     }
 }
 
@@ -199,10 +150,14 @@ pub struct Account {
     pub id: i64,
     pub plaid_account_id: Option<String>,
     pub name: String,
+    pub official_name: Option<String>,
     pub bank_id: i64,
+    pub plaid_item_id: Option<String>,
     pub account_type: AccountType,
     #[sqlx(rename = "initial_balance_cents")]
     pub initial_balance: Cents,
+    #[sqlx(rename = "available_balance_cents")]
+    pub available_balance: Cents,
     #[sqlx(rename = "current_balance_cents")]
     pub current_balance: Cents,
 }
@@ -210,19 +165,26 @@ pub struct Account {
 impl Account {
     pub fn new(
         id: i64,
+        plaid_account_id: Option<String>,
         name: String,
+        official_name: Option<String>,
         bank_id: i64,
+        plaid_item_id: Option<String>,
         account_type: AccountType,
         initial_balance: Cents,
+        available_balance: Cents,
         current_balance: Cents,
     ) -> Self {
         Account {
             id,
-            plaid_account_id: None,
+            plaid_account_id,
             name,
+            official_name,
             bank_id,
+            plaid_item_id,
             account_type,
             initial_balance,
+            available_balance,
             current_balance,
         }
     }
@@ -257,7 +219,18 @@ impl FullAccount {
         current_balance: Cents,
     ) -> Self {
         FullAccount {
-            account: Account::new(id, name, bank_id, account_type, initial_balance, current_balance),
+            account: Account::new(
+                id,
+                None,
+                name,
+                None,
+                bank_id,
+                None,
+                account_type,
+                initial_balance,
+                current_balance,
+                current_balance,
+            ),
             bank_name,
         }
     }
@@ -267,7 +240,7 @@ impl FullAccount {
 pub struct PlaidItem {
     item_id: String,
     access_token: String,
-    cursor: Option<String>
+    cursor: Option<String>,
 }
 
 impl PlaidItem {
@@ -283,21 +256,23 @@ impl PlaidItem {
         &self.cursor
     }
 
-    pub fn new(
-        item_id: String,
-        access_token: String,
-        cursor: Option<String>
-    ) -> Self {
+    pub fn new(item_id: String, access_token: String, cursor: Option<String>) -> Self {
         PlaidItem {
-            item_id, access_token, cursor
+            item_id,
+            access_token,
+            cursor,
         }
     }
 }
 
 impl fmt::Display for PlaidItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "PlaidItem: {} {}", 
-            self.item_id, self.cursor.clone().unwrap_or("No cursor".to_string()))
+        write!(
+            f,
+            "PlaidItem: {} {}",
+            self.item_id,
+            self.cursor.clone().unwrap_or("No cursor".to_string())
+        )
     }
 }
 
@@ -314,10 +289,13 @@ impl Bank {
         id: i64,
         plaid_item_id: Option<String>,
         plaid_institution_id: Option<String>,
-        bank_name: String
+        bank_name: String,
     ) -> Self {
         Bank {
-            id, plaid_item_id, plaid_institution_id, bank_name
+            id,
+            plaid_item_id,
+            plaid_institution_id,
+            bank_name,
         }
     }
 
@@ -332,10 +310,16 @@ impl Bank {
 
 impl fmt::Display for Bank {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Bank: {} {} {} {}", 
-            self.id, 
-            self.plaid_item_id.clone().unwrap_or("no_item_id".to_string()), 
-            self.plaid_institution_id.clone().unwrap_or("no_institution_id".to_string()), 
+        write!(
+            f,
+            "Bank: {} {} {} {}",
+            self.id,
+            self.plaid_item_id
+                .clone()
+                .unwrap_or("no_item_id".to_string()),
+            self.plaid_institution_id
+                .clone()
+                .unwrap_or("no_institution_id".to_string()),
             self.bank_name
         )
     }

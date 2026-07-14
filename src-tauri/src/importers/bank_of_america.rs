@@ -1,10 +1,12 @@
-use std::path::Path;
 use crate::importers::types::TransactionImport;
 use csv::ReaderBuilder;
+use std::path::Path;
 
 const HEADER_START: &str = "Date";
 
-pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<TransactionImport>, std::io::Error> {
+pub fn parse_csv_statement<P: AsRef<Path>>(
+    filename: P,
+) -> Result<Vec<TransactionImport>, std::io::Error> {
     let mut reader = ReaderBuilder::new()
         .has_headers(false)
         .flexible(true)
@@ -26,9 +28,9 @@ pub fn parse_csv_statement<P: AsRef<Path>>(filename: P) -> Result<Vec<Transactio
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     use chrono::NaiveDate;
     use rust_decimal::dec;
+    use std::path::PathBuf;
 
     use super::*;
 
@@ -64,7 +66,8 @@ mod tests {
             },
             TransactionImport {
                 date: NaiveDate::from_ymd_opt(2025, 11, 12).unwrap(),
-                name: "WELLS FARGO CARD DES:CRD ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB".to_string(),
+                name: "WELLS FARGO CARD DES:CRD ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB"
+                    .to_string(),
                 amount: dec!(-481.86),
             },
             TransactionImport {
@@ -79,12 +82,14 @@ mod tests {
             },
             TransactionImport {
                 date: NaiveDate::from_ymd_opt(2025, 11, 21).unwrap(),
-                name: "SimpleBills Prod DES:WEB PMTS ID:AAAA INDN:JOHN DOE CO ID:XXXXX WEB".to_string(),
+                name: "SimpleBills Prod DES:WEB PMTS ID:AAAA INDN:JOHN DOE CO ID:XXXXX WEB"
+                    .to_string(),
                 amount: dec!(-31.94),
             },
             TransactionImport {
                 date: NaiveDate::from_ymd_opt(2025, 11, 25).unwrap(),
-                name: "WELLS FARGO CARD DES:CRD ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB".to_string(),
+                name: "WELLS FARGO CARD DES:CRD ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB"
+                    .to_string(),
                 amount: dec!(-474.74),
             },
             TransactionImport {
@@ -94,7 +99,8 @@ mod tests {
             },
             TransactionImport {
                 date: NaiveDate::from_ymd_opt(2025, 12, 1).unwrap(),
-                name: "Online Recurring transfer from CHK 1111 Confirmation# aaaaaaa; DOE, JANE".to_string(),
+                name: "Online Recurring transfer from CHK 1111 Confirmation# aaaaaaa; DOE, JANE"
+                    .to_string(),
                 amount: dec!(1000),
             },
             TransactionImport {
@@ -104,7 +110,8 @@ mod tests {
             },
             TransactionImport {
                 date: NaiveDate::from_ymd_opt(2025, 12, 4).unwrap(),
-                name: "BILTPYMTS DES:RENT PMT ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB".to_string(),
+                name: "BILTPYMTS DES:RENT PMT ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB"
+                    .to_string(),
                 amount: dec!(-939.00),
             },
             TransactionImport {
@@ -119,7 +126,8 @@ mod tests {
             },
             TransactionImport {
                 date: NaiveDate::from_ymd_opt(2025, 12, 9).unwrap(),
-                name: "WELLS FARGO CARD DES:CRD ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB".to_string(),
+                name: "WELLS FARGO CARD DES:CRD ID:XXXXXXXXXX INDN:JOHN DOE CO ID:XXXXX WEB"
+                    .to_string(),
                 amount: dec!(-397.57),
             },
         ];

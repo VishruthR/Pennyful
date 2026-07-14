@@ -20,18 +20,48 @@ interface Transaction {
 
 type TransactionImport = Omit<Transaction, "id">;
 
+interface PlaidAccount {
+  account_id: string;
+  balances: {
+    available: number;
+    current: number;
+    limit: number;
+  };
+  mask: string | null;
+  name: string;
+  official_name: string | null;
+  type: string;
+  subtype: string | null;
+}
+
+interface PlaidItem {
+  item_id: string;
+  institution_id: string | null;
+  institution_name: string | null;
+}
+
+interface AccountsGetResponse {
+  accounts: PlaidAccount[];
+  item: PlaidItem;
+}
+
 enum AccountType {
     Savings = "Savings",
     Checkings = "Checkings",
+    Credit = "Credit"
 }
 
 interface Account {
     id: number;
+    plaid_account_id: string | null;
     name: string;
+    official_name: string | null;
     bank_id: number;
+    plaid_item_id: string | null;
     bank_name: string;
     account_type: AccountType;
     initial_balance: number;
+    available_balance: number;
     current_balance: number;
 }
 
@@ -40,4 +70,4 @@ interface DropdownOption {
     content: Snippet;
 }
 
-export type { Category, CategoryDetails, Transaction, TransactionImport, AccountType, Account, DropdownOption };
+export type { Category, CategoryDetails, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse };
