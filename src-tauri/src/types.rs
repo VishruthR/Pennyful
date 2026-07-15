@@ -280,6 +280,7 @@ pub struct Bank {
 pub struct LinkedInstitution {
     pub item_id: String,
     pub institution_name: String,
+    pub institution_id: Option<String>,
     pub account_count: i64,
 }
 

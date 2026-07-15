@@ -126,6 +126,7 @@
       {#each institutions as institution}
         <InstitutionCard
           name={institution.institution_name}
+          institutionId={institution.institution_id}
           accountCount={institution.account_count}
           selected={item_id === institution.item_id}
           onClick={() => item_id = institution.item_id}
