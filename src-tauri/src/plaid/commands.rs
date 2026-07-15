@@ -172,7 +172,9 @@ fn plaid_transaction_to_new_transaction(
         Some(name),
         plaid_transaction.merchant_entity_id.clone(),
         amount,
-        plaid_transaction.date,
+        plaid_transaction
+            .authorized_date
+            .unwrap_or(plaid_transaction.date),
         plaid_transaction.pending,
         plaid_transaction.account_id.clone(),
         None,

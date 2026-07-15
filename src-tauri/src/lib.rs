@@ -26,6 +26,7 @@ mod categories {
     pub(crate) mod queries;
 }
 mod banks {
+    pub(crate) mod commands;
     pub(crate) mod queries;
 }
 mod db;
@@ -107,6 +108,7 @@ pub fn run() {
             categories::commands::get_category_details,
             accounts::commands::get_all_accounts,
             accounts::commands::get_accounts_of_item,
+            banks::commands::get_linked_institutions,
             importers::commands::import_transactions,
             plaid::commands::generate_link_token,
             plaid::commands::generate_access_token_from_hosted_link,

@@ -1,16 +1,43 @@
 <script lang="ts">
   import Stepper from "$lib/components/Stepper.svelte";
   import AccountCard from "$lib/components/AccountCard.svelte";
-  import type { Account, AccountsGetResponse, PlaidAccount, PlaidItem } from "$lib/types";
-  import PlaidLink from "$lib/components/PlaidLink.svelte";
-    import { plaidApi } from "$lib/api/plaid";
-    import Button from "$lib/components/Button.svelte";
-    import { goto } from "$app/navigation";
+  import InstitutionCard from "$lib/components/InstitutionCard.svelte";
+  import type { AccountsGetResponse, LinkedInstitution, PlaidAccount, PlaidItem } from "$lib/types";
+  import { plaidApi } from "$lib/api/plaid";
+  import Button from "$lib/components/Button.svelte";
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
+  import { openUrl } from "@tauri-apps/plugin-opener";
 
   // TODO: Handle errors
 
   // Step 1 state
   let item_id: string = $state("");
+  let institutions: LinkedInstitution[] = $state([]);
+  let linkError: string | null = $state(null);
+  let linking: boolean = $state(false);
+
+  onMount(async () => {
+    institutions = await plaidApi.getLinkedInstitutions();
+  });
+
+  // In prod the pennyful:// deep link finishes the flow; in dev completeLinkDev does.
+  const handleLink = async () => {
+    linking = true;
+    linkError = null;
+    try {
+      const hosted_link_url = await plaidApi.generateLinkToken();
+      await openUrl(hosted_link_url);
+    } catch (err) {
+      linkError = err as string;
+    } finally {
+      linking = false;
+    }
+  };
+
+  const completeLinkDev = async () => {
+    item_id = await plaidApi.generateAccessTokenFromHostedLink();
+  };
 
   // Step 2 state
   let alreadyAddedAccounts: (string | null)[] = $state([]);
@@ -34,8 +61,9 @@
 
   const steps = [
     {
-      name: "Link an institution",
+      name: "Choose an institution",
       content: step1Content,
+      canProceed: () => item_id !== "",
       onNext: async () => {
         alreadyAddedAccounts = (await plaidApi.getAccountsOfItem(item_id)).map((a) => a.plaid_account_id);
         accounts = await plaidApi.getAccountsOfItemFromPlaid(item_id);
@@ -83,11 +111,34 @@
 {#snippet step1Content()}
   <div class="step-container">
     <div class="step-text-container">
-      <h2 class="h2 step-title">Link an institution</h2>
-      <p class="paragraph step-description">The button below will use Plaid Link's interface, which will let you connect a financial institution thru Plaid and begin pulling transactions.</p>
+      <h2 class="h2 step-title">Choose an institution</h2>
+      <p class="paragraph step-description">Pick an institution you've already linked to add more of its accounts, or link a new one through Plaid.</p>
       <p class="paragraph step-note">Note: If you just created your Plaid account, institutions that use OAuth may not be available immediately. It can take up to a day for an institution to grant your Plaid account OAuth access. If this is the case, please try again in a few hours.</p>
     </div>
-    <PlaidLink bind:item_id={item_id} />
+
+    <div class="accounts-grid">
+      {#each institutions as institution}
+        <InstitutionCard
+          name={institution.institution_name}
+          accountCount={institution.account_count}
+          selected={item_id === institution.item_id}
+          onClick={() => item_id = institution.item_id}
+        />
+      {/each}
+      <InstitutionCard addNew name="" onClick={handleLink} />
+    </div>
+
+    {#if linking}
+      <p class="paragraph step-note">Loading…</p>
+    {/if}
+    {#if linkError}
+      <p class="paragraph error">{linkError}</p>
+    {/if}
+    {#if import.meta.env.DEV}
+      <!-- Dev-only: in `tauri dev` the pennyful:// deep link can't reach us, so
+           finish the Hosted Link flow by hand. Prod uses the deep link. -->
+      <button class="link-btn" onclick={completeLinkDev}>Done with flow (dev)</button>
+    {/if}
   </div>
 {/snippet}
 
@@ -225,5 +276,22 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
     width: 100%;
+  }
+
+  .link-btn {
+    border: none;
+    font-size: 12px;
+    background-color: transparent;
+    text-decoration: underline;
+    color: var(--grey-200);
+    cursor: pointer;
+  }
+
+  .link-btn:hover {
+    color: var(--grey-400);
+  }
+
+  .error {
+    color: var(--loss-red);
   }
 </style>

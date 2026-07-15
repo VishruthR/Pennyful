@@ -1,8 +1,15 @@
+CREATE TABLE IF NOT EXISTS plaid_item (
+    item_id TEXT PRIMARY KEY,
+    access_token TEXT NOT NULL,
+    "cursor" TEXT
+);
+
 CREATE TABLE IF NOT EXISTS bank (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     plaid_item_id TEXT,
     plaid_institution_id TEXT,
-    bank_name TEXT NOT NULL
+    bank_name TEXT NOT NULL,
+    FOREIGN KEY (plaid_item_id) REFERENCES plaid_item(item_id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_plaid_item_id
   ON bank(plaid_item_id)
@@ -14,7 +21,6 @@ CREATE TABLE IF NOT EXISTS account (
     name TEXT NOT NULL,
     official_name TEXT,
     bank_id INTEGER NOT NULL,
-    plaid_item_id TEXT,
     account_type TEXT NOT NULL CHECK(account_type IN ('SAVINGS', 'CHECKINGS', 'CREDIT')),
     initial_balance_cents INTEGER NOT NULL DEFAULT 0,
     available_balance_cents INTEGER NOT NULL DEFAULT 0,
@@ -42,7 +48,6 @@ CREATE TABLE IF NOT EXISTS "transaction" (
     date TEXT NOT NULL,
     pending INTEGER NOT NULL DEFAULT 0 CHECK (pending IN (0, 1)),
     deleted_at TEXT,
-    plaid_account_id TEXT,
     account_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
     FOREIGN KEY (account_id) REFERENCES account(id) ON DELETE CASCADE,

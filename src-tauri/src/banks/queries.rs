@@ -51,6 +51,25 @@ pub async fn get_bank_by_item_id(
     Ok(bank)
 }
 
+/// Excludes manual banks (no `plaid_item_id`): only Plaid-linked banks can have
+/// their accounts re-fetched without re-linking.
+pub async fn get_all_plaid_banks(pool: &Pool<Sqlite>) -> Result<Vec<Bank>, sqlx::Error> {
+    let query = r#"
+        SELECT
+            b.id,
+            b.plaid_item_id,
+            b.plaid_institution_id,
+            b.bank_name
+        FROM bank b
+        WHERE b.plaid_item_id IS NOT NULL
+        ORDER BY b.bank_name
+    "#;
+
+    let banks: Vec<Bank> = sqlx::query_as(query).fetch_all(pool).await?;
+
+    Ok(banks)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -68,10 +87,19 @@ mod tests {
         ])
     }
 
+    async fn seed_plaid_item(pool: &Pool<Sqlite>, item_id: &str) {
+        sqlx::query("INSERT INTO plaid_item (item_id, access_token) VALUES (?, 'test-token')")
+            .bind(item_id)
+            .execute(pool)
+            .await
+            .unwrap();
+    }
+
     #[sqlx::test]
     async fn upsert_stores_lookupable_item_id(
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        seed_plaid_item(&pool, "item-abc").await;
         upsert_item_from_plaid(&pool, &plaid_item("item-abc", "ins_1", "Bank of America")).await?;
 
         let bank = get_bank_by_item_id(&pool, &"item-abc".to_owned()).await?;
@@ -90,6 +118,7 @@ mod tests {
     async fn upsert_is_idempotent_on_item_id(
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        seed_plaid_item(&pool, "item-abc").await;
         let item = plaid_item("item-abc", "ins_1", "Bank of America");
         assert_eq!(upsert_item_from_plaid(&pool, &item).await?, 1);
         // Re-linking the same item is a no-op rather than a duplicate bank.
@@ -99,6 +128,25 @@ mod tests {
             .fetch_one(&pool)
             .await?;
         assert_eq!(count, 1);
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn get_all_plaid_banks_excludes_manual_banks(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        seed_plaid_item(&pool, "item-abc").await;
+        upsert_item_from_plaid(&pool, &plaid_item("item-abc", "ins_1", "Bank of America")).await?;
+        // Manually-created bank has no plaid_item_id.
+        sqlx::query("INSERT INTO bank (bank_name) VALUES ('Manual Bank')")
+            .execute(&pool)
+            .await?;
+
+        let banks = get_all_plaid_banks(&pool).await?;
+
+        assert_eq!(banks.len(), 1);
+        assert_eq!(banks[0].plaid_item_id(), &Some("item-abc".to_owned()));
+        assert_eq!(banks[0].bank_name(), "Bank of America");
         Ok(())
     }
 }

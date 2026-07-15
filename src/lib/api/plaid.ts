@@ -1,4 +1,4 @@
-import type { Account, AccountsGetResponse, PlaidAccount } from "$lib/types";
+import type { Account, AccountsGetResponse, LinkedInstitution, PlaidAccount } from "$lib/types";
 import { invoke } from "@tauri-apps/api/core";
 
 const savePlaidCredentials = async (client_id: string, secret: string): Promise<string> => {
@@ -20,6 +20,10 @@ const getAccountsOfItem = async (item_id: string): Promise<Account[]> => {
   return (await invoke("get_accounts_of_item", {
     itemId: item_id
   })) as Account[];
+}
+
+const getLinkedInstitutions = async (): Promise<LinkedInstitution[]> => {
+  return (await invoke("get_linked_institutions")) as LinkedInstitution[];
 }
 
 const getAccountsOfItemFromPlaid = async (item_id: string): Promise<AccountsGetResponse> => {
@@ -49,5 +53,6 @@ export const plaidApi = {
     syncTransactions,
     getAccountsOfItem,
     getAccountsOfItemFromPlaid,
+    getLinkedInstitutions,
     addNewPlaidAccounts
 };
