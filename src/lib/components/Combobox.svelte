@@ -1,16 +1,24 @@
-<script lang="ts">
+<!-- @component
+  Combobox which enables dropdown selection
+
+  It accepts a list options with values and data + an optionRenderer
+  Options are rendered through calling optionRenderer(option.data)
+-->
+
+<script lang="ts" generics="T">
   import { Select } from 'bits-ui';
   import Icon from '@iconify/svelte';
-  import type { DropdownOption } from '$lib/types';
+  import type { Snippet } from 'svelte';
 
   interface Props {
-    options: DropdownOption[];
+    options: { value: string, data: T }[];
+    optionRenderer: Snippet<[T]>;
     onSelect?: (value: string | null) => void;
     placeholder?: string;
     value?: string | null;
   }
 
-  let { options, onSelect, placeholder = 'Select...', value = $bindable<string | null>(null) }: Props = $props();
+  let { options, optionRenderer, onSelect, placeholder = 'Select...', value = $bindable<string | null>(null) }: Props = $props();
 
   let isOpen = $state(false);
 
@@ -20,7 +28,6 @@
   }
 
   const selectedOption = $derived(options.find(o => o.value === value));
-  const optionsContent = $derived(Object.fromEntries(options.map(o => [o.value, o.content])));
 </script>
 
 <div class="combobox" class:open={isOpen}>
@@ -33,7 +40,7 @@
     <Select.Trigger class="trigger paragraph">
       <span class="trigger-content">
         {#if selectedOption}
-          {@render selectedOption.content()}
+          {@render optionRenderer(selectedOption.data)}
         {:else}
           <span class="placeholder">{placeholder}</span>
         {/if}
@@ -45,7 +52,7 @@
       <Select.Viewport>
         {#each options as option (option.value)}
           <Select.Item value={option.value} label={option.value} class="item paragraph">
-            {@render optionsContent[option.value]()}
+            {@render optionRenderer(option.data)} 
           </Select.Item>
         {:else}
           <span class="paragraph">No results found</span>
