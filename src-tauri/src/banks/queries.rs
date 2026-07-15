@@ -38,6 +38,7 @@ pub async fn get_bank_account_counts(
         SELECT
             b.bank_name AS institution_name,
             b.plaid_item_id AS item_id,
+            b.plaid_institution_id AS institution_id,
             COUNT(a.id) AS account_count
         FROM bank b
         LEFT JOIN account a ON a.bank_id = b.id
