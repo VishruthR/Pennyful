@@ -1,4 +1,4 @@
-use crate::types;
+use crate::types::{self, LinkedInstitution};
 use crate::types::{Account, Bank, FullAccount};
 use plaid::model::{AccountBase, AccountSubtype, AccountType};
 use sqlx::{Pool, Sqlite};
@@ -91,20 +91,21 @@ pub async fn get_account_id_by_plaid_id(
 
 pub async fn get_account_counts_by_item(
     pool: &Pool<Sqlite>,
-) -> Result<HashMap<String, i64>, sqlx::Error> {
+) -> Result<Vec<LinkedInstitution>, sqlx::Error> {
     let query = r#"
         SELECT
-            b.plaid_item_id,
-            COUNT(*)
+            b.bank_name AS institution_name
+            b.plaid_item_id AS item_id,
+            COUNT(*) AS account_count
         FROM account a
         INNER JOIN bank b ON a.bank_id = b.id
         WHERE b.plaid_item_id IS NOT NULL
         GROUP BY b.plaid_item_id
     "#;
 
-    let counts: Vec<(String, i64)> = sqlx::query_as(query).fetch_all(pool).await?;
+    let account_counts: Vec<LinkedInstitution> = sqlx::query_as(query).fetch_all(pool).await?;
 
-    Ok(counts.into_iter().collect())
+    Ok(account_counts)
 }
 
 pub async fn get_accounts_of_item(
