@@ -131,6 +131,14 @@ pub struct Category {
     pub icon: Option<String>,
 }
 
+#[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
+pub struct Budget {
+    id: i64,
+    pub category_id: i64,
+    #[sqlx(rename = "amount_cents")]
+    pub amount: Cents,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, serde::Serialize)]
 #[sqlx(rename_all = "UPPERCASE")]
 pub enum AccountType {
