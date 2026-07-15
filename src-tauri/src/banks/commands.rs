@@ -1,4 +1,4 @@
-use crate::accounts::queries as account_queries;
+use crate::banks::queries as bank_queries;
 use crate::types::LinkedInstitution;
 use crate::AppState;
 
@@ -8,7 +8,7 @@ pub async fn get_linked_institutions(
 ) -> Result<Vec<LinkedInstitution>, String> {
     let db = &state.db;
 
-    let account_counts = account_queries::get_account_counts_by_item(&db.0)
+    let account_counts = bank_queries::get_bank_account_counts(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 

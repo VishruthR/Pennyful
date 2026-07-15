@@ -16,6 +16,7 @@
   let institutions: LinkedInstitution[] = $state([]);
   let linkError: string | null = $state(null);
   let linking: boolean = $state(false);
+  let currentStep: number = $state(0);
 
   onMount(async () => {
     institutions = await plaidApi.getLinkedInstitutions();
@@ -32,11 +33,19 @@
       linkError = err as string;
     } finally {
       linking = false;
+
     }
+  };
+
+  const loadAccounts = async () => {
+    alreadyAddedAccounts = (await plaidApi.getAccountsOfItem(item_id)).map((a) => a.plaid_account_id);
+    accounts = await plaidApi.getAccountsOfItemFromPlaid(item_id);
   };
 
   const completeLinkDev = async () => {
     item_id = await plaidApi.generateAccessTokenFromHostedLink();
+    await loadAccounts();
+    currentStep = 1;
   };
 
   // Step 2 state
@@ -64,10 +73,7 @@
       name: "Choose an institution",
       content: step1Content,
       canProceed: () => item_id !== "",
-      onNext: async () => {
-        alreadyAddedAccounts = (await plaidApi.getAccountsOfItem(item_id)).map((a) => a.plaid_account_id);
-        accounts = await plaidApi.getAccountsOfItemFromPlaid(item_id);
-      },
+      onNext: loadAccounts,
     },
     {
       name: "Select bank accounts",
@@ -125,12 +131,9 @@
           onClick={() => item_id = institution.item_id}
         />
       {/each}
-      <InstitutionCard addNew name="" onClick={handleLink} />
+      <InstitutionCard addNew name="" onClick={handleLink} loading={linking} />
     </div>
 
-    {#if linking}
-      <p class="paragraph step-note">Loading…</p>
-    {/if}
     {#if linkError}
       <p class="paragraph error">{linkError}</p>
     {/if}
@@ -215,7 +218,7 @@
 <main class="page-container">
   <h1 class="h1 page-title">Batch Add</h1>
   <div class="stepper-container">
-    <Stepper {steps} />
+    <Stepper {steps} bind:currentStep />
   </div>
 </main>
 

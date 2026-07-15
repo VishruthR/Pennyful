@@ -10,16 +10,27 @@
     name: string;
     accountCount?: number;
     selected?: boolean;
+    loading?: boolean;
     addNew?: boolean;
     onClick: () => void;
   }
-  let { name, accountCount = 0, selected = false, addNew = false, onClick }: Props = $props();
+  let { name, accountCount = 0, loading = false, selected = false, addNew = false, onClick }: Props = $props();
+
+  const getDisplayText  = () => {
+    if (loading) {
+      return "Loading..."
+    } else if (addNew) {
+      return "Link an institution"
+    } else {
+      return name;
+    }
+  }
 </script>
 
 <button class="institution-card" class:selected class:add-new={addNew} onclick={onClick}>
   <Icon icon={addNew ? "mdi:bank-plus" : "mdi:bank"} width={24} height={24} />
   <div class="institution-text">
-    <span class="institution-name paragraph-bold">{addNew ? "Link an institution" : name}</span>
+    <span class="institution-name paragraph-bold">{getDisplayText()}</span>
     {#if !addNew}
       <span class="institution-subline">
         {accountCount} account{accountCount === 1 ? "" : "s"} added
@@ -45,7 +56,7 @@
     color: var(--grey-500);
   }
 
-  .institution-card:hover {
+  .institution-card:hover, .selected {
     background-color: var(--blue-50);
   }
 
@@ -57,6 +68,10 @@
     border: 2px dashed var(--grey-200);
     background-color: transparent;
     color: var(--grey-300);
+  }
+
+  .institution-card.add-new:hover {
+    background-color: var(--blue-50);
   }
 
   .institution-card:focus-visible {

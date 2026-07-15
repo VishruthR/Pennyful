@@ -1,8 +1,7 @@
 use serde_json::Value;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
-
-use crate::types::Bank;
+use crate::types::{Bank, LinkedInstitution};
 
 pub async fn upsert_item_from_plaid(
     pool: &Pool<Sqlite>,
@@ -30,6 +29,25 @@ pub async fn upsert_item_from_plaid(
         .await?;
 
     Ok(upsert_res.rows_affected())
+}
+
+pub async fn get_bank_account_counts(
+    pool: &Pool<Sqlite>,
+) -> Result<Vec<LinkedInstitution>, sqlx::Error> {
+    let query = r#"
+        SELECT
+            b.bank_name AS institution_name,
+            b.plaid_item_id AS item_id,
+            COUNT(a.id) AS account_count
+        FROM bank b
+        LEFT JOIN account a ON a.bank_id = b.id
+        WHERE b.plaid_item_id IS NOT NULL
+        GROUP BY b.plaid_item_id
+    "#;
+
+    let account_counts: Vec<LinkedInstitution> = sqlx::query_as(query).fetch_all(pool).await?;
+
+    Ok(account_counts)
 }
 
 pub async fn get_bank_by_item_id(
