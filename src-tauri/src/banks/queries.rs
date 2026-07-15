@@ -1,8 +1,7 @@
 use serde_json::Value;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
-
-use crate::types::Bank;
+use crate::types::{Bank, LinkedInstitution};
 
 pub async fn upsert_item_from_plaid(
     pool: &Pool<Sqlite>,
@@ -30,6 +29,25 @@ pub async fn upsert_item_from_plaid(
         .await?;
 
     Ok(upsert_res.rows_affected())
+}
+
+pub async fn get_bank_account_counts(
+    pool: &Pool<Sqlite>,
+) -> Result<Vec<LinkedInstitution>, sqlx::Error> {
+    let query = r#"
+        SELECT
+            b.bank_name AS institution_name,
+            b.plaid_item_id AS item_id,
+            COUNT(a.id) AS account_count
+        FROM bank b
+        LEFT JOIN account a ON a.bank_id = b.id
+        WHERE b.plaid_item_id IS NOT NULL
+        GROUP BY b.plaid_item_id
+    "#;
+
+    let account_counts: Vec<LinkedInstitution> = sqlx::query_as(query).fetch_all(pool).await?;
+
+    Ok(account_counts)
 }
 
 pub async fn get_bank_by_item_id(
@@ -68,10 +86,19 @@ mod tests {
         ])
     }
 
+    async fn seed_plaid_item(pool: &Pool<Sqlite>, item_id: &str) {
+        sqlx::query("INSERT INTO plaid_item (item_id, access_token) VALUES (?, 'test-token')")
+            .bind(item_id)
+            .execute(pool)
+            .await
+            .unwrap();
+    }
+
     #[sqlx::test]
     async fn upsert_stores_lookupable_item_id(
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        seed_plaid_item(&pool, "item-abc").await;
         upsert_item_from_plaid(&pool, &plaid_item("item-abc", "ins_1", "Bank of America")).await?;
 
         let bank = get_bank_by_item_id(&pool, &"item-abc".to_owned()).await?;
@@ -90,6 +117,7 @@ mod tests {
     async fn upsert_is_idempotent_on_item_id(
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        seed_plaid_item(&pool, "item-abc").await;
         let item = plaid_item("item-abc", "ins_1", "Bank of America");
         assert_eq!(upsert_item_from_plaid(&pool, &item).await?, 1);
         // Re-linking the same item is a no-op rather than a duplicate bank.

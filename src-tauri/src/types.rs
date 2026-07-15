@@ -69,7 +69,6 @@ pub struct Transaction {
     pub date: NaiveDate,
     pub pending: bool,
     pub deleted_at: Option<NaiveDate>,
-    plaid_account_id: Option<String>,
     account_id: i64,
     category_id: i64,
 }
@@ -81,10 +80,6 @@ impl Transaction {
 
     pub fn plaid_transaction_id(&self) -> &Option<String> {
         &self.plaid_transaction_id
-    }
-
-    pub fn plaid_account_id(&self) -> &Option<String> {
-        &self.plaid_account_id
     }
 
     pub fn account_id(&self) -> &i64 {
@@ -112,7 +107,6 @@ impl Transaction {
             date,
             pending: false,
             deleted_at: None,
-            plaid_account_id: None,
             account_id,
             category_id,
         }
@@ -152,7 +146,6 @@ pub struct Account {
     pub name: String,
     pub official_name: Option<String>,
     pub bank_id: i64,
-    pub plaid_item_id: Option<String>,
     pub account_type: AccountType,
     #[sqlx(rename = "initial_balance_cents")]
     pub initial_balance: Cents,
@@ -169,7 +162,6 @@ impl Account {
         name: String,
         official_name: Option<String>,
         bank_id: i64,
-        plaid_item_id: Option<String>,
         account_type: AccountType,
         initial_balance: Cents,
         available_balance: Cents,
@@ -181,7 +173,6 @@ impl Account {
             name,
             official_name,
             bank_id,
-            plaid_item_id,
             account_type,
             initial_balance,
             available_balance,
@@ -225,7 +216,6 @@ impl FullAccount {
                 name,
                 None,
                 bank_id,
-                None,
                 account_type,
                 initial_balance,
                 current_balance,
@@ -276,12 +266,21 @@ impl fmt::Display for PlaidItem {
     }
 }
 
-#[derive(sqlx::FromRow, PartialEq, Debug)]
+#[derive(sqlx::FromRow, PartialEq, Debug, serde::Serialize)]
 pub struct Bank {
     id: i64,
     plaid_item_id: Option<String>,
     plaid_institution_id: Option<String>,
     bank_name: String,
+}
+
+/// A previously-linked institution surfaced to the frontend so the user can add
+/// more of its accounts without re-linking through Plaid Link.
+#[derive(sqlx::FromRow, serde::Serialize, Debug, PartialEq)]
+pub struct LinkedInstitution {
+    pub item_id: String,
+    pub institution_name: String,
+    pub account_count: i64,
 }
 
 impl Bank {
@@ -305,6 +304,14 @@ impl Bank {
 
     pub fn plaid_item_id(&self) -> &Option<String> {
         &self.plaid_item_id
+    }
+
+    pub fn plaid_institution_id(&self) -> &Option<String> {
+        &self.plaid_institution_id
+    }
+
+    pub fn bank_name(&self) -> &String {
+        &self.bank_name
     }
 }
 

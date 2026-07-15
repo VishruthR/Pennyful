@@ -60,7 +60,8 @@ pub async fn insert_plaid_item_without_cursor(
 ) -> Result<u64, sqlx::Error> {
     let query = r#"
         INSERT INTO plaid_item (item_id, access_token)
-        VALUES ($1, $2) 
+        VALUES ($1, $2)
+        ON CONFLICT(item_id) DO UPDATE SET access_token = excluded.access_token
     "#;
 
     let res = sqlx::query(query)

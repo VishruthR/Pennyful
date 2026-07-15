@@ -1,4 +1,4 @@
-use crate::types;
+use crate::types::{self};
 use crate::types::{Account, Bank, FullAccount};
 use plaid::model::{AccountBase, AccountSubtype, AccountType};
 use sqlx::{Pool, Sqlite};
@@ -15,13 +15,12 @@ pub async fn insert_new_plaid_accounts(
             name,
             official_name,
             bank_id,
-            plaid_item_id,
             account_type,
             initial_balance_cents,
             available_balance_cents,
             current_balance_cents
         )
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT(plaid_account_id) WHERE plaid_account_id IS NOT NULL DO NOTHING
     "#;
 
@@ -59,7 +58,6 @@ pub async fn insert_new_plaid_accounts(
             .bind(account.name)
             .bind(account.official_name)
             .bind(bank.id())
-            .bind(bank.plaid_item_id())
             .bind(account_type)
             .bind(current_balance)
             .bind(available_balance)
@@ -102,13 +100,13 @@ pub async fn get_accounts_of_item(
             a.name,
             a.official_name,
             a.bank_id,
-            a.plaid_item_id,
             a.account_type,
             a.initial_balance_cents,
             a.available_balance_cents,
             a.current_balance_cents
         FROM account a
-        WHERE a.plaid_item_id=?
+        INNER JOIN bank b ON a.bank_id = b.id
+        WHERE b.plaid_item_id=?
         ORDER BY a.id
     "#;
 
@@ -123,10 +121,12 @@ pub async fn get_full_accounts(pool: &Pool<Sqlite>) -> Result<Vec<FullAccount>, 
             a.id,
             a.plaid_account_id,
             a.name,
+            a.official_name,
             a.bank_id,
             b.bank_name,
             a.account_type,
             a.initial_balance_cents,
+            a.available_balance_cents,
             a.current_balance_cents
         FROM account a
         INNER JOIN bank b ON a.bank_id = b.id

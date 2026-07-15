@@ -17,11 +17,10 @@
 
   interface Props {
     steps: Step[];
+    currentStep?: number;
   }
 
-  let { steps }: Props = $props();
-
-  let currentStep = $state(0);
+  let { steps, currentStep = $bindable(0) }: Props = $props();
   
   const canProceed = $derived(steps[currentStep].canProceed?.() ?? true);
 

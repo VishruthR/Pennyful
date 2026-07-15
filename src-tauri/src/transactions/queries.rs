@@ -7,7 +7,7 @@ pub async fn get_transactions(
     pool: &Pool<Sqlite>,
     limit: Option<i64>,
 ) -> Result<Vec<Transaction>, sqlx::Error> {
-    let query = "SELECT id, plaid_transaction_id, name, merchant_entity_id, amount_cents, date, pending, deleted_at, plaid_account_id, account_id, category_id FROM 'transaction' WHERE deleted_at IS NULL ORDER BY date, id LIMIT $1";
+    let query = "SELECT id, plaid_transaction_id, name, merchant_entity_id, amount_cents, date, pending, deleted_at, account_id, category_id FROM 'transaction' WHERE deleted_at IS NULL ORDER BY date, id LIMIT $1";
 
     // Negative value returns all rows
     let lim = limit.unwrap_or(-1);
@@ -26,11 +26,10 @@ pub async fn add_plaid_transactions(
     let num_transactions = new_transactions.len() as u64;
 
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-        "INSERT INTO 'transaction' (plaid_transaction_id, name, merchant_entity_id, amount_cents, date, pending, plaid_account_id, account_id, category_id) "
+        "INSERT INTO 'transaction' (plaid_transaction_id, name, merchant_entity_id, amount_cents, date, pending, account_id, category_id) "
     );
 
     query_builder.push_values(new_transactions, |mut b, t| {
-        let plaid_account_id = t.plaid_account_id().clone();
         let account_id = *t.account_id();
 
         b.push_bind(t.plaid_transaction_id)
@@ -39,7 +38,6 @@ pub async fn add_plaid_transactions(
             .push_bind(t.amount)
             .push_bind(t.date)
             .push_bind(t.pending)
-            .push_bind(plaid_account_id)
             .push_bind(account_id)
             .push_bind(1); // "Uncategorized" category, TODO: Fetch "Uncategorized" category thru
                            // query for source of truth

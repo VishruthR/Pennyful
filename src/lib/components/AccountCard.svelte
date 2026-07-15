@@ -61,7 +61,7 @@
     font-family: inherit;
   }
 
-  .bank-account-card:hover {
+  .bank-account-card:hover, .selected {
     background-color: var(--blue-50);
   }
 

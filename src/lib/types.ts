@@ -45,6 +45,12 @@ interface AccountsGetResponse {
   item: PlaidItem;
 }
 
+interface LinkedInstitution {
+  item_id: string;
+  institution_name: string;
+  account_count: number;
+}
+
 enum AccountType {
     Savings = "Savings",
     Checkings = "Checkings",
@@ -57,7 +63,6 @@ interface Account {
     name: string;
     official_name: string | null;
     bank_id: number;
-    plaid_item_id: string | null;
     bank_name: string;
     account_type: AccountType;
     initial_balance: number;
@@ -70,4 +75,4 @@ interface DropdownOption {
     content: Snippet;
 }
 
-export type { Category, CategoryDetails, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse };
+export type { Category, CategoryDetails, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse, LinkedInstitution };
