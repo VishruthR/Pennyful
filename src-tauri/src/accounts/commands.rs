@@ -76,7 +76,6 @@ mod tests {
         let app = tauri::test::mock_app();
         app.manage(AppState {
             db: DatabaseState(pool),
-            category_details: Mutex::new(None),
             link_token: Mutex::new(None),
         });
 

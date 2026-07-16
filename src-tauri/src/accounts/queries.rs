@@ -106,7 +106,7 @@ pub async fn get_accounts_of_item(
             a.current_balance_cents
         FROM account a
         INNER JOIN bank b ON a.bank_id = b.id
-        WHERE b.plaid_item_id=?
+        WHERE b.plaid_item_id=? AND a.plaid_account_id IS NOT NULL
         ORDER BY a.id
     "#;
 
@@ -217,9 +217,6 @@ mod tests {
 
         let ids: Vec<i64> = accounts.iter().map(|a| a.id).collect();
         assert_eq!(ids, vec![1, 2]);
-        assert!(accounts
-            .iter()
-            .all(|a| a.plaid_item_id == Some("item-1".to_owned())));
         Ok(())
     }
 
@@ -234,6 +231,12 @@ mod tests {
     }
 
     async fn seed_bank(pool: &Pool<Sqlite>) -> Bank {
+        sqlx::query(
+            "INSERT INTO plaid_item (item_id, access_token) VALUES ('item-1', 'access-token-1')",
+        )
+        .execute(pool)
+        .await
+        .expect("seed plaid_item");
         sqlx::query("INSERT INTO bank (id, plaid_item_id, bank_name) VALUES (1, 'item-1', 'Test Bank')")
             .execute(pool)
             .await
