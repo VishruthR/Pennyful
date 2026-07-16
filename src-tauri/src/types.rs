@@ -131,6 +131,12 @@ pub struct Category {
     pub icon: Option<String>,
 }
 
+impl Category {
+    pub fn id(&self) -> &i64 {
+        &self.id
+    }
+}
+
 #[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
 pub struct Budget {
     id: i64,
@@ -139,8 +145,6 @@ pub struct Budget {
     pub amount: Cents,
 }
 
-/// A category joined with its budget and current-month spend, for the manage-categories table.
-/// Cent amounts are kept as raw integers so the frontend can format them directly.
 #[derive(sqlx::FromRow, PartialEq, Eq, Debug, Clone, serde::Serialize)]
 pub struct CategoryOverview {
     pub id: i64,

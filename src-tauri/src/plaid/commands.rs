@@ -1,6 +1,7 @@
 use crate::accounts;
 use crate::banks;
 use crate::credentials;
+use crate::categories;
 use crate::plaid;
 use crate::plaid::types::PlaidTransaction;
 use crate::transactions;
@@ -93,6 +94,10 @@ pub async fn sync_transactions(
         )
         .collect();
 
+    let uncategorized = categories::queries::get_uncategorized_category(&db.0)
+        .await
+        .map_err(|e| format!("Error fetching uncategorized category: {e}"))?;
+
     // Apply all writes (and the cursor advance) in one transaction so a partial
     // failure rolls back and the sync cleanly re-runs from the same cursor.
     let mut tx =
@@ -100,7 +105,7 @@ pub async fn sync_transactions(
             .await
             .map_err(|e| format!("Failed to begin transaction: {e}"))?;
 
-    let skipped_duplicates = transactions::queries::add_plaid_transactions(&mut tx, added)
+    let skipped_duplicates = transactions::queries::add_plaid_transactions(&mut tx, added, uncategorized.id())
         .await
         .map_err(|e| format!("Failed to add plaid transactions: {e}"))?;
     println!(

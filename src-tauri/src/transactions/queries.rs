@@ -19,6 +19,7 @@ pub async fn get_transactions(
 pub async fn add_plaid_transactions(
     conn: &mut SqliteConnection,
     new_transactions: Vec<PlaidTransaction>,
+    default_category: &i64,
 ) -> Result<u64, sqlx::Error> {
     if new_transactions.is_empty() {
         return Ok(0);
@@ -39,8 +40,7 @@ pub async fn add_plaid_transactions(
             .push_bind(t.date)
             .push_bind(t.pending)
             .push_bind(account_id)
-            .push_bind(1); // "Uncategorized" category, TODO: Fetch "Uncategorized" category thru
-                           // query for source of truth
+            .push_bind(default_category);
     });
     query_builder.push(
         " ON CONFLICT(plaid_transaction_id) WHERE plaid_transaction_id IS NOT NULL DO NOTHING",
@@ -195,6 +195,7 @@ mod tests {
                 plaid_txn("txn-1", "Coffee", -4.50, false),
                 plaid_txn("txn-2", "Books", -20.00, false),
             ],
+            &1
         )
         .await?;
         assert_eq!(skipped, 0);
@@ -223,7 +224,7 @@ mod tests {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut conn = pool.acquire().await?;
         let first =
-            add_plaid_transactions(&mut conn, vec![plaid_txn("txn-1", "Coffee", -4.50, false)])
+            add_plaid_transactions(&mut conn, vec![plaid_txn("txn-1", "Coffee", -4.50, false)], &1)
                 .await?;
         assert_eq!(first, 0);
 
@@ -232,6 +233,7 @@ mod tests {
         let second = add_plaid_transactions(
             &mut conn,
             vec![plaid_txn("txn-1", "Coffee CHANGED", -9.99, false)],
+            &1
         )
         .await?;
         assert_eq!(second, 1);
@@ -261,6 +263,7 @@ mod tests {
         add_plaid_transactions(
             &mut conn,
             vec![plaid_txn("txn-1", "Pending Coffee", -4.50, true)],
+            &1
         )
         .await?;
 
@@ -285,7 +288,7 @@ mod tests {
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut conn = pool.acquire().await?;
-        add_plaid_transactions(&mut conn, vec![plaid_txn("txn-1", "Coffee", -4.50, false)]).await?;
+        add_plaid_transactions(&mut conn, vec![plaid_txn("txn-1", "Coffee", -4.50, false)], &1).await?;
 
         remove_plaid_transactions(
             &mut conn,

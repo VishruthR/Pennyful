@@ -4,7 +4,6 @@ use crate::types::{Category, CategoryOverview};
 use crate::AppState;
 use std::collections::HashMap;
 
-/// Converts a vector of categories to a HashMap keyed by category name
 pub fn categories_to_hashmap(categories: Vec<Category>) -> HashMap<String, Category> {
     categories
         .into_iter()
@@ -52,7 +51,7 @@ pub async fn create_category(
     icon: Option<String>,
     budget_cents: Option<i64>,
 ) -> Result<i64, String> {
-    queries::create_category(&state.db.0, &name, &color, icon.as_deref(), budget_cents)
+    queries::create_category(&state.db.0, &name, &color, &icon, budget_cents)
         .await
         .map_err(|e| e.to_string())
 }
@@ -66,7 +65,7 @@ pub async fn update_category(
     icon: Option<String>,
     budget_cents: Option<i64>,
 ) -> Result<(), String> {
-    queries::update_category(&state.db.0, id, &name, &color, icon.as_deref(), budget_cents)
+    queries::update_category(&state.db.0, id, &name, &color, &icon, budget_cents)
         .await
         .map_err(|e| e.to_string())
 }

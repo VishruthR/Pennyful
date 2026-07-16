@@ -9,10 +9,6 @@ pub async fn get_all_categories(pool: &Pool<Sqlite>) -> Result<Vec<Category>, sq
     Ok(res)
 }
 
-/// Returns every category with its budget (if any) and the amount spent in the
-/// current calendar month. Spending is stored as negative cents, so the net of all
-/// transactions is negated into a positive "spent" total; income/refunds (positive
-/// amounts) are included and reduce the total toward (or below) zero.
 pub async fn get_category_overviews(
     pool: &Pool<Sqlite>,
 ) -> Result<Vec<CategoryOverview>, sqlx::Error> {
@@ -40,7 +36,6 @@ pub async fn get_category_overviews(
     Ok(res)
 }
 
-/// Inserts or updates the budget for a category.
 pub async fn upsert_budget(
     pool: &Pool<Sqlite>,
     category_id: i64,
@@ -63,13 +58,11 @@ pub async fn upsert_budget(
     Ok(())
 }
 
-/// Creates a category and, if a budget is provided, sets its budget.
-/// Returns the id of the new category.
 pub async fn create_category(
     pool: &Pool<Sqlite>,
-    name: &str,
-    color: &str,
-    icon: Option<&str>,
+    name: &String,
+    color: &String,
+    icon: &Option<String>,
     budget_cents: Option<i64>,
 ) -> Result<i64, sqlx::Error> {
     let id: i64 =
@@ -87,13 +80,12 @@ pub async fn create_category(
     Ok(id)
 }
 
-/// Updates a category's name/color/icon and, if a budget is provided, its budget.
 pub async fn update_category(
     pool: &Pool<Sqlite>,
     id: i64,
-    name: &str,
-    color: &str,
-    icon: Option<&str>,
+    name: &String,
+    color: &String,
+    icon: &Option<String>,
     budget_cents: Option<i64>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query("UPDATE category SET name = ?, color = ?, icon = ? WHERE id = ?")
@@ -111,9 +103,13 @@ pub async fn update_category(
     Ok(())
 }
 
-/// Deletes a category. Any transactions in that category are first reassigned to
-/// "Uncategorized" so no spending is lost. The budget row is removed by the
-/// ON DELETE CASCADE foreign key.
+pub async fn get_uncategorized_category(pool: &Pool<Sqlite>) -> Result<Category, sqlx::Error> {
+    let query = "SELECT id, name, color, icon FROM Category WHERE name='Uncategorized'";
+    let uncategorized: Category = sqlx::query_as(query).fetch_one(pool).await?;
+
+    Ok(uncategorized)
+}
+
 pub async fn delete_category(pool: &Pool<Sqlite>, id: i64) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
 
@@ -172,7 +168,6 @@ mod tests {
         Ok(())
     }
 
-    /// Seeds a single bank + account so transactions can satisfy their FK.
     async fn seed_account(pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
         sqlx::query("INSERT INTO bank (id, bank_name) VALUES (1, 'Test Bank')")
             .execute(pool)
@@ -263,7 +258,7 @@ mod tests {
     async fn test_create_category_with_budget(
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let id = create_category(&pool, "Coffee", "#6F4E37", Some("mdi:coffee"), Some(2000)).await?;
+        let id = create_category(&pool, &"Coffee".to_string(), &"#6F4E37".to_string(), &Some("mdi:coffee".to_string()), Some(2000)).await?;
 
         let overviews = get_category_overviews(&pool).await?;
         let created = overview_for(&overviews, id);
@@ -279,7 +274,7 @@ mod tests {
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         // Category 3 (Housing) starts with no budget.
-        update_category(&pool, 3, "Home", "#000000", Some("mdi:home"), Some(30000)).await?;
+        update_category(&pool, 3, &"Home".to_string(), &"#000000".to_string(), &Some("mdi:home".to_string()), Some(30000)).await?;
 
         let overviews = get_category_overviews(&pool).await?;
         let updated = overview_for(&overviews, 3);
