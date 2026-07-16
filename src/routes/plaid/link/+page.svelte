@@ -217,7 +217,7 @@
 {/snippet}
 
 <main class="page-container">
-  <h1 class="h1 page-title">Batch Add</h1>
+  <h1 class="h1 page-title">Add an account</h1>
   <div class="stepper-container">
     <Stepper {steps} bind:currentStep />
   </div>
