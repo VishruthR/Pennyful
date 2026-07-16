@@ -8,6 +8,18 @@ const savePlaidCredentials = async (client_id: string, secret: string): Promise<
   })) as string;
 }
 
+const savePlaidClientId = async (client_id: string): Promise<void> => {
+  await invoke("save_plaid_client_id", {
+    clientId: client_id
+  });
+}
+
+const savePlaidSecret = async (secret: string): Promise<void> => {
+  await invoke("save_plaid_secret", {
+    secret: secret
+  });
+}
+
 const generateLinkToken = async (): Promise<string> => {
   return (await invoke("generate_link_token")) as string;
 }
@@ -48,6 +60,8 @@ const syncTransactions = async (item_id: string): Promise<number> => {
 
 export const plaidApi = {
     savePlaidCredentials,
+    savePlaidClientId,
+    savePlaidSecret,
     generateLinkToken,
     generateAccessTokenFromHostedLink,
     syncTransactions,

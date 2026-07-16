@@ -1,15 +1,10 @@
 <script lang="ts">
-    import { goto } from "$app/navigation";
-    import { plaidApi } from "$lib/api/plaid";
+  import { goto } from "$app/navigation";
+  import { plaidApi } from "$lib/api/plaid";
   import Button from "$lib/components/Button.svelte";
   import TextInput from "$lib/components/TextInput.svelte";
-  import { openUrl } from "@tauri-apps/plugin-opener";
+    import { GITHUB_REPO_URL, openExternal, PLAID_TRIAL_URL } from "$lib/utils/externalLinks";
   import { load } from "@tauri-apps/plugin-store";
-
-  // TODO: confirm these external URLs
-  const PLAID_URL = "https://plaid.com";
-  const PLAID_TRIAL_URL = "https://dashboard.plaid.com/signup";
-  const GITHUB_REPO_URL = "https://github.com/pennyful/pennyful";
 
   const USERNAME_MAX_LENGTH = 80;
 
@@ -60,11 +55,6 @@
 
     await plaidApi.savePlaidCredentials(clientId, secret);
     goto("/");
-  };
-
-  const openExternal = (url: string) => (event: MouseEvent) => {
-    event.preventDefault();
-    openUrl(url);
   };
 </script>
 

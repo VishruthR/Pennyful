@@ -1,11 +1,11 @@
 use crate::accounts;
 use crate::banks;
+use crate::credentials;
 use crate::plaid;
 use crate::plaid::types::PlaidTransaction;
 use crate::transactions;
 use crate::types::Cents;
 use crate::AppState;
-use keyring::Entry;
 use ::plaid::{
     model::{
         AccountBase, AccountsGetResponse, CountryCode, LinkTokenCreateHostedLink,
@@ -17,26 +17,12 @@ use ::plaid::{
 };
 use dotenvy_macro::dotenv;
 use httpclient::{Client, InMemoryResponseExt};
-use tauri_plugin_store::StoreExt;
 
 fn plaid_client(app_handle: &tauri::AppHandle) -> Result<PlaidClient, String> {
     let http_client = Client::new().base_url(dotenv!("PLAID_ENV"));
 
-    let store = app_handle.store("store.json")
-        .map_err(|e| format!("Error getting store: {e}"))?;
-    let username = store.get("username")
-        .ok_or("Error fetching username from store")?
-        .to_string();
-    
-    let client_id_entry = Entry::new("plaid_client_id", &username)
-        .map_err(|e| format!("Error creating client_id_entry {e}"))?;
-    let client_id = client_id_entry.get_password()
-        .map_err(|e| format!("Error getting client_id_entry password {e}"))?;
-
-    let secret_entry = Entry::new("plaid_secret", &username)
-        .map_err(|e| format!("Error creating secret_entry {e}"))?;
-    let secret = secret_entry.get_password()
-        .map_err(|e| format!("Error getting secret_entry password {e}"))?;
+    let client_id = credentials::commands::get_client_id(app_handle)?;
+    let secret = credentials::commands::get_secret(app_handle)?;
 
     let auth = PlaidAuth::ClientId {
         client_id: client_id,
@@ -48,27 +34,13 @@ fn plaid_client(app_handle: &tauri::AppHandle) -> Result<PlaidClient, String> {
 
 #[tauri::command]
 pub async fn save_plaid_credentials(
-    app_handle: tauri::AppHandle, 
-    client_id: String, 
+    app_handle: tauri::AppHandle,
+    client_id: String,
     secret: String
 ) -> Result<(), String> {
-    let store = app_handle.store("store.json")
-        .map_err(|e| format!("Error getting store: {e}"))?;
-    let username = store.get("username")
-        .ok_or("Error fetching username from store")?
-        .to_string();
-
-    let client_id_entry = Entry::new("plaid_client_id", &username)
-        .map_err(|e| format!("Error creating client_id_entry {e}"))?;
-    client_id_entry.set_password(&client_id)
-        .map_err(|e| format!("Error setting client_id_entry password {e}"))?;
-
-    let secret_entry = Entry::new("plaid_secret", &username)
-        .map_err(|e| format!("Error creating secret_entry {e}"))?;
-    secret_entry.set_password(&secret)
-        .map_err(|e| format!("Error setting secret_entry password {e}"))?;
-
-    Ok(()) 
+    credentials::commands::set_client_id(&app_handle, &client_id)?;
+    credentials::commands::set_secret(&app_handle, &secret)?;
+    Ok(())
 }
 
 #[tauri::command]

@@ -9,6 +9,9 @@ mod importers {
     pub(crate) mod types;
     pub(crate) mod wells_fargo;
 }
+mod credentials {
+    pub(crate) mod commands;
+}
 mod plaid {
     pub(crate) mod commands;
     pub(crate) mod queries;
@@ -113,7 +116,9 @@ pub fn run() {
             plaid::commands::sync_transactions,
             plaid::commands::add_new_plaid_accounts,
             plaid::commands::get_accounts_of_item_from_plaid,
-            plaid::commands::save_plaid_credentials
+            plaid::commands::save_plaid_credentials,
+            credentials::commands::save_plaid_client_id,
+            credentials::commands::save_plaid_secret
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

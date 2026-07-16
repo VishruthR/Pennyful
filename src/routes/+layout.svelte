@@ -12,6 +12,7 @@
     "/plaid/link": "Add Accounts",
     "/categories": "Categories",
     "/settings": "Settings",
+    "/settings/plaid": "Plaid Credentials",
   };
 
   // Full-screen flows that should render without the app chrome.
