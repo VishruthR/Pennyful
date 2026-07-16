@@ -9,6 +9,15 @@ interface Category {
 }
 type CategoryDetails =  Record<string, Category>;
 
+interface CategoryOverview {
+    id: number;
+    name: string;
+    color: string;
+    icon?: string;
+    budget_cents: number | null;
+    spent_cents: number;
+}
+
 interface Transaction {
     id: number;
     name: string;
@@ -76,4 +85,4 @@ interface DropdownOption {
     content: Snippet;
 }
 
-export type { Category, CategoryDetails, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse, LinkedInstitution };
+export type { Category, CategoryDetails, CategoryOverview, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse, LinkedInstitution };

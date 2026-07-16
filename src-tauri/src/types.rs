@@ -139,6 +139,18 @@ pub struct Budget {
     pub amount: Cents,
 }
 
+/// A category joined with its budget and current-month spend, for the manage-categories table.
+/// Cent amounts are kept as raw integers so the frontend can format them directly.
+#[derive(sqlx::FromRow, PartialEq, Eq, Debug, Clone, serde::Serialize)]
+pub struct CategoryOverview {
+    pub id: i64,
+    pub name: String,
+    pub color: String,
+    pub icon: Option<String>,
+    pub budget_cents: Option<i64>,
+    pub spent_cents: i64,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, serde::Serialize)]
 #[sqlx(rename_all = "UPPERCASE")]
 pub enum AccountType {
