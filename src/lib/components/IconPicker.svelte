@@ -65,6 +65,7 @@
 
 <div class="container" bind:this={container}>
   <button
+    type="button"
     class="trigger"
     onclick={() => dialogOpen = !dialogOpen}
   >
@@ -80,7 +81,7 @@
     bind:this={picker}
     class="iconpicker"
     style:display={dialogOpen ? 'block' : 'none'}
-    collection="mdi"
+    collection="material-symbols"
     height="300px"
     hide-collection
     onicon-selected={handleIconSelected}

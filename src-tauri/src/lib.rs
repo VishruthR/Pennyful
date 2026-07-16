@@ -107,6 +107,11 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .invoke_handler(tauri::generate_handler![
             categories::commands::get_category_details,
+            categories::commands::get_category_overviews,
+            categories::commands::set_category_budget,
+            categories::commands::create_category,
+            categories::commands::update_category,
+            categories::commands::delete_category,
             accounts::commands::get_all_accounts,
             accounts::commands::get_accounts_of_item,
             banks::commands::get_linked_institutions,

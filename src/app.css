@@ -13,6 +13,7 @@
   --profit-green-50: rgba(55, 135, 39, 0.5);
   --loss-red: #DC1716;
   --loss-red-50: rgba(220, 23, 22, 0.5);
+  --warning-yellow: #F7B500;
 
   /* Typography */
   --font-family: 'DM Sans', sans-serif;
