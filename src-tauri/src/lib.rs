@@ -34,7 +34,6 @@ mod types;
 
 struct AppState {
     db: db::DatabaseState,
-    category_details: Mutex<Option<Vec<types::Category>>>,
     link_token: Mutex<Option<String>>,
 }
 
@@ -84,7 +83,6 @@ pub fn run() {
 
             app.manage(AppState {
                 db: db::DatabaseState(database.pool),
-                category_details: Mutex::new(None),
                 link_token: Mutex::new(None),
             });
 

@@ -15,23 +15,10 @@ pub fn categories_to_hashmap(categories: Vec<Category>) -> HashMap<String, Categ
 pub async fn get_category_details(
     state: tauri::State<'_, AppState>,
 ) -> Result<HashMap<String, Category>, String> {
-    let mut category_details = state.category_details.lock().await;
-    let db = &state.db;
-
-    let details = if let Some(c) = &*category_details {
-        c.clone()
-    } else {
-        let d = get_all_categories(&db.0)
-            .await
-            // TODO: Should map this to custom error that can be serialized and used by FE
-            .map_err(|e| e.to_string())?;
-
-        // TODO: Add a method to invalidate this cache when categories are updated
-        // Should consider encapsulating category_details modifications in a setter function which automatically handles this
-        *category_details = Some(d.clone());
-
-        d
-    };
+    let details = get_all_categories(&state.db.0)
+        .await
+        // TODO: Should map this to custom error that can be serialized and used by FE
+        .map_err(|e| e.to_string())?;
 
     Ok(categories_to_hashmap(details))
 }
@@ -61,7 +48,6 @@ mod tests {
         let app = tauri::test::mock_app();
         app.manage(AppState {
             db: DatabaseState(pool),
-            category_details: Mutex::new(None),
             link_token: Mutex::new(None),
         });
 
