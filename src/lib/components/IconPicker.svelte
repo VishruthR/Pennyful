@@ -1,14 +1,13 @@
 <!-- @component
   A reusable icon picker form field, built on iconify-picker
-
 -->
 
 <script lang="ts">
-    import Icon from '@iconify/svelte';
+  import Icon from '@iconify/svelte';
   import 'iconify-picker';
 
   interface Props {
-    /** selected hex color, or null when nothing is chosen yet */
+    /** selected icon color, or null when nothing is chosen yet */
     iconName?: string | null;
     /** placeholder shown when no color is selected */
     placeholder?: string;
@@ -56,15 +55,12 @@
     if (!dialogOpen) return;
     const handlePointerDown = (e: PointerEvent) => {
       if (!e.composedPath().includes(container)) {
-        console.log("unfocused element");
         dialogOpen = false;
       }
     };
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   });
-
-  $inspect(dialogOpen);
 </script>
 
 <div class="container" bind:this={container}>
