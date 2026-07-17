@@ -1,4 +1,4 @@
-import type { TransactionWithAccount } from "$lib/types";
+import type { PaginedSortedTransactionsResponse, TransactionWithAccount } from "$lib/types";
 import { invoke } from "@tauri-apps/api/core";
 
 const syncTransactions = async (): Promise<void> => {
@@ -10,13 +10,13 @@ const getPaginatedSortedTransactions = async (
   page_size: number,
   sort_col: string | null,
   sort_dir: string | null
-): Promise<TransactionWithAccount[]> => {
+): Promise<PaginedSortedTransactionsResponse> => {
   return (await invoke("get_paginated_sorted_transactions", {
     page: page,
     pageSize: page_size,
     sortCol: sort_col,
     sortDir: sort_dir
-  })) as TransactionWithAccount[];
+  })) as PaginedSortedTransactionsResponse;
 }
 
 export const transactionsApi = {

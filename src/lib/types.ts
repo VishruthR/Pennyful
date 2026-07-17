@@ -4,7 +4,6 @@ interface Category {
     id: number,
     name: string,
     color: string,
-    secondary_color: string,
     icon: string
 }
 type CategoryDetails =  Record<string, Category>;
@@ -29,7 +28,19 @@ interface Transaction {
 
 interface TransactionWithAccount {
   transaction: Transaction;
+  category_name: string;
+  category_color: string;
+  category_icon: string | null;
   account_name: string;
+}
+
+interface PaginedSortedTransactionsResponse {
+  transactions: TransactionWithAccount[];
+  curr_page: number;
+  next_page: number | null;
+  prev_page: number | null;
+  num_pages: number;
+  num_transactions: number;
 }
 
 type TransactionImport = Omit<Transaction, "id">;
@@ -90,5 +101,4 @@ interface DropdownOption {
     content: Snippet;
 }
 
-export type { Category, CategoryDetails, CategoryOverview, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse, LinkedInstitution, TransactionWithAccount };
-
+export type { Category, CategoryDetails, CategoryOverview, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse, LinkedInstitution, TransactionWithAccount, PaginedSortedTransactionsResponse };

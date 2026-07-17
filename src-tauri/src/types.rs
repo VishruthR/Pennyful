@@ -133,6 +133,9 @@ impl fmt::Display for Transaction {
 #[derive(sqlx::FromRow, PartialEq, Debug, serde::Serialize)]
 pub struct TransactionWithAccount {
     pub transaction: Transaction,
+    pub category_name: String,
+    pub category_color: String,
+    pub category_icon: Option<String>,
     account_name: String
 }
 
@@ -149,6 +152,9 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for TransactionWithAccount {
         use sqlx::Row;
         Ok(TransactionWithAccount {
             transaction: Transaction::from_row(row)?,
+            category_name: row.try_get("category_name")?,
+            category_color: row.try_get("category_color")?,
+            category_icon: row.try_get("category_icon")?,
             account_name: row.try_get("account_name")?,
         })
     }

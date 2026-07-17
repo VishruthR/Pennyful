@@ -16,6 +16,17 @@ pub async fn get_transactions(
     Ok(res)
 }
 
+pub async fn get_num_transactions(
+    pool: &Pool<Sqlite>
+) -> Result<i64, sqlx::Error> {
+    let res: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM 'transaction'")
+        .fetch_one(pool)
+        .await?;
+
+    Ok(res)
+}
+
+
 pub async fn get_paginated_sorted_transactions(
     pool: &Pool<Sqlite>,
     page: &i64,
@@ -24,8 +35,6 @@ pub async fn get_paginated_sorted_transactions(
     sort_dir: &Option<SortDir>
 ) -> Result<Vec<TransactionWithAccount>, sqlx::Error> {
     let offset = std::cmp::max(page - 1, 0) * page_size;
-
-    
 
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(r#"
         SELECT
@@ -39,9 +48,13 @@ pub async fn get_paginated_sorted_transactions(
             t.deleted_at,
             t.account_id,
             t.category_id,
-            a.name AS account_name
+            a.name AS account_name,
+            c.name AS category_name,
+            c.color AS category_color,
+            c.icon AS category_icon
         FROM 'transaction' t
         JOIN account a ON t.account_id=a.id
+        JOIN category c ON t.category_id=c.id
     "#);
     if let Some(sort_col_unwrapped) = sort_col {
         let sort_col_final = match sort_col_unwrapped.as_str() {
@@ -66,9 +79,6 @@ pub async fn get_paginated_sorted_transactions(
     query_builder.push_bind(page_size);
     query_builder.push(" OFFSET ");
     query_builder.push_bind(offset);
-
-    let query = query_builder.sql();
-    println!("Query: {query}");
 
     let transactions: Vec<TransactionWithAccount> = query_builder.build_query_as::<TransactionWithAccount>()
         .fetch_all(pool)

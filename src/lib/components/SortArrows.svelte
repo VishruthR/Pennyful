@@ -4,7 +4,7 @@
 -->
 
 <script lang="ts" module>
-  export type SortDirection = "asc" | "desc" | null;
+  export type SortDirection = "Asc" | "Desc" | null;
 </script>
 
 <script lang="ts">
@@ -19,8 +19,8 @@
   let { column, activeColumn, direction }: Props = $props();
 
   const isActive = $derived(column === activeColumn);
-  const showAsc = $derived(!isActive || direction === null || direction === "asc");
-  const showDesc = $derived(!isActive || direction === null || direction === "desc");
+  const showAsc = $derived(!isActive || direction === null || direction === "Asc");
+  const showDesc = $derived(!isActive || direction === null || direction === "Desc");
 </script>
 
 <span class="arrows-container">

@@ -1,19 +1,10 @@
 <script lang="ts">
-    import { transactionsApi } from "$lib/api/transactions";
   import Button from "$lib/components/Button.svelte";
-
-  const handleClick = async () => {
-    console.log(await transactionsApi.getPaginatedSortedTransactions(
-      2,
-      10,
-      "amount",
-      "Desc"
-    ))
-  }
+  import TransactionsTable from "$lib/components/TransactionsTable.svelte";
  </script>
 
 <main class="container">
-  <Button onclick={handleClick}>Test get transactions </Button>
+  <TransactionsTable />
   <a href="/onboarding" class="batch-link">
     <Button>Onboarding</Button>
   </a>
