@@ -1,5 +1,5 @@
-use crate::plaid::types::PlaidTransaction;
-use crate::types::Transaction;
+use crate::{plaid::types::PlaidTransaction, types::SortDir};
+use crate::types::{Transaction, TransactionWithAccount};
 use ::plaid::model::RemovedTransaction;
 use sqlx::{Pool, QueryBuilder, Sqlite, SqliteConnection};
 
@@ -14,6 +14,67 @@ pub async fn get_transactions(
     let res: Vec<Transaction> = sqlx::query_as(query).bind(lim).fetch_all(pool).await?;
 
     Ok(res)
+}
+
+pub async fn get_paginated_sorted_transactions(
+    pool: &Pool<Sqlite>,
+    page: &i64,
+    page_size: &i64,
+    sort_col: &Option<String>,
+    sort_dir: &Option<SortDir>
+) -> Result<Vec<TransactionWithAccount>, sqlx::Error> {
+    let offset = std::cmp::max(page - 1, 0) * page_size;
+
+    
+
+    let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(r#"
+        SELECT
+            t.id,
+            t.plaid_transaction_id,
+            t.name,
+            t.merchant_entity_id,
+            t.amount_cents,
+            t.date,
+            t.pending,
+            t.deleted_at,
+            t.account_id,
+            t.category_id,
+            a.name AS account_name
+        FROM 'transaction' t
+        JOIN account a ON t.account_id=a.id
+    "#);
+    if let Some(sort_col_unwrapped) = sort_col {
+        let sort_col_final = match sort_col_unwrapped.as_str() {
+            "date" => "t.date",
+            "account" => "a.name",
+            "name" => "t.name",
+            "amount" => "t.amount_cents",
+            _ => return Err(sqlx::Error::Protocol("Invalid sort column".into()))
+        };
+
+        let sort_dir_final = match sort_dir.unwrap_or(SortDir::Asc) {
+            SortDir::Asc => "ASC",
+            SortDir::Desc => "DESC"
+        };
+
+        query_builder.push(" ORDER BY ");
+        query_builder.push(sort_col_final);
+        query_builder.push(" ");
+        query_builder.push(sort_dir_final);
+    }
+    query_builder.push(" LIMIT ");
+    query_builder.push_bind(page_size);
+    query_builder.push(" OFFSET ");
+    query_builder.push_bind(offset);
+
+    let query = query_builder.sql();
+    println!("Query: {query}");
+
+    let transactions: Vec<TransactionWithAccount> = query_builder.build_query_as::<TransactionWithAccount>()
+        .fetch_all(pool)
+        .await?;
+
+    Ok(transactions)
 }
 
 pub async fn add_plaid_transactions(

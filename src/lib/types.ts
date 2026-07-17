@@ -27,6 +27,11 @@ interface Transaction {
     category_id: number;
 }
 
+interface TransactionWithAccount {
+  transaction: Transaction;
+  account_name: string;
+}
+
 type TransactionImport = Omit<Transaction, "id">;
 
 interface PlaidAccount {
@@ -85,4 +90,5 @@ interface DropdownOption {
     content: Snippet;
 }
 
-export type { Category, CategoryDetails, CategoryOverview, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse, LinkedInstitution };
+export type { Category, CategoryDetails, CategoryOverview, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse, LinkedInstitution, TransactionWithAccount };
+

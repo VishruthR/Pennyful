@@ -18,6 +18,7 @@ mod plaid {
     pub(crate) mod types;
 }
 mod transactions {
+    pub(crate) mod commands;
     pub(crate) mod queries;
 }
 mod accounts {
@@ -123,7 +124,8 @@ pub fn run() {
             plaid::commands::get_accounts_of_item_from_plaid,
             plaid::commands::save_plaid_credentials,
             credentials::commands::save_plaid_client_id,
-            credentials::commands::save_plaid_secret
+            credentials::commands::save_plaid_secret,
+            transactions::commands::get_paginated_sorted_transactions
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

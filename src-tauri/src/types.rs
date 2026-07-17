@@ -8,7 +8,7 @@ use sqlx::{
     encode::{Encode, IsNull},
     Sqlite, Type,
 };
-use std::fmt;
+use std::{fmt, ops::Deref};
 
 // Custom type to enable automatic encoding/decoding for sqlx
 #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd, serde::Serialize)]
@@ -58,7 +58,14 @@ impl Cents {
     }
 }
 
-#[derive(sqlx::FromRow, PartialEq, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, serde::Serialize, serde::Deserialize)]
+#[sqlx(rename_all = "UPPERCASE")]
+pub enum SortDir {
+    Asc,
+    Desc,
+}
+
+#[derive(sqlx::FromRow, PartialEq, Debug, serde::Serialize)]
 pub struct Transaction {
     id: i64,
     plaid_transaction_id: Option<String>,
@@ -120,6 +127,30 @@ impl fmt::Display for Transaction {
             "Transaction: {} {} {} {}, {:?}, {}",
             self.id, self.date, self.name, self.amount, self.category_id, self.account_id
         )
+    }
+}
+
+#[derive(sqlx::FromRow, PartialEq, Debug, serde::Serialize)]
+pub struct TransactionWithAccount {
+    pub transaction: Transaction,
+    account_name: String
+}
+
+impl Deref for TransactionWithAccount {
+    type Target = Transaction;
+
+    fn deref(&self) -> &Self::Target {
+        &self.transaction
+    }
+}
+
+impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for TransactionWithAccount {
+    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, sqlx::Error> {
+        use sqlx::Row;
+        Ok(TransactionWithAccount {
+            transaction: Transaction::from_row(row)?,
+            account_name: row.try_get("account_name")?,
+        })
     }
 }
 
