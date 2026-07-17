@@ -19,7 +19,7 @@ pub async fn get_transactions(
 pub async fn get_num_transactions(
     pool: &Pool<Sqlite>
 ) -> Result<i64, sqlx::Error> {
-    let res: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM 'transaction'")
+    let res: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM 'transaction' WHERE deleted_at IS NULL")
         .fetch_one(pool)
         .await?;
 
@@ -55,9 +55,12 @@ pub async fn get_paginated_sorted_transactions(
         FROM 'transaction' t
         JOIN account a ON t.account_id=a.id
         JOIN category c ON t.category_id=c.id
+        WHERE t.deleted_at IS NULL
     "#);
-    if let Some(sort_col_unwrapped) = sort_col {
-        let sort_col_final = match sort_col_unwrapped.as_str() {
+
+    query_builder.push(" ORDER BY ");
+    if let Some(col) = sort_col.as_deref() {
+        let sort_col_final = match col {
             "date" => "t.date",
             "account" => "a.name",
             "name" => "t.name",
@@ -70,11 +73,14 @@ pub async fn get_paginated_sorted_transactions(
             SortDir::Desc => "DESC"
         };
 
-        query_builder.push(" ORDER BY ");
         query_builder.push(sort_col_final);
         query_builder.push(" ");
         query_builder.push(sort_dir_final);
+        query_builder.push(", ");
     }
+    // Stable tiebreaker so LIMIT/OFFSET paging never overlaps or drops rows.
+    query_builder.push("t.id");
+
     query_builder.push(" LIMIT ");
     query_builder.push_bind(page_size);
     query_builder.push(" OFFSET ");
@@ -388,6 +394,81 @@ mod tests {
             deleted_at.is_some(),
             "row should still exist with deleted_at set"
         );
+        Ok(())
+    }
+
+    fn ids(transactions: &[TransactionWithAccount]) -> Vec<i64> {
+        transactions.iter().map(|t| *t.id()).collect()
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("transactions")))]
+    async fn paginated_walks_pages_without_overlap(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        assert_eq!(get_num_transactions(&pool).await?, 4);
+
+        // Sort by amount (unique values) so paging is deterministic.
+        // Ascending amounts: id2=-10.90, id1=-5.77, id3=-1.90, id4=-0.70
+        let sort_col = Some("amount".to_owned());
+        let page1 =
+            get_paginated_sorted_transactions(&pool, &1, &2, &sort_col, &Some(SortDir::Asc)).await?;
+        let page2 =
+            get_paginated_sorted_transactions(&pool, &2, &2, &sort_col, &Some(SortDir::Asc)).await?;
+        let page3 =
+            get_paginated_sorted_transactions(&pool, &3, &2, &sort_col, &Some(SortDir::Asc)).await?;
+
+        assert_eq!(ids(&page1), vec![2, 1]);
+        assert_eq!(ids(&page2), vec![3, 4]);
+        assert!(page3.is_empty(), "page past the end should be empty");
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("transactions")))]
+    async fn paginated_sorts_by_amount_both_directions(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let asc = get_paginated_sorted_transactions(
+            &pool,
+            &1,
+            &10,
+            &Some("amount".to_owned()),
+            &Some(SortDir::Asc),
+        )
+        .await?;
+        let desc = get_paginated_sorted_transactions(
+            &pool,
+            &1,
+            &10,
+            &Some("amount".to_owned()),
+            &Some(SortDir::Desc),
+        )
+        .await?;
+
+        assert_eq!(ids(&asc), vec![2, 1, 3, 4]);
+        assert_eq!(ids(&desc), vec![4, 3, 1, 2]);
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("transactions")))]
+    async fn paginated_joins_category_details(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let transactions = get_paginated_sorted_transactions(
+            &pool,
+            &1,
+            &1,
+            &Some("name".to_owned()),
+            &Some(SortDir::Asc),
+        )
+        .await?;
+
+        let first = &transactions[0];
+        // All fixture rows are category_id = 1 ("Uncategorized", no icon).
+        assert_eq!(first.category_name, "Uncategorized");
+        assert_eq!(first.category_color, "#535353");
+        assert_eq!(first.category_icon, None);
+        // Deref exposes the underlying Transaction fields.
+        assert_eq!(first.name, "TRANSACTION 1");
         Ok(())
     }
 }

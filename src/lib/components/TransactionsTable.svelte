@@ -11,7 +11,6 @@
   import { formatSignedCurrencyChange, isPositiveAmount } from "$lib/utils/format";
   import { transactionsApi } from "$lib/api/transactions";
   import type { TransactionWithAccount, PaginedSortedTransactionsResponse } from "$lib/types";
-  import { onMount } from "svelte";
   import Icon from "@iconify/svelte";
 
   interface Props {
@@ -23,7 +22,7 @@
   let sortColumn: string = $state("date");
   let sortDirection: SortDirection = $state("Desc");
   let page: number = $state(1);
-  let pageSize: number = $state(13);
+  let pageSize: number = $state(25);
   let paginatedResponse: PaginedSortedTransactionsResponse | null = $state(null); 
   
   let transactions: TransactionWithAccount[] = $derived.by(() => {
@@ -33,38 +32,58 @@
       return [];
     }
   })
+  $inspect(paginatedResponse);
 
   let requestId = 0;
-  const fetchTransactions = async () => {
-    const currentRequest = ++requestId;
-    try {
-      const response = await transactionsApi.getPaginatedSortedTransactions(
-        page,
-        pageSize,
-        sortColumn,
-        sortDirection
-      );
-      // If a user flips between pages rapidly this could cause multiple requests
-      // to be in flight. To maintain a consistent state we must ignore older requests
-      if (currentRequest !== requestId) return;
-      paginatedResponse = response;
-    } catch(e) {
-      if (currentRequest !== requestId) return;
-      console.log(e);
+
+  $effect(() => {
+    const currPage = page;
+    const currPageSize = pageSize;
+    const currSortColumn = sortColumn;
+    const currSortDirection = sortDirection;
+
+    const fetchTransactions = async () => {
+      const currentRequest = ++requestId;
+      console.log(page, pageSize, sortColumn, sortDirection);
+      try {
+        const response = await transactionsApi.getPaginatedSortedTransactions(
+          currPage,
+          currPageSize,
+          currSortColumn,
+          currSortDirection
+        );
+        console.log("res", response);
+        console.log(currentRequest, requestId);
+        // If a user flips between pages rapidly this could cause multiple requests
+        // to be in flight. To maintain a consistent state we must ignore older requests
+        if (currentRequest !== requestId) {
+          console.log("outdated request getting dropped", response);
+          return;
+        }
+        paginatedResponse = response;
+      } catch(e) {
+        let error = e as string;
+        console.error(error);
+      }
     }
-  }
-  onMount(fetchTransactions);
+
+    fetchTransactions();
+  })
+  
+  // onMount(fetchTransactions);
+
+  const DEFAULT_SORT_COLUMN = "date";
+  const DEFAULT_SORT_DIRECTION: SortDirection = "Desc";
 
   function toggleSort(column: string) {
+    console.log("toggling sort", column);
     if (sortColumn === column) {
-      // Cycle through: null -> desc -> asc -> null
-      if (sortDirection === null) {
-        sortDirection = "Desc";
-      } else if (sortDirection === "Desc") {
+      // Cycle through: Desc -> Asc -> default (newest first)
+      if (sortDirection === "Desc") {
         sortDirection = "Asc";
       } else {
-        sortDirection = null;
-        sortColumn = "";
+        sortColumn = DEFAULT_SORT_COLUMN;
+        sortDirection = DEFAULT_SORT_DIRECTION;
       }
     } else {
       sortColumn = column;
@@ -72,18 +91,18 @@
     }
     page = 1;
 
-    fetchTransactions();
+    // fetchTransactions();
   }
 
   const handleNextPage = () => {
-    if (paginatedResponse?.next_page == null) return;
+    if (paginatedResponse === null || page >= paginatedResponse.num_pages) return;
     page++;
-    fetchTransactions();
+    // fetchTransactions();
   };
   const handlePrevPage = () => {
-    if (paginatedResponse?.prev_page == null) return;
+    if (page <= 1) return;
     page--;
-    fetchTransactions();
+    // fetchTransactions();
   };
 
   const getShowingRange = () => {
@@ -98,9 +117,12 @@
   const dateFormatter = new Intl.DateTimeFormat("en-US", { 
     month: "short", day: "numeric", year: "numeric" 
   });
-  function formatTableDate(date: Date): string {
-    // Have to create new Date to avoid format issues
-    return dateFormatter.format(new Date(date));
+  function formatTableDate(date: string | Date): string {
+    // The backend serializes dates as "YYYY-MM-DD". Passing that straight to
+    // `new Date(...)` parses it as UTC midnight, which renders the previous day
+    // in negative-offset timezones. Build the date from its parts so it stays local.
+    const [year, month, day] = String(date).split("-").map(Number);
+    return dateFormatter.format(new Date(year, month - 1, day));
   }
 
   let tableHeight = $derived(
@@ -327,7 +349,6 @@
   }
 
   .foot-controls {
-    padding: 12 16px;
     display: flex;
     justify-content: center;
     align-items: center;
