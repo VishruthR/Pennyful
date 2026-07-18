@@ -23,7 +23,7 @@
   let sortDirection: SortDirection = $state("Desc");
   let page: number = $state(1);
   let pageSize: number = $state(25);
-  let paginatedResponse: PaginedSortedTransactionsResponse | null = $state(null); 
+  let paginatedResponse: PaginedSortedTransactionsResponse | null = $state.raw(null); 
   
   let transactions: TransactionWithAccount[] = $derived.by(() => {
     if (paginatedResponse !== null) {
@@ -32,45 +32,6 @@
       return [];
     }
   })
-  $inspect(paginatedResponse);
-
-  let requestId = 0;
-
-  $effect(() => {
-    const currPage = page;
-    const currPageSize = pageSize;
-    const currSortColumn = sortColumn;
-    const currSortDirection = sortDirection;
-
-    const fetchTransactions = async () => {
-      const currentRequest = ++requestId;
-      console.log(page, pageSize, sortColumn, sortDirection);
-      try {
-        const response = await transactionsApi.getPaginatedSortedTransactions(
-          currPage,
-          currPageSize,
-          currSortColumn,
-          currSortDirection
-        );
-        console.log("res", response);
-        console.log(currentRequest, requestId);
-        // If a user flips between pages rapidly this could cause multiple requests
-        // to be in flight. To maintain a consistent state we must ignore older requests
-        if (currentRequest !== requestId) {
-          console.log("outdated request getting dropped", response);
-          return;
-        }
-        paginatedResponse = response;
-      } catch(e) {
-        let error = e as string;
-        console.error(error);
-      }
-    }
-
-    fetchTransactions();
-  })
-  
-  // onMount(fetchTransactions);
 
   const DEFAULT_SORT_COLUMN = "date";
   const DEFAULT_SORT_DIRECTION: SortDirection = "Desc";
@@ -90,20 +51,48 @@
       sortDirection = "Desc";
     }
     page = 1;
-
-    // fetchTransactions();
   }
 
   const handleNextPage = () => {
     if (paginatedResponse === null || page >= paginatedResponse.num_pages) return;
     page++;
-    // fetchTransactions();
   };
   const handlePrevPage = () => {
     if (page <= 1) return;
     page--;
-    // fetchTransactions();
   };
+
+  let requestId = 0;
+  $effect(() => {
+    const currPage = page;
+    const currPageSize = pageSize;
+    const currSortColumn = sortColumn;
+    const currSortDirection = sortDirection;
+
+    const fetchTransactions = async () => {
+      const currentRequest = ++requestId;
+      try {
+        const response = await transactionsApi.getPaginatedSortedTransactions(
+          currPage,
+          currPageSize,
+          currSortColumn,
+          currSortDirection
+        );
+        // If a user flips between pages rapidly this could cause multiple requests
+        // to be in flight. To maintain a consistent state we must ignore older requests
+        if (currentRequest !== requestId) {
+          console.log("[WARN] Outdated request getting dropped", response);
+          return;
+        }
+        paginatedResponse = response;
+      } catch(e) {
+        let error = e as string;
+        console.error(error);
+      }
+    }
+
+    fetchTransactions();
+  })
 
   const getShowingRange = () => {
     if (paginatedResponse === null ) { return [0, 0]; }

@@ -3,7 +3,7 @@
   import { plaidApi } from "$lib/api/plaid";
   import Button from "$lib/components/Button.svelte";
   import TextInput from "$lib/components/TextInput.svelte";
-    import { GITHUB_REPO_URL, openExternal, PLAID_TRIAL_URL } from "$lib/utils/externalLinks";
+    import { GITHUB_REPO_URL, openExternal, PLAID_TRIAL_URL, PLAID_URL } from "$lib/utils/externalLinks";
   import { load } from "@tauri-apps/plugin-store";
 
   const USERNAME_MAX_LENGTH = 80;

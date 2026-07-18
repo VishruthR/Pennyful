@@ -5,12 +5,6 @@
 
 <main class="container">
   <TransactionsTable />
-  <a href="/onboarding" class="batch-link">
-    <Button>Onboarding</Button>
-  </a>
-  <a href="/plaid/link" class="batch-link">
-    <Button>Add Plaid Account</Button>
-  </a>
 </main>
 
 <style>
@@ -23,9 +17,5 @@
     justify-content: center;
     padding: 32px;
     gap: 48px;
-  }
-
-  .batch-link {
-    text-decoration: none;
   }
 </style>
