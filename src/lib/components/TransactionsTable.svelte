@@ -37,7 +37,6 @@
   const DEFAULT_SORT_DIRECTION: SortDirection = "Desc";
 
   function toggleSort(column: string) {
-    console.log("toggling sort", column);
     if (sortColumn === column) {
       // Cycle through: Desc -> Asc -> default (newest first)
       if (sortDirection === "Desc") {
