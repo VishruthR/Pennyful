@@ -1,14 +1,10 @@
 <script lang="ts">
   import Button from "$lib/components/Button.svelte";
+  import TransactionsTable from "$lib/components/TransactionsTable.svelte";
  </script>
 
 <main class="container">
-  <a href="/onboarding" class="batch-link">
-    <Button>Onboarding</Button>
-  </a>
-  <a href="/plaid/link" class="batch-link">
-    <Button>Add Plaid Account</Button>
-  </a>
+  <TransactionsTable />
 </main>
 
 <style>
@@ -21,9 +17,5 @@
     justify-content: center;
     padding: 32px;
     gap: 48px;
-  }
-
-  .batch-link {
-    text-decoration: none;
   }
 </style>
