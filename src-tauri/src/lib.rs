@@ -125,7 +125,8 @@ pub fn run() {
             plaid::commands::save_plaid_credentials,
             credentials::commands::save_plaid_client_id,
             credentials::commands::save_plaid_secret,
-            transactions::commands::get_paginated_sorted_transactions
+            transactions::commands::get_paginated_sorted_transactions,
+            transactions::commands::update_transaction_category
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

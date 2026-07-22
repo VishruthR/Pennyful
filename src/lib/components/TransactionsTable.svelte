@@ -7,10 +7,11 @@
 
 <script lang="ts">
   import SortArrows, { type SortDirection } from "$lib/components/SortArrows.svelte";
-  import CategoryPill from "$lib/components/CategoryPill.svelte";
+  import CategoryCombobox from "$lib/components/CategoryCombobox.svelte";
   import { formatSignedCurrencyChange, isPositiveAmount } from "$lib/utils/format";
   import { transactionsApi } from "$lib/api/transactions";
-  import type { TransactionWithAccount, PaginedSortedTransactionsResponse } from "$lib/types";
+  import { categoriesApi } from "$lib/api/categories";
+  import type { Category, TransactionWithAccount, PaginedSortedTransactionsResponse } from "$lib/types";
   import Icon from "@iconify/svelte";
 
   interface Props {
@@ -32,6 +33,39 @@
       return [];
     }
   })
+
+  let categories: Category[] = $state([]);
+  $effect(() => {
+    categoriesApi.getCategoryDetails()
+      .then((details) => { categories = Object.values(details); })
+      .catch((e) => console.error(e));
+  });
+
+  async function handleCategoryChange(txn: TransactionWithAccount, categoryId: number) {
+    const category = categories.find((c) => c.id === categoryId);
+    if (!category || paginatedResponse === null || txn.transaction.category_id === categoryId) return;
+    try {
+      await transactionsApi.updateTransactionCategory(txn.transaction.id, categoryId);
+      // Optimistically reflect the change in the row without a refetch. Since
+      // paginatedResponse is $state.raw we reassign a fresh object.
+      paginatedResponse = {
+        ...paginatedResponse,
+        transactions: paginatedResponse.transactions.map((t) =>
+          t.transaction.id === txn.transaction.id
+            ? {
+                ...t,
+                category_name: category.name,
+                category_color: category.color,
+                category_icon: category.icon ?? null,
+                transaction: { ...t.transaction, category_id: category.id },
+              }
+            : t
+        ),
+      };
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   const DEFAULT_SORT_COLUMN = "date";
   const DEFAULT_SORT_DIRECTION: SortDirection = "Desc";
@@ -180,11 +214,10 @@
             <span class="ellipsis">{transaction.transaction.name}</span>
           </td>
           <td class="col-category">
-            <CategoryPill 
-              name={transaction.category_name}
-              icon={transaction.category_icon ?? undefined}
-              color={transaction.category_color}
-              textColor={index % 2 === 0 ? 'var(--pure-white)' : 'var(--grey-50)'}
+            <CategoryCombobox
+              categories={categories}
+              value={String(transaction.transaction.category_id)}
+              onSelect={(categoryId) => handleCategoryChange(transaction, categoryId)}
             />
           </td>
           <td class="col-amount {isPositiveAmount(transaction.transaction.amount) ? 'positive' : 'negative'}">
@@ -291,6 +324,10 @@
     color: var(--grey-500);
   }
 
+  td.col-category {
+    padding: 8px 20px;
+  }
+
   td.col-amount {
     text-align: right;
     white-space: nowrap;
@@ -313,7 +350,7 @@
   }
 
   .col-name {
-    width: 35%;
+    width: 25%;
   }
 
   .col-category {
@@ -321,7 +358,7 @@
   }
 
   .col-amount {
-    width: 15%;
+    width: 20%;
     min-width: 100px;
   }
 

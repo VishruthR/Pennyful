@@ -1,6 +1,16 @@
+<!-- @component
+  Combobox that allows users to select from a list of options
+
+  It allows caller to pass in a list of items as well as Snippets to render items
+  However, an optional item prop can also be passed in which will override the options.content
+  field. This item prop is convenient when a user wants to render a similar element 
+  but with modifications based on the content of option.item
+-->
+
 <script lang="ts">
   import { Select } from 'bits-ui';
   import Icon from '@iconify/svelte';
+  import type { Snippet } from 'svelte';
   import type { DropdownOption } from '$lib/types';
 
   interface Props {
@@ -8,9 +18,18 @@
     onSelect?: (value: string | null) => void;
     placeholder?: string;
     value?: string | null;
+    variant?: 'default' | 'slim';
+    item?: Snippet<[DropdownOption]>;
   }
 
-  let { options, onSelect, placeholder = 'Select...', value = $bindable<string | null>(null) }: Props = $props();
+  let {
+    options,
+    onSelect,
+    placeholder = 'Select...',
+    value = $bindable<string | null>(null),
+    variant = 'default',
+    item
+  }: Props = $props();
 
   let isOpen = $state(false);
 
@@ -23,7 +42,7 @@
   const optionsContent = $derived(Object.fromEntries(options.map(o => [o.value, o.content])));
 </script>
 
-<div class="combobox" class:open={isOpen}>
+<div class="combobox" class:open={isOpen} class:slim={variant === 'slim'}>
   <Select.Root
     type="single"
     value={value ?? undefined}
@@ -33,7 +52,11 @@
     <Select.Trigger class="trigger paragraph">
       <span class="trigger-content">
         {#if selectedOption}
-          {@render selectedOption.content()}
+          {#if item}
+            {@render item(selectedOption)}
+          {:else}
+            {@render selectedOption.content?.()}
+          {/if}
         {:else}
           <span class="placeholder">{placeholder}</span>
         {/if}
@@ -45,7 +68,11 @@
       <Select.Viewport>
         {#each options as option (option.value)}
           <Select.Item value={option.value} label={option.value} class="item paragraph">
-            {@render optionsContent[option.value]()}
+            {#if item}
+              {@render item(option)}
+            {:else}
+              {@render optionsContent[option.value]?.()}
+            {/if}
           </Select.Item>
         {:else}
           <span class="paragraph">No results found</span>
@@ -140,5 +167,10 @@
 
   .combobox :global(.item[data-selected]) {
     background-color: var(--blue-50);
+  }
+
+  /* ── Slim variant: Combobox with minimal padding ─────── */
+  .combobox.slim :global(.trigger) {
+    padding: 4px 4px;
   }
 </style>

@@ -54,8 +54,7 @@
         <CategoryPill
           name={category.name}
           icon={category.icon}
-          color={category.color}
-          textColor="white"
+          textColor={category.color}
         />
       </div>
       {/if}

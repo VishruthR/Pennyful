@@ -129,6 +129,20 @@ pub async fn add_plaid_transactions(
     Ok(num_transactions - res.rows_affected())
 }
 
+pub async fn update_transaction_category(
+    pool: &Pool<Sqlite>,
+    transaction_id: i64,
+    category_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(r#"UPDATE 'transaction' SET category_id=? WHERE id=?"#)
+        .bind(category_id)
+        .bind(transaction_id)
+        .execute(pool)
+        .await?;
+
+    Ok(())
+}
+
 pub async fn modify_plaid_transactions(
     conn: &mut SqliteConnection,
     modified_transactions: Vec<PlaidTransaction>,

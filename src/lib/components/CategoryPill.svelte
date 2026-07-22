@@ -8,11 +8,11 @@
   interface Props {
     name: string;
     icon?: string;
-    color: string;
+    color?: string;
     textColor: string;
   }
 
-  let { name, icon, color, textColor = 'inherit' }: Props = $props();
+  let { name, icon, color = "transparent", textColor = 'inherit' }: Props = $props();
 </script>
 
 <span class="category-pill" style:background-color={color} style:color={textColor}>
@@ -29,7 +29,7 @@
     display: inline-flex;
     align-items: center;
     padding: 6px 6px;
-    border-radius: 10px;
+    border-radius: 8px;
     white-space: nowrap;
   }
 

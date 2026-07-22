@@ -44,3 +44,14 @@ pub async fn get_paginated_sorted_transactions(
 
     Ok(out)
 }
+
+#[tauri::command]
+pub async fn update_transaction_category(
+    state: tauri::State<'_, AppState>,
+    transaction_id: i64,
+    category_id: i64,
+) -> Result<(), String> {
+    transactions::queries::update_transaction_category(&state.db.0, transaction_id, category_id)
+        .await
+        .map_err(|e| format!("Error updating transaction category: {e}"))
+}
