@@ -485,4 +485,67 @@ mod tests {
         assert_eq!(first.name, "TRANSACTION 1");
         Ok(())
     }
+
+    fn category_of(transactions: &[TransactionWithAccount], id: i64) -> &str {
+        transactions
+            .iter()
+            .find(|t| *t.id() == id)
+            .map(|t| t.category_name.as_str())
+            .expect("transaction should exist")
+    }
+
+    async fn all_transactions(
+        pool: &Pool<Sqlite>,
+    ) -> Result<Vec<TransactionWithAccount>, sqlx::Error> {
+        get_paginated_sorted_transactions(pool, &1, &10, &Some("name".to_owned()), &Some(SortDir::Asc))
+            .await
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("transactions")))]
+    async fn update_reassigns_and_overwrites_category(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        update_transaction_category(&pool, 1, 4).await?;
+        assert_eq!(category_of(&all_transactions(&pool).await?, 1), "Groceries");
+
+        // A subsequent update replaces the previous category (last write wins).
+        update_transaction_category(&pool, 1, 2).await?;
+        assert_eq!(category_of(&all_transactions(&pool).await?, 1), "Income");
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("transactions")))]
+    async fn update_only_affects_target_transaction(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        update_transaction_category(&pool, 1, 4).await?;
+
+        let transactions = all_transactions(&pool).await?;
+        assert_eq!(category_of(&transactions, 1), "Groceries");
+        for id in [2, 3, 4] {
+            assert_eq!(
+                category_of(&transactions, id),
+                "Uncategorized",
+                "transaction {id} should be untouched"
+            );
+        }
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures(path = "../fixtures", scripts("transactions")))]
+    async fn update_to_nonexistent_category_is_rejected(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        // category_id 999 has no matching category row; the foreign key on
+        // transaction.category_id should reject the update.
+        let result = update_transaction_category(&pool, 1, 999).await;
+        assert!(
+            result.is_err(),
+            "updating to a non-existent category should fail"
+        );
+
+        // The rejected update must leave the transaction's category unchanged.
+        assert_eq!(category_of(&all_transactions(&pool).await?, 1), "Uncategorized");
+        Ok(())
+    }
 }
