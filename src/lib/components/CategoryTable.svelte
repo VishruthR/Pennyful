@@ -28,11 +28,6 @@
 
   const UNCATEGORIZED = "Uncategorized";
 
-  function pillTextColor(color: string): string {
-    // No secondary color is stored, so darken the category color for the label.
-    return `color-mix(in srgb, ${color} 25%, black)`;
-  }
-
   function hasBudget(category: CategoryOverview): boolean {
     return category.budget_cents !== null && category.budget_cents > 0;
   }
@@ -72,8 +67,8 @@
             <CategoryPill
               name={category.name}
               icon={category.icon}
-              color={category.color}
-              textColor={pillTextColor(category.color)}
+              color={"transparent"}
+              textColor={category.color}
             />
           </td>
           <td class="col-budget">

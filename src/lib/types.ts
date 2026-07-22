@@ -98,7 +98,7 @@ interface Account {
 
 interface DropdownOption {
     value: string;
-    content: Snippet;
+    content?: Snippet;
 }
 
 export type { Category, CategoryDetails, CategoryOverview, Transaction, TransactionImport, AccountType, Account, DropdownOption, PlaidAccount, PlaidItem, AccountsGetResponse, LinkedInstitution, TransactionWithAccount, PaginedSortedTransactionsResponse };

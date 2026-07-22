@@ -19,7 +19,12 @@ const getPaginatedSortedTransactions = async (
   })) as PaginedSortedTransactionsResponse;
 }
 
+const updateTransactionCategory = async (transactionId: number, categoryId: number): Promise<void> => {
+  await invoke("update_transaction_category", { transactionId, categoryId });
+}
+
 export const transactionsApi = {
   syncTransactions,
-  getPaginatedSortedTransactions
+  getPaginatedSortedTransactions,
+  updateTransactionCategory
 }
