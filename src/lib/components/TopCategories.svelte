@@ -1,32 +1,21 @@
 <!-- @component
   Displays a list of spending categories with progress bars showing budget usage.
   Each category shows an icon, name, progress bar, and spending/budget amounts.
-
-  Example data:
-  const categories = [
-    { name: "Restaurants", icon: "fluent:food-28-filled", spending: 555, budget: 600 },
-    { name: "Healthcare", icon: "mdi:heart", spending: 84, budget: 400 },
-    { name: "Transportation", icon: "bxs:car", spending: 400, budget: 600 },
-  ];
 -->
 
 <script lang="ts">
   import Icon from "@iconify/svelte";
+  import type { CategoryOverview } from "$lib/types";
+    import { categoriesApi } from "$lib/api/categories";
 
-  interface SpendingCategory {
-    name: string;
-    icon: string;
-    spending: number;
-    budget?: number;
+  let categories: CategoryOverview[] = $state([]);
+
+  const loadCategories = async () => {
+    categories = await categoriesApi.getCategoryOverviews();
+    categories.sort((a, b) => {
+      return (a.spent)
+      })
   }
-
-  interface Props {
-    categories: SpendingCategory[];
-    title?: string;
-    onSeeAll?: () => void;
-  }
-
-  let { categories, title = "Top categories", onSeeAll }: Props = $props();
 
   function formatAmount(amount: number): string {
     return `$${amount.toLocaleString()}`;

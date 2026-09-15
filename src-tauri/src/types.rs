@@ -177,21 +177,15 @@ impl Category {
 }
 
 #[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
-pub struct Budget {
-    id: i64,
-    pub category_id: i64,
-    #[sqlx(rename = "amount_cents")]
-    pub amount: Cents,
-}
-
-#[derive(sqlx::FromRow, PartialEq, Eq, Debug, Clone, serde::Serialize)]
 pub struct CategoryOverview {
     pub id: i64,
     pub name: String,
     pub color: String,
     pub icon: Option<String>,
-    pub budget_cents: Option<i64>,
-    pub spent_cents: i64,
+    #[sqlx(rename = "budget_cents")]
+    pub budget: Option<Cents>,
+    #[sqlx(rename = "spent_cents")]
+    pub spent: Cents,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, serde::Serialize)]

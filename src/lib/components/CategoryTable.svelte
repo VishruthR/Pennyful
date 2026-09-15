@@ -12,12 +12,12 @@
   import Icon from "@iconify/svelte";
   import CategoryPill from "$lib/components/CategoryPill.svelte";
   import BudgetInput from "$lib/components/BudgetInput.svelte";
-  import { formatCentsAsDollars } from "$lib/utils/format";
+  import { formatDollars } from "$lib/utils/format";
   import { SPECIAL_CATEGORIES } from "$lib/utils/constants";
 
   interface Props {
     categories: CategoryOverview[];
-    onBudgetChange: (categoryId: number, amountCents: number) => void;
+    onBudgetChange: (categoryId: number, amount: number) => void;
     onEdit: (category: CategoryOverview) => void;
     onDelete: (category: CategoryOverview) => void;
     height?: string;
@@ -29,14 +29,14 @@
   let tableHeight = $derived(height ? height : "100%");
 
   function hasBudget(category: CategoryOverview): boolean {
-    return category.budget_cents !== null && category.budget_cents > 0;
+    return category.budget !== null && category.budget > 0;
   }
 
   function spentDisplay(category: CategoryOverview): string {
-    const spent = formatCentsAsDollars(category.spent_cents);
+    const spent = formatDollars(category.spent);
     if (hasBudget(category)) {
       const percent = Math.round(
-        (category.spent_cents / category.budget_cents!) * 100,
+        (category.spent / category.budget!) * 100,
       );
       return `${spent} (${percent}%)`;
     }
@@ -45,7 +45,7 @@
 
   function spentClass(category: CategoryOverview): string {
     if (!hasBudget(category)) return "spent-neutral";
-    const ratio = category.spent_cents / category.budget_cents!;
+    const ratio = category.spent / category.budget!;
     if (ratio >= 1) return "spent-over";
     if (ratio >= 0.9) return "spent-warning";
     return "spent-under";
@@ -75,8 +75,8 @@
           </td>
           <td class="col-budget">
             <BudgetInput
-              budgetCents={category.budget_cents}
-              onCommit={(cents) => onBudgetChange(category.id, cents)}
+              budget={category.budget}
+              onCommit={(amount) => onBudgetChange(category.id, amount)}
               slim
             />
           </td>

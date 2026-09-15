@@ -44,6 +44,16 @@ pub async fn set_category_budget(
 }
 
 #[tauri::command]
+pub async fn delete_category_budget(
+    state: tauri::State<'_, AppState>,
+    category_id: i64,
+) -> Result<(), String> {
+    queries::delete_budget(&state.db.0, category_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn create_category(
     state: tauri::State<'_, AppState>,
     name: String,

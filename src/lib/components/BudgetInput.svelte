@@ -1,48 +1,50 @@
 <!-- @component
-  A compact, editable currency input for a category's budget.
-  Displays a formatted whole-dollar amount (e.g. "$500") when idle and the raw
-  editable value while focused. Commits on blur or Enter; Escape cancels.
+A compact, editable currency input for a category's budget.
+Displays a formatted whole-dollar amount (e.g. "$500").
+Commits on blur or Enter; Escape cancels.
 -->
 
 <script lang="ts">
-  import { formatCentsAsDollars, parseDollarsToCents } from "$lib/utils/format";
+  import { formatDollars } from "$lib/utils/format";
+    import { sort } from "svelteplot";
 
   interface Props {
-    budgetCents: number | null;
-    onCommit: (amountCents: number) => void;
-    slim?: boolean;
+  budget: number | null;
+  onCommit: (amount: number | null) => void;
+      slim?: boolean;
   }
 
-  let { budgetCents, onCommit, slim = false }: Props = $props();
+  let { budget = null, onCommit, slim = false }: Props = $props();
 
-  let editing = $state(false);
-  let text = $state("");
+  let value = $state<number | null>(budget);
 
-  const display = $derived(
-    budgetCents === null ? "" : formatCentsAsDollars(budgetCents),
-  );
-
-  function startEdit() {
-    editing = true;
-    text = budgetCents === null ? "" : String(Math.round(budgetCents / 100));
+  const formattedBudget = {
+      get() {
+          console.log("get", value);
+          return value !== null ? `$${value}` : "";
+      },
+      set(displayValue: String) {
+          const nullLength = displayValue.startsWith("$") ? 1 : 0;
+          if (displayValue.length <= nullLength) {
+            value = null;
+            return;
+          }
+          value = parseInt(displayValue.slice(nullLength));
+      }
   }
 
-  function commit() {
-    editing = false;
-    const cents = parseDollarsToCents(text);
-    if (cents !== null && cents !== budgetCents) {
-      onCommit(cents);
-    }
+  const commit = () => {
+    onCommit(value);
   }
 
-  function handleKeydown(event: KeyboardEvent) {
+  const handleKeyDown = (event: KeyboardEvent) => {
     const target = event.currentTarget as HTMLInputElement;
-    if (event.key === "Enter") {
-      target.blur();
-    } else if (event.key === "Escape") {
-      editing = false;
-      target.blur();
-    }
+      if (event.key === "Enter") {
+        target.blur();
+      } else if (event.key === "Escape") {
+        value = budget;
+        target.blur();
+      }
   }
 </script>
 
@@ -51,11 +53,9 @@
   inputmode="decimal"
   placeholder="$0"
   class:slim
-  value={editing ? text : display}
-  oninput={(e) => (text = e.currentTarget.value)}
-  onfocus={startEdit}
+  bind:value={formattedBudget.get, formattedBudget.set}
   onblur={commit}
-  onkeydown={handleKeydown}
+  onkeydown={handleKeyDown}
 />
 
 <style>

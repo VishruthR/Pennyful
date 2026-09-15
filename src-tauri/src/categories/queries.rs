@@ -58,6 +58,24 @@ pub async fn upsert_budget(
     Ok(())
 }
 
+pub async fn delete_budget(
+    pool: &Pool<Sqlite>,
+    category_id: i64,
+) -> Result<(), sqlx::Error> {
+    let query = r#"
+        DELETE FROM budget b
+        WHERE b.category_id = ?
+    "#;
+
+    sqlx::query(query)
+        .bind(category_id)
+        .execute(pool)
+        .await?;
+
+    Ok(())
+}
+
+
 pub async fn create_category(
     pool: &Pool<Sqlite>,
     name: &String,
@@ -257,6 +275,24 @@ mod tests {
         );
         Ok(())
     }
+
+    #[sqlx::test]
+    #[should_panic(expected = "category should be present in overviews")]
+    async fn test_delete_budget(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        upsert_budget(&pool, 3, 5000).await?;
+        assert_eq!(
+            overview_for(&get_category_overview(&pool).await?, 3).budget,
+            Some(5000)
+        );
+
+        delete_budget(&pool, 3);
+        overview_fr(&get_category_overview(&pool).await?, 3);
+
+        Ok(())
+    }
+
 
     #[sqlx::test]
     async fn test_create_category_with_budget(

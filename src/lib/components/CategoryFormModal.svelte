@@ -13,7 +13,6 @@
   import ColorPicker from "$lib/components/ColorPicker.svelte";
   import Button from "$lib/components/Button.svelte";
   import { categoriesApi } from "$lib/api/categories";
-  import { parseDollarsToCents } from "$lib/utils/format";
   import type { CategoryOverview } from "$lib/types";
 
   interface Props {
@@ -37,10 +36,7 @@
     if (open && !wasOpen) {
       if (mode === "edit" && category) {
         name = category.name;
-        budgetText =
-          category.budget_cents !== null
-            ? String(Math.round(category.budget_cents / 100))
-            : "";
+        budgetText = String(category.budget) ?? "";
         iconName = category.icon ?? null;
         hex = category.color;
       } else {
@@ -70,12 +66,12 @@
       return;
     }
 
-    const budgetCents = parseDollarsToCents(budgetText);
+    const budget = parseInt(budgetText, 10);
     const input = {
       name: trimmedName,
       color: hex,
       icon: iconName,
-      budgetCents,
+      budget,
     };
 
     submitting = true;
