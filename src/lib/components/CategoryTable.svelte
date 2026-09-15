@@ -35,9 +35,7 @@
   function spentDisplay(category: CategoryOverview): string {
     const spent = formatDollars(category.spent);
     if (hasBudget(category)) {
-      const percent = Math.round(
-        (category.spent / category.budget!) * 100,
-      );
+      const percent = Math.round((category.spent / category.budget!) * 100);
       return `${spent} (${percent}%)`;
     }
     return spent;

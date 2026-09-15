@@ -25,9 +25,7 @@
   async function handleBudgetChange(categoryId: number, amount: number) {
     await categoriesApi.setCategoryBudget(categoryId, amount);
     categories = categories.map((category) =>
-      category.id === categoryId
-        ? { ...category, budget: amount }
-        : category,
+      category.id === categoryId ? { ...category, budget: amount } : category,
     );
   }
 

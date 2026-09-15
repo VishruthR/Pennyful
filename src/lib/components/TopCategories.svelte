@@ -6,16 +6,16 @@
 <script lang="ts">
   import Icon from "@iconify/svelte";
   import type { CategoryOverview } from "$lib/types";
-    import { categoriesApi } from "$lib/api/categories";
+  import { categoriesApi } from "$lib/api/categories";
 
   let categories: CategoryOverview[] = $state([]);
 
   const loadCategories = async () => {
     categories = await categoriesApi.getCategoryOverviews();
     categories.sort((a, b) => {
-      return (a.spent)
-      })
-  }
+      return a.spent;
+    });
+  };
 
   function formatAmount(amount: number): string {
     return `$${amount.toLocaleString()}`;

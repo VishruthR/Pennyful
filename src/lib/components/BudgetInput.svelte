@@ -6,12 +6,12 @@ Commits on blur or Enter; Escape cancels.
 
 <script lang="ts">
   import { formatDollars } from "$lib/utils/format";
-    import { sort } from "svelteplot";
+  import { sort } from "svelteplot";
 
   interface Props {
-  budget: number | null;
-  onCommit: (amount: number | null) => void;
-      slim?: boolean;
+    budget: number | null;
+    onCommit: (amount: number | null) => void;
+    slim?: boolean;
   }
 
   let { budget = null, onCommit, slim = false }: Props = $props();
@@ -19,33 +19,33 @@ Commits on blur or Enter; Escape cancels.
   let value = $state<number | null>(budget);
 
   const formattedBudget = {
-      get() {
-          console.log("get", value);
-          return value !== null ? `$${value}` : "";
-      },
-      set(displayValue: String) {
-          const nullLength = displayValue.startsWith("$") ? 1 : 0;
-          if (displayValue.length <= nullLength) {
-            value = null;
-            return;
-          }
-          value = parseInt(displayValue.slice(nullLength));
+    get() {
+      console.log("get", value);
+      return value !== null ? `$${value}` : "";
+    },
+    set(displayValue: String) {
+      const nullLength = displayValue.startsWith("$") ? 1 : 0;
+      if (displayValue.length <= nullLength) {
+        value = null;
+        return;
       }
-  }
+      value = parseInt(displayValue.slice(nullLength));
+    },
+  };
 
   const commit = () => {
     onCommit(value);
-  }
+  };
 
   const handleKeyDown = (event: KeyboardEvent) => {
     const target = event.currentTarget as HTMLInputElement;
-      if (event.key === "Enter") {
-        target.blur();
-      } else if (event.key === "Escape") {
-        value = budget;
-        target.blur();
-      }
-  }
+    if (event.key === "Enter") {
+      target.blur();
+    } else if (event.key === "Escape") {
+      value = budget;
+      target.blur();
+    }
+  };
 </script>
 
 <input
