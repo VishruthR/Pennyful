@@ -5,9 +5,6 @@ Commits on blur or Enter; Escape cancels.
 -->
 
 <script lang="ts">
-  import { formatDollars } from "$lib/utils/format";
-  import { sort } from "svelteplot";
-
   interface Props {
     budget: number | null;
     onCommit: (amount: number | null) => void;
@@ -16,6 +13,8 @@ Commits on blur or Enter; Escape cancels.
 
   let { budget = null, onCommit, slim = false }: Props = $props();
 
+  // This `value` is expected to be updated so we want to avoid binding it to `budget`.
+  // svelte-ignore state_referenced_locally
   let value = $state<number | null>(budget);
 
   const formattedBudget = {

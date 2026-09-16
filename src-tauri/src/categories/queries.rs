@@ -1,4 +1,4 @@
-use crate::types::{Category, CategoryOverview};
+use crate::types::{Category, CategoryOverview, Cents};
 use sqlx::{Pool, Sqlite};
 
 pub async fn get_all_categories(pool: &Pool<Sqlite>) -> Result<Vec<Category>, sqlx::Error> {
@@ -39,7 +39,7 @@ pub async fn get_category_overviews(
 pub async fn upsert_budget(
     pool: &Pool<Sqlite>,
     category_id: i64,
-    amount_cents: i64,
+    amount: Cents,
 ) -> Result<(), sqlx::Error> {
     let query = r#"
         INSERT INTO budget (category_id, amount_cents)
@@ -51,7 +51,7 @@ pub async fn upsert_budget(
 
     sqlx::query(query)
         .bind(category_id)
-        .bind(amount_cents)
+        .bind(amount)
         .execute(pool)
         .await?;
 
@@ -61,18 +61,17 @@ pub async fn upsert_budget(
 pub async fn delete_budget(
     pool: &Pool<Sqlite>,
     category_id: i64,
-) -> Result<(), sqlx::Error> {
+) -> Result<u64, sqlx::Error> {
     let query = r#"
-        DELETE FROM budget b
-        WHERE b.category_id = ?
+        DELETE FROM budget WHERE category_id = ?
     "#;
 
-    sqlx::query(query)
+    let result = sqlx::query(query)
         .bind(category_id)
         .execute(pool)
         .await?;
 
-    Ok(())
+    Ok(result.rows_affected())
 }
 
 
@@ -81,7 +80,7 @@ pub async fn create_category(
     name: &String,
     color: &String,
     icon: &Option<String>,
-    budget_cents: Option<i64>,
+    budget: Option<Cents>,
 ) -> Result<i64, sqlx::Error> {
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO category (name, color, icon) VALUES (?, ?, ?) RETURNING id",
@@ -92,7 +91,7 @@ pub async fn create_category(
     .fetch_one(pool)
     .await?;
 
-    if let Some(cents) = budget_cents {
+    if let Some(cents) = budget {
         upsert_budget(pool, id, cents).await?;
     }
 
@@ -105,7 +104,7 @@ pub async fn update_category(
     name: &String,
     color: &String,
     icon: &Option<String>,
-    budget_cents: Option<i64>,
+    budget: Option<Cents>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query("UPDATE category SET name = ?, color = ?, icon = ? WHERE id = ?")
         .bind(name)
@@ -115,7 +114,7 @@ pub async fn update_category(
         .execute(pool)
         .await?;
 
-    if let Some(cents) = budget_cents {
+    if let Some(cents) = budget {
         upsert_budget(pool, id, cents).await?;
     }
 
@@ -155,7 +154,9 @@ pub async fn delete_category(pool: &Pool<Sqlite>, id: i64) -> Result<(), sqlx::E
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::types::Cents;
+
+use super::*;
 
     fn get_expected_categories() -> Vec<String> {
         // Only test default categories
@@ -235,8 +236,8 @@ mod tests {
 
         // With no budget row and no transactions, budget is null and spend is 0.
         let uncategorized = overview_for(&overviews, 1);
-        assert_eq!(uncategorized.budget_cents, None);
-        assert_eq!(uncategorized.spent_cents, 0);
+        assert_eq!(uncategorized.budget, None);
+        assert_eq!(uncategorized.spent, Cents::from_i32(0).expect("Coudln't parse literal"));
         Ok(())
     }
 
@@ -254,7 +255,7 @@ mod tests {
         insert_txn(&pool, 3, -5000, "2020-01-15").await?;
 
         let overviews = get_category_overviews(&pool).await?;
-        assert_eq!(overview_for(&overviews, 3).spent_cents, 700);
+        assert_eq!(overview_for(&overviews, 3).spent, Cents::from_i32(7).expect("Couldn't parse literal"));
         Ok(())
     }
 
@@ -262,33 +263,32 @@ mod tests {
     async fn test_upsert_budget_inserts_then_updates(
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        upsert_budget(&pool, 3, 50000).await?;
+        upsert_budget(&pool, 3, Cents::from_i32_or_throw(500)).await?;
         assert_eq!(
-            overview_for(&get_category_overviews(&pool).await?, 3).budget_cents,
-            Some(50000)
+            overview_for(&get_category_overviews(&pool).await?, 3).budget,
+            Cents::from_i32(500)
         );
 
-        upsert_budget(&pool, 3, 12500).await?;
+        upsert_budget(&pool, 3, Cents::from_i32_or_throw(125)).await?;
         assert_eq!(
-            overview_for(&get_category_overviews(&pool).await?, 3).budget_cents,
-            Some(12500)
+            overview_for(&get_category_overviews(&pool).await?, 3).budget,
+            Cents::from_i32(125)
         );
         Ok(())
     }
 
     #[sqlx::test]
-    #[should_panic(expected = "category should be present in overviews")]
     async fn test_delete_budget(
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        upsert_budget(&pool, 3, 5000).await?;
+        upsert_budget(&pool, 3, Cents::from_i32_or_throw(50)).await.expect("Couldn't upsert budget");
         assert_eq!(
-            overview_for(&get_category_overview(&pool).await?, 3).budget,
-            Some(5000)
+            overview_for(&get_category_overviews(&pool).await.expect("Couldn't get category overview"), 3).budget,
+            Cents::from_i32(50)
         );
 
-        delete_budget(&pool, 3);
-        overview_fr(&get_category_overview(&pool).await?, 3);
+        assert_eq!(delete_budget(&pool, 3).await.expect("Couldn't delete budget"), 1);
+        assert_eq!(overview_for(&get_category_overviews(&pool).await.expect("Coudln't get category overview"), 3).budget, None);
 
         Ok(())
     }
@@ -303,7 +303,7 @@ mod tests {
             &"Coffee".to_string(),
             &"#6F4E37".to_string(),
             &Some("mdi:coffee".to_string()),
-            Some(2000),
+            Some(Cents::from_i32_or_throw(20)),
         )
         .await?;
 
@@ -312,7 +312,7 @@ mod tests {
         assert_eq!(created.name, "Coffee");
         assert_eq!(created.color, "#6F4E37");
         assert_eq!(created.icon.as_deref(), Some("mdi:coffee"));
-        assert_eq!(created.budget_cents, Some(2000));
+        assert_eq!(created.budget, Cents::from_i32(20));
         Ok(())
     }
 
@@ -327,7 +327,7 @@ mod tests {
             &"Home".to_string(),
             &"#000000".to_string(),
             &Some("mdi:home".to_string()),
-            Some(30000),
+            Cents::from_i32(30),
         )
         .await?;
 
@@ -336,7 +336,7 @@ mod tests {
         assert_eq!(updated.name, "Home");
         assert_eq!(updated.color, "#000000");
         assert_eq!(updated.icon.as_deref(), Some("mdi:home"));
-        assert_eq!(updated.budget_cents, Some(30000));
+        assert_eq!(updated.budget, Cents::from_i32(30));
         Ok(())
     }
 
@@ -347,7 +347,7 @@ mod tests {
         seed_account(&pool).await?;
         // A transaction in category 3 (Housing), plus a budget for it.
         insert_txn(&pool, 3, -1000, "2020-01-15").await?;
-        upsert_budget(&pool, 3, 50000).await?;
+        upsert_budget(&pool, 3, Cents::from_i32_or_throw(500)).await?;
 
         delete_category(&pool, 3).await?;
 

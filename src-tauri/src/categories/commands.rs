@@ -1,6 +1,6 @@
 use crate::categories::queries;
 use crate::categories::queries::get_all_categories;
-use crate::types::{Category, CategoryOverview};
+use crate::types::{Category, CategoryOverview, Cents};
 use crate::AppState;
 use std::collections::HashMap;
 
@@ -36,9 +36,9 @@ pub async fn get_category_overviews(
 pub async fn set_category_budget(
     state: tauri::State<'_, AppState>,
     category_id: i64,
-    amount_cents: i64,
+    amount: Cents,
 ) -> Result<(), String> {
-    queries::upsert_budget(&state.db.0, category_id, amount_cents)
+    queries::upsert_budget(&state.db.0, category_id, amount)
         .await
         .map_err(|e| e.to_string())
 }
@@ -48,9 +48,11 @@ pub async fn delete_category_budget(
     state: tauri::State<'_, AppState>,
     category_id: i64,
 ) -> Result<(), String> {
-    queries::delete_budget(&state.db.0, category_id)
+    let _ = queries::delete_budget(&state.db.0, category_id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -59,9 +61,9 @@ pub async fn create_category(
     name: String,
     color: String,
     icon: Option<String>,
-    budget_cents: Option<i64>,
+    budget: Option<Cents>,
 ) -> Result<i64, String> {
-    queries::create_category(&state.db.0, &name, &color, &icon, budget_cents)
+    queries::create_category(&state.db.0, &name, &color, &icon, budget)
         .await
         .map_err(|e| e.to_string())
 }
@@ -73,9 +75,9 @@ pub async fn update_category(
     name: String,
     color: String,
     icon: Option<String>,
-    budget_cents: Option<i64>,
+    budget: Option<Cents>,
 ) -> Result<(), String> {
-    queries::update_category(&state.db.0, id, &name, &color, &icon, budget_cents)
+    queries::update_category(&state.db.0, id, &name, &color, &icon, budget)
         .await
         .map_err(|e| e.to_string())
 }

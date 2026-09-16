@@ -28,6 +28,10 @@ const setCategoryBudget = async (
   await invoke("set_category_budget", { categoryId, amountCents });
 };
 
+const deleteCategoryBudget = async (categoryId: number): Promise<void> => {
+  await invoke("delete_category_budget", { categoryId });
+};
+
 interface CategoryInput {
   name: string;
   color: string;
@@ -56,6 +60,7 @@ export const categoriesApi = {
   getCategoryById,
   getCategoryOverviews,
   setCategoryBudget,
+  deleteCategoryBudget,
   createCategory,
   updateCategory,
   deleteCategory,
