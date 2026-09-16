@@ -17,7 +17,7 @@
 
   interface Props {
     categories: CategoryOverview[];
-    onBudgetChange: (categoryId: number, amount: number) => void;
+    onBudgetChange: (categoryId: number, amount: number | null) => void;
     onEdit: (category: CategoryOverview) => void;
     onDelete: (category: CategoryOverview) => void;
     height?: string;

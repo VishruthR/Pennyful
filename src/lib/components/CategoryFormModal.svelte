@@ -36,7 +36,7 @@
     if (open && !wasOpen) {
       if (mode === "edit" && category) {
         name = category.name;
-        budgetText = String(category.budget) ?? "";
+        budgetText = String(category.budget);
         iconName = category.icon ?? null;
         hex = category.color;
       } else {

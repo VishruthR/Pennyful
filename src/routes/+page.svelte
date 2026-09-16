@@ -1,6 +1,6 @@
 <script lang="ts">
   import MonthByMonthSpendingChart from "$lib/components/MonthByMonthSpendingChart.svelte";
-  import TopCategories from "$lib/components/TopCategories.svelte";
+  // import TopCategories from "$lib/components/TopCategories.svelte";
   import TransactionsTable from "$lib/components/TransactionsTable.svelte";
 </script>
 

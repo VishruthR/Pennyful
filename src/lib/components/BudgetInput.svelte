@@ -22,7 +22,7 @@ Commits on blur or Enter; Escape cancels.
       console.log("get", value);
       return value !== null ? `$${value}` : "";
     },
-    set(displayValue: String) {
+    set(displayValue: string) {
       const nullLength = displayValue.startsWith("$") ? 1 : 0;
       if (displayValue.length <= nullLength) {
         value = null;

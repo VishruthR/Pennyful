@@ -6,27 +6,27 @@
 <script lang="ts">
   import Icon from "@iconify/svelte";
   import type { CategoryOverview } from "$lib/types";
-  import { categoriesApi } from "$lib/api/categories";
+  // import { categoriesApi } from "$lib/api/categories";
 
   let categories: CategoryOverview[] = $state([]);
 
-  const loadCategories = async () => {
-    categories = await categoriesApi.getCategoryOverviews();
-    categories.sort((a, b) => {
-      return a.spent;
-    });
-  };
+  // const loadCategories = async () => {
+  //   categories = await categoriesApi.getCategoryOverviews();
+  //   categories.sort((a, b) => {
+  //     return a.spent;
+  //   });
+  // };
 
   function formatAmount(amount: number): string {
     return `$${amount.toLocaleString()}`;
   }
 
-  function getProgress(category: SpendingCategory): number {
+  function getProgress(category: CategoryOverview): number {
     if (!category.budget) return 100;
-    return Math.min((category.spending / category.budget) * 100, 100);
+    return Math.min((category.spent / category.budget) * 100, 100);
   }
 
-  function getProgressColor(category: SpendingCategory): string {
+  function getProgressColor(category: CategoryOverview): string {
     const progress = getProgress(category);
     if (progress < 35) return "var(--profit-green)";
     if (progress <= 70) return "#F7B500";
@@ -36,14 +36,14 @@
 
 <div class="top-categories">
   <header class="header">
-    <h2 class="title h3">{title}</h2>
-    <button class="see-all" onclick={onSeeAll}>
+    <h2 class="title h3">Top Categories</h2>
+    <a class="see-all" href="/categories">
       see all categories <Icon
         icon="stash:chevron-right"
         width={16}
         height={16}
       />
-    </button>
+    </a>
   </header>
 
   <div class="category-grid">
@@ -51,7 +51,11 @@
       {#each categories as category (category.name)}
         <div class="category-label">
           <div class="category-icon">
-            <Icon icon={category.icon} width={20} height={20} />
+            <Icon
+              icon={category.icon ?? "bx:category"}
+              width={20}
+              height={20}
+            />
           </div>
           <span class="category-name paragraph">{category.name}</span>
         </div>
@@ -76,9 +80,9 @@
       {#each categories as category (category.name)}
         <span class="category-amount paragraph">
           {#if category.budget}
-            {formatAmount(category.spending)} / {formatAmount(category.budget)}
+            {formatAmount(category.spent)} / {formatAmount(category.budget)}
           {:else}
-            {formatAmount(category.spending)}
+            {formatAmount(category.spent)}
           {/if}
         </span>
       {/each}
