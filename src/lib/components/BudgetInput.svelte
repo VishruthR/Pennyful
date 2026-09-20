@@ -1,66 +1,71 @@
 <!-- @component
-  A compact, editable currency input for a category's budget.
-  Displays a formatted whole-dollar amount (e.g. "$500") when idle and the raw
-  editable value while focused. Commits on blur or Enter; Escape cancels.
+A compact, editable currency input for a category's budget.
+Displays a formatted whole-dollar amount (e.g. "$500").
+Commits on blur or Enter; Escape cancels.
 -->
 
 <script lang="ts">
-  import { formatCentsAsDollars, parseDollarsToCents } from "$lib/utils/format";
+  import { formatDollars } from "$lib/utils/format";
+  import { parseNumericString } from "$lib/utils/parse";
 
   interface Props {
-    budgetCents: number | null;
-    onCommit: (amountCents: number) => void;
+    budget: number | null;
+    onCommit: (amount: number | null) => void;
     slim?: boolean;
   }
 
-  let { budgetCents, onCommit, slim = false }: Props = $props();
+  let { budget = null, onCommit, slim = false }: Props = $props();
 
-  let editing = $state(false);
-  let text = $state("");
+  // `value` is expected to be updated so we want to avoid binding it to `budget`.
+  // svelte-ignore state_referenced_locally
+  let value = $state<number | null>(budget);
 
-  const display = $derived(
-    budgetCents === null ? "" : formatCentsAsDollars(budgetCents),
-  );
+  // TODO: Support budgets with cents values
+  const formattedBudget = {
+    get() {
+      return value !== null ? formatDollars(value) : "";
+    },
+    set(displayValue: string) {
+      const nullLength = displayValue.startsWith("$") ? 1 : 0;
+      if (displayValue.length <= nullLength) {
+        value = null;
+        return;
+      }
+      value = parseNumericString(displayValue.slice(nullLength));
+      if (Number.isNaN(value)) {
+        value = null;
+      }
+    },
+  };
 
-  function startEdit() {
-    editing = true;
-    text = budgetCents === null ? "" : String(Math.round(budgetCents / 100));
-  }
+  const commit = () => {
+    onCommit(value);
+  };
 
-  function commit() {
-    editing = false;
-    const cents = parseDollarsToCents(text);
-    if (cents !== null && cents !== budgetCents) {
-      onCommit(cents);
-    }
-  }
-
-  function handleKeydown(event: KeyboardEvent) {
+  const handleKeyDown = (event: KeyboardEvent) => {
     const target = event.currentTarget as HTMLInputElement;
     if (event.key === "Enter") {
       target.blur();
     } else if (event.key === "Escape") {
-      editing = false;
+      value = budget;
       target.blur();
     }
-  }
+  };
 </script>
 
 <input
   class="budget-input paragraph"
   inputmode="decimal"
-  placeholder="$0"
+  placeholder="--"
   class:slim
-  value={editing ? text : display}
-  oninput={(e) => (text = e.currentTarget.value)}
-  onfocus={startEdit}
+  bind:value={formattedBudget.get, formattedBudget.set}
   onblur={commit}
-  onkeydown={handleKeydown}
+  onkeydown={handleKeyDown}
 />
 
 <style>
   .budget-input {
-    width: 96px;
+    width: 104px;
     padding: 10px 12px;
     text-align: center;
     border: 1.5px solid var(--grey-100);

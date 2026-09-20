@@ -13,8 +13,8 @@ interface CategoryOverview {
   name: string;
   color: string;
   icon?: string;
-  budget_cents: number | null;
-  spent_cents: number;
+  budget: number | null;
+  spent: number;
 }
 
 interface Transaction {

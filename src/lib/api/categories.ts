@@ -23,16 +23,23 @@ const getCategoryOverviews = async (): Promise<CategoryOverview[]> => {
 
 const setCategoryBudget = async (
   categoryId: number,
-  amountCents: number,
+  amount: number,
 ): Promise<void> => {
-  await invoke("set_category_budget", { categoryId, amountCents });
+  await invoke("set_category_budget", {
+    categoryId,
+    amount: amount.toString(),
+  });
+};
+
+const deleteCategoryBudget = async (categoryId: number): Promise<void> => {
+  await invoke("delete_category_budget", { categoryId });
 };
 
 interface CategoryInput {
   name: string;
   color: string;
   icon: string | null;
-  budgetCents: number | null;
+  budget: number | null;
 }
 
 const createCategory = async (input: CategoryInput): Promise<number> => {
@@ -56,6 +63,7 @@ export const categoriesApi = {
   getCategoryById,
   getCategoryOverviews,
   setCategoryBudget,
+  deleteCategoryBudget,
   createCategory,
   updateCategory,
   deleteCategory,

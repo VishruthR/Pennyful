@@ -22,12 +22,15 @@
   }
   onMount(loadCategories);
 
-  async function handleBudgetChange(categoryId: number, amountCents: number) {
-    await categoriesApi.setCategoryBudget(categoryId, amountCents);
+  async function handleBudgetChange(categoryId: number, amount: number | null) {
+    if (amount == null) {
+      await categoriesApi.deleteCategoryBudget(categoryId);
+    } else {
+      await categoriesApi.setCategoryBudget(categoryId, amount);
+    }
+
     categories = categories.map((category) =>
-      category.id === categoryId
-        ? { ...category, budget_cents: amountCents }
-        : category,
+      category.id === categoryId ? { ...category, budget: amount } : category,
     );
   }
 

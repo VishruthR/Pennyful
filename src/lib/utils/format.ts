@@ -43,23 +43,10 @@ export function formatSignedCurrencyAmount(amount: number): string {
 }
 
 /**
- * Formats an integer number of cents as a whole-dollar currency string, e.g. 50000 -> "$500".
+ * Formats an integer `amount` to a dollar currency string, e.g. 500 --> "$500".
  * Rounds to the nearest dollar; cents are not shown.
  */
-export function formatCentsAsDollars(cents: number): string {
-  const dollars = Math.round(cents / 100);
-  const sign = dollars < 0 ? "-" : "";
-  return `${sign}$${Math.abs(dollars).toLocaleString("en-US")}`;
-}
-
-/**
- * Parses a user-entered dollar string (e.g. "$1,200" or "500") into integer cents.
- * Returns null when the input is empty or not a valid number.
- */
-export function parseDollarsToCents(input: string): number | null {
-  const cleaned = input.replace(/[$,\s]/g, "");
-  if (cleaned === "") return null;
-  const dollars = Number(cleaned);
-  if (!Number.isFinite(dollars)) return null;
-  return Math.round(dollars * 100);
+export function formatDollars(amount: number): string {
+  const sign = amount < 0 ? "-" : "";
+  return `${sign}$${Math.abs(amount).toLocaleString("en-US")}`;
 }

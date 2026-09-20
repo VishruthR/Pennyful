@@ -11,7 +11,10 @@ use sqlx::{
 use std::{fmt, ops::Deref};
 
 // Custom type to enable automatic encoding/decoding for sqlx
-#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd, serde::Serialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize,
+)]
+#[serde(transparent)]
 pub struct Cents(pub Decimal);
 
 impl Type<Sqlite> for Cents {
@@ -55,6 +58,14 @@ impl<'r> Decode<'r, Sqlite> for Cents {
 impl Cents {
     pub fn from_dollars_f64(dollars: f64) -> Option<Self> {
         Decimal::from_f64(dollars).map(|d| Cents(d.round_dp(2)))
+    }
+
+    pub fn from_i32(dollars: i32) -> Option<Self> {
+        Decimal::from_i32(dollars).map(|d| Cents(d))
+    }
+
+    pub fn from_i32_or_throw(dollars: i32) -> Self {
+        Self::from_i32(dollars).expect("Coudln't convert i32 value to Cents")
     }
 }
 
@@ -177,21 +188,15 @@ impl Category {
 }
 
 #[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
-pub struct Budget {
-    id: i64,
-    pub category_id: i64,
-    #[sqlx(rename = "amount_cents")]
-    pub amount: Cents,
-}
-
-#[derive(sqlx::FromRow, PartialEq, Eq, Debug, Clone, serde::Serialize)]
 pub struct CategoryOverview {
     pub id: i64,
     pub name: String,
     pub color: String,
     pub icon: Option<String>,
-    pub budget_cents: Option<i64>,
-    pub spent_cents: i64,
+    #[sqlx(rename = "budget_cents")]
+    pub budget: Option<Cents>,
+    #[sqlx(rename = "spent_cents")]
+    pub spent: Cents,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, serde::Serialize)]
