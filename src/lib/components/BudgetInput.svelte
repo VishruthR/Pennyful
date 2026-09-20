@@ -5,7 +5,8 @@ Commits on blur or Enter; Escape cancels.
 -->
 
 <script lang="ts">
-    import { formatDollars } from "$lib/utils/format";
+  import { formatDollars } from "$lib/utils/format";
+  import { parseNumericString } from "$lib/utils/parse";
 
   interface Props {
     budget: number | null;
@@ -19,6 +20,7 @@ Commits on blur or Enter; Escape cancels.
   // svelte-ignore state_referenced_locally
   let value = $state<number | null>(budget);
 
+  // TODO: Support budgets with cents values
   const formattedBudget = {
     get() {
       return value !== null ? formatDollars(value) : "";
@@ -29,7 +31,10 @@ Commits on blur or Enter; Escape cancels.
         value = null;
         return;
       }
-      value = parseInt(displayValue.slice(nullLength));
+      value = parseNumericString(displayValue.slice(nullLength));
+      if (Number.isNaN(value)) {
+        value = null;
+      }
     },
   };
 
@@ -51,7 +56,7 @@ Commits on blur or Enter; Escape cancels.
 <input
   class="budget-input paragraph"
   inputmode="decimal"
-  placeholder="$0"
+  placeholder="--"
   class:slim
   bind:value={formattedBudget.get, formattedBudget.set}
   onblur={commit}
@@ -60,7 +65,7 @@ Commits on blur or Enter; Escape cancels.
 
 <style>
   .budget-input {
-    width: 96px;
+    width: 104px;
     padding: 10px 12px;
     text-align: center;
     border: 1.5px solid var(--grey-100);

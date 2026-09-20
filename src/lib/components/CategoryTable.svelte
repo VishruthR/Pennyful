@@ -177,11 +177,11 @@
   }
 
   .col-category {
-    width: 34%;
+    width: 32%;
   }
 
   .col-budget {
-    width: 20%;
+    width: 22%;
   }
 
   .col-spent {
