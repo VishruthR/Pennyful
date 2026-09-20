@@ -9,12 +9,13 @@ Commits on blur or Enter; Escape cancels.
   import { parseNumericString } from "$lib/utils/parse";
 
   interface Props {
+    id?: string;
     budget: number | null;
     onCommit: (amount: number | null) => void;
     slim?: boolean;
   }
 
-  let { budget = null, onCommit, slim = false }: Props = $props();
+  let { id, budget = null, onCommit, slim = false }: Props = $props();
 
   // `value` is expected to be updated so we want to avoid binding it to `budget`.
   // svelte-ignore state_referenced_locally
@@ -54,6 +55,7 @@ Commits on blur or Enter; Escape cancels.
 </script>
 
 <input
+  id={id}
   class="budget-input paragraph"
   inputmode="decimal"
   placeholder="--"

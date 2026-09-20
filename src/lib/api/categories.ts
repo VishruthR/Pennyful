@@ -43,14 +43,17 @@ interface CategoryInput {
 }
 
 const createCategory = async (input: CategoryInput): Promise<number> => {
-  return (await invoke("create_category", { ...input })) as number;
+  const budget = input.budget !== null ? input.budget.toString() : null;
+  return (await invoke("create_category", { ...input, budget })) as number;
 };
 
 const updateCategory = async (
   id: number,
   input: CategoryInput,
 ): Promise<void> => {
-  await invoke("update_category", { id, ...input });
+  const budget = input.budget !== null ? input.budget.toString() : null;
+  console.log(budget);
+  await invoke("update_category", { id, ...input, budget });
 };
 
 const deleteCategory = async (id: number): Promise<void> => {

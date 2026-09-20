@@ -14,6 +14,7 @@
   import Button from "$lib/components/Button.svelte";
   import { categoriesApi } from "$lib/api/categories";
   import type { CategoryOverview } from "$lib/types";
+    import BudgetInput from "./BudgetInput.svelte";
 
   interface Props {
     open?: boolean;
@@ -24,40 +25,41 @@
 
   let { open = $bindable(false), mode, category, onSuccess }: Props = $props();
 
-  let name = $state("");
-  let budgetText = $state("");
-  let iconName = $state<string | null>(null);
-  let hex = $state<string | null>(null);
+  let name = $derived(category?.name ?? "");
+  let budget = $derived(category?.budget ?? null);
+  let icon = $derived(category?.icon ?? null);
+  // let budgetText = $state<number | null>(category?.budget ?? null);
+  // let budget = $state<number | null>(() => { return category?.budget ?? null; }());
+  let hex = $derived(category?.color ?? null);
   let submitting = $state(false);
   let error = $state<string | null>(null);
 
-  let wasOpen = false;
-  $effect(() => {
-    if (open && !wasOpen) {
-      if (mode === "edit" && category) {
-        name = category.name;
-        budgetText = String(category.budget);
-        iconName = category.icon ?? null;
-        hex = category.color;
-      } else {
-        name = "";
-        budgetText = "";
-        iconName = null;
-        hex = null;
-      }
-      error = null;
-    }
-    wasOpen = open;
-  });
+  // let wasOpen = false;
+  // $effect(() => {
+  //   if (open && !wasOpen) {
+  //     if (mode === "edit" && category) {
+  //       name = category.name;
+  //       budgetText = String(category.budget);
+  //       iconName = category.icon ?? null;
+  //       hex = category.color;
+  //     } else {
+  //       name = "";
+  //       budgetText = "";
+  //       iconName = null;
+  //       hex = null;
+  //     }
+  //     error = null;
+  //   }
+  //   wasOpen = open;
+  // });
 
   const title = $derived(mode === "edit" ? "Edit Category" : "Add Category");
   const submitLabel = $derived(mode === "edit" ? "Save" : "Add Category");
 
-  async function handleSubmit(event: SubmitEvent) {
+  const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
-
-    const trimmedName = name.trim();
-    if (!trimmedName) {
+    
+    if (!name || !name.trim()) {
       error = "Please enter a name.";
       return;
     }
@@ -66,11 +68,10 @@
       return;
     }
 
-    const budget = parseInt(budgetText, 10);
     const input = {
-      name: trimmedName,
+      name: name.trim(),
       color: hex,
-      icon: iconName,
+      icon: icon,
       budget,
     };
 
@@ -105,18 +106,24 @@
 
     <div class="field">
       <label class="paragraph-bold" for="category-budget">Budget</label>
-      <TextInput
-        id="category-budget"
-        bind:value={budgetText}
-        inputmode="decimal"
-        placeholder="$0.00"
+      <BudgetInput 
+        id="category-budget" 
+        budget={budget}
+        onCommit={(amount: number | null) => { budget = amount; }}
+        slim={false}
       />
+      <!-- <TextInput -->
+      <!--   id="category-budget" -->
+      <!--   bind:value={budgetText} -->
+      <!--   inputmode="decimal" -->
+      <!--   placeholder="$0.00" -->
+      <!-- /> -->
     </div>
 
     <div class="pickers">
       <div class="field">
         <span class="paragraph-bold">Icon</span>
-        <IconPicker bind:iconName />
+        <IconPicker bind:iconName={icon} />
       </div>
       <div class="field">
         <span class="paragraph-bold">Color</span>
