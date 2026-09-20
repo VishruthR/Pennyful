@@ -16,7 +16,7 @@ Commits on blur or Enter; Escape cancels.
     maxWidth?: string;
   }
 
-  let { id, budget = null, onCommit, slim = false, maxWidth }: Props = $props();
+  let { id, budget = null, onCommit, slim = false }: Props = $props();
 
   let value = $derived<number | null>(budget);
 
@@ -54,7 +54,7 @@ Commits on blur or Enter; Escape cancels.
 </script>
 
 <input
-  {id}
+  id={id}
   class="budget-input paragraph"
   inputmode="decimal"
   placeholder="--"

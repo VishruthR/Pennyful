@@ -28,30 +28,9 @@
   let name = $derived(category?.name ?? "");
   let budget = $derived(category?.budget ?? null);
   let icon = $derived(category?.icon ?? null);
-  // let budgetText = $state<number | null>(category?.budget ?? null);
-  // let budget = $state<number | null>(() => { return category?.budget ?? null; }());
   let hex = $derived(category?.color ?? null);
   let submitting = $state(false);
   let error = $state<string | null>(null);
-
-  // let wasOpen = false;
-  // $effect(() => {
-  //   if (open && !wasOpen) {
-  //     if (mode === "edit" && category) {
-  //       name = category.name;
-  //       budgetText = String(category.budget);
-  //       iconName = category.icon ?? null;
-  //       hex = category.color;
-  //     } else {
-  //       name = "";
-  //       budgetText = "";
-  //       iconName = null;
-  //       hex = null;
-  //     }
-  //     error = null;
-  //   }
-  //   wasOpen = open;
-  // });
 
   const title = $derived(mode === "edit" ? "Edit Category" : "Add Category");
   const submitLabel = $derived(mode === "edit" ? "Save" : "Add Category");
