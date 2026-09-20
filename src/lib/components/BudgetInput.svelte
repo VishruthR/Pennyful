@@ -5,6 +5,8 @@ Commits on blur or Enter; Escape cancels.
 -->
 
 <script lang="ts">
+    import { formatDollars } from "$lib/utils/format";
+
   interface Props {
     budget: number | null;
     onCommit: (amount: number | null) => void;
@@ -13,13 +15,13 @@ Commits on blur or Enter; Escape cancels.
 
   let { budget = null, onCommit, slim = false }: Props = $props();
 
-  // This `value` is expected to be updated so we want to avoid binding it to `budget`.
+  // `value` is expected to be updated so we want to avoid binding it to `budget`.
   // svelte-ignore state_referenced_locally
   let value = $state<number | null>(budget);
 
   const formattedBudget = {
     get() {
-      return value !== null ? `$${value}` : "";
+      return value !== null ? formatDollars(value) : "";
     },
     set(displayValue: string) {
       const nullLength = displayValue.startsWith("$") ? 1 : 0;
@@ -32,7 +34,6 @@ Commits on blur or Enter; Escape cancels.
   };
 
   const commit = () => {
-    console.log("Committing");
     onCommit(value);
   };
 

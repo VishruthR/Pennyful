@@ -230,10 +230,7 @@ mod tests {
         // With no budget row and no transactions, budget is null and spend is 0.
         let uncategorized = overview_for(&overviews, 1);
         assert_eq!(uncategorized.budget, None);
-        assert_eq!(
-            uncategorized.spent,
-            Cents::from_i32_or_throw(0),
-        );
+        assert_eq!(uncategorized.spent, Cents::from_i32_or_throw(0),);
         Ok(())
     }
 
