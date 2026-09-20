@@ -232,7 +232,7 @@ mod tests {
         assert_eq!(uncategorized.budget, None);
         assert_eq!(
             uncategorized.spent,
-            Cents::from_i32(0).expect("Coudln't parse literal")
+            Cents::from_i32_or_throw(0),
         );
         Ok(())
     }
@@ -253,7 +253,7 @@ mod tests {
         let overviews = get_category_overviews(&pool).await?;
         assert_eq!(
             overview_for(&overviews, 3).spent,
-            Cents::from_i32(7).expect("Couldn't parse literal")
+            Cents::from_i32_or_throw(7),
         );
         Ok(())
     }

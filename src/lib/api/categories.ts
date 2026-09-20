@@ -25,7 +25,7 @@ const setCategoryBudget = async (
   categoryId: number,
   amount: number,
 ): Promise<void> => {
-  await invoke("set_category_budget", { categoryId, amount });
+  await invoke("set_category_budget", { categoryId, amount: amount.toString() });
 };
 
 const deleteCategoryBudget = async (categoryId: number): Promise<void> => {

@@ -19,7 +19,6 @@ Commits on blur or Enter; Escape cancels.
 
   const formattedBudget = {
     get() {
-      console.log("get", value);
       return value !== null ? `$${value}` : "";
     },
     set(displayValue: string) {
@@ -33,6 +32,7 @@ Commits on blur or Enter; Escape cancels.
   };
 
   const commit = () => {
+    console.log("Committing");
     onCommit(value);
   };
 
