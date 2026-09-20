@@ -11,7 +11,9 @@ use sqlx::{
 use std::{fmt, ops::Deref};
 
 // Custom type to enable automatic encoding/decoding for sqlx
-#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize,
+)]
 #[serde(transparent)]
 pub struct Cents(pub Decimal);
 
@@ -63,7 +65,7 @@ impl Cents {
     }
 
     pub fn from_i32_or_throw(dollars: i32) -> Self {
-        Self::from_i32(dollars).expect("Coudln't convert i32 value to Cents", )
+        Self::from_i32(dollars).expect("Coudln't convert i32 value to Cents")
     }
 }
 

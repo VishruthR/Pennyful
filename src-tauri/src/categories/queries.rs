@@ -58,22 +58,15 @@ pub async fn upsert_budget(
     Ok(())
 }
 
-pub async fn delete_budget(
-    pool: &Pool<Sqlite>,
-    category_id: i64,
-) -> Result<u64, sqlx::Error> {
+pub async fn delete_budget(pool: &Pool<Sqlite>, category_id: i64) -> Result<u64, sqlx::Error> {
     let query = r#"
         DELETE FROM budget WHERE category_id = ?
     "#;
 
-    let result = sqlx::query(query)
-        .bind(category_id)
-        .execute(pool)
-        .await?;
+    let result = sqlx::query(query).bind(category_id).execute(pool).await?;
 
     Ok(result.rows_affected())
 }
-
 
 pub async fn create_category(
     pool: &Pool<Sqlite>,
@@ -156,7 +149,7 @@ pub async fn delete_category(pool: &Pool<Sqlite>, id: i64) -> Result<(), sqlx::E
 mod tests {
     use crate::types::Cents;
 
-use super::*;
+    use super::*;
 
     fn get_expected_categories() -> Vec<String> {
         // Only test default categories
@@ -237,7 +230,10 @@ use super::*;
         // With no budget row and no transactions, budget is null and spend is 0.
         let uncategorized = overview_for(&overviews, 1);
         assert_eq!(uncategorized.budget, None);
-        assert_eq!(uncategorized.spent, Cents::from_i32(0).expect("Coudln't parse literal"));
+        assert_eq!(
+            uncategorized.spent,
+            Cents::from_i32(0).expect("Coudln't parse literal")
+        );
         Ok(())
     }
 
@@ -255,7 +251,10 @@ use super::*;
         insert_txn(&pool, 3, -5000, "2020-01-15").await?;
 
         let overviews = get_category_overviews(&pool).await?;
-        assert_eq!(overview_for(&overviews, 3).spent, Cents::from_i32(7).expect("Couldn't parse literal"));
+        assert_eq!(
+            overview_for(&overviews, 3).spent,
+            Cents::from_i32(7).expect("Couldn't parse literal")
+        );
         Ok(())
     }
 
@@ -278,21 +277,40 @@ use super::*;
     }
 
     #[sqlx::test]
-    async fn test_delete_budget(
-        pool: Pool<Sqlite>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        upsert_budget(&pool, 3, Cents::from_i32_or_throw(50)).await.expect("Couldn't upsert budget");
+    async fn test_delete_budget(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
+        upsert_budget(&pool, 3, Cents::from_i32_or_throw(50))
+            .await
+            .expect("Couldn't upsert budget");
         assert_eq!(
-            overview_for(&get_category_overviews(&pool).await.expect("Couldn't get category overview"), 3).budget,
+            overview_for(
+                &get_category_overviews(&pool)
+                    .await
+                    .expect("Couldn't get category overview"),
+                3
+            )
+            .budget,
             Cents::from_i32(50)
         );
 
-        assert_eq!(delete_budget(&pool, 3).await.expect("Couldn't delete budget"), 1);
-        assert_eq!(overview_for(&get_category_overviews(&pool).await.expect("Coudln't get category overview"), 3).budget, None);
+        assert_eq!(
+            delete_budget(&pool, 3)
+                .await
+                .expect("Couldn't delete budget"),
+            1
+        );
+        assert_eq!(
+            overview_for(
+                &get_category_overviews(&pool)
+                    .await
+                    .expect("Coudln't get category overview"),
+                3
+            )
+            .budget,
+            None
+        );
 
         Ok(())
     }
-
 
     #[sqlx::test]
     async fn test_create_category_with_budget(
