@@ -13,13 +13,12 @@ Commits on blur or Enter; Escape cancels.
     budget: number | null;
     onCommit: (amount: number | null) => void;
     slim?: boolean;
+    maxWidth?: string;
   }
 
-  let { id, budget = null, onCommit, slim = false }: Props = $props();
+  let { id, budget = null, onCommit, slim = false, maxWidth }: Props = $props();
 
-  // `value` is expected to be updated so we want to avoid binding it to `budget`.
-  // svelte-ignore state_referenced_locally
-  let value = $state<number | null>(budget);
+  let value = $derived<number | null>(budget);
 
   // TODO: Support budgets with cents values
   const formattedBudget = {
@@ -55,11 +54,12 @@ Commits on blur or Enter; Escape cancels.
 </script>
 
 <input
-  id={id}
+  {id}
   class="budget-input paragraph"
   inputmode="decimal"
   placeholder="--"
   class:slim
+  style:max-width={maxWidth}
   bind:value={formattedBudget.get, formattedBudget.set}
   onblur={commit}
   onkeydown={handleKeyDown}
@@ -67,7 +67,7 @@ Commits on blur or Enter; Escape cancels.
 
 <style>
   .budget-input {
-    width: 104px;
+    width: 100%;
     padding: 10px 12px;
     text-align: center;
     border: 1.5px solid var(--grey-100);

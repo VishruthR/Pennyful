@@ -29,9 +29,7 @@
       await categoriesApi.setCategoryBudget(categoryId, amount);
     }
 
-    categories = categories.map((category) =>
-      category.id === categoryId ? { ...category, budget: amount } : category,
-    );
+    loadCategories();
   }
 
   function handleAdd() {

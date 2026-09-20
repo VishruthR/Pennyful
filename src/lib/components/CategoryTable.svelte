@@ -76,6 +76,7 @@
               budget={category.budget}
               onCommit={(amount) => onBudgetChange(category.id, amount)}
               slim
+              maxWidth="104px"
             />
           </td>
           <td class="col-spent">

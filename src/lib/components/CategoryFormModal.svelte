@@ -14,7 +14,7 @@
   import Button from "$lib/components/Button.svelte";
   import { categoriesApi } from "$lib/api/categories";
   import type { CategoryOverview } from "$lib/types";
-    import BudgetInput from "./BudgetInput.svelte";
+  import BudgetInput from "./BudgetInput.svelte";
 
   interface Props {
     open?: boolean;
@@ -58,7 +58,7 @@
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
-    
+
     if (!name || !name.trim()) {
       error = "Please enter a name.";
       return;
@@ -90,7 +90,7 @@
     } finally {
       submitting = false;
     }
-  }
+  };
 </script>
 
 <Modal bind:open {title}>
@@ -106,18 +106,15 @@
 
     <div class="field">
       <label class="paragraph-bold" for="category-budget">Budget</label>
-      <BudgetInput 
-        id="category-budget" 
-        budget={budget}
-        onCommit={(amount: number | null) => { budget = amount; }}
+      <BudgetInput
+        id="category-budget"
+        {budget}
+        onCommit={(amount: number | null) => {
+          budget = amount;
+        }}
         slim={false}
+        maxWidth="110px"
       />
-      <!-- <TextInput -->
-      <!--   id="category-budget" -->
-      <!--   bind:value={budgetText} -->
-      <!--   inputmode="decimal" -->
-      <!--   placeholder="$0.00" -->
-      <!-- /> -->
     </div>
 
     <div class="pickers">
