@@ -52,7 +52,6 @@ const updateCategory = async (
   input: CategoryInput,
 ): Promise<void> => {
   const budget = input.budget !== null ? input.budget.toString() : null;
-  console.log(budget);
   await invoke("update_category", { id, ...input, budget });
 };
 
