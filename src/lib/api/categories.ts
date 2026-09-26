@@ -52,6 +52,10 @@ const updateCategory = async (
   input: CategoryInput,
 ): Promise<void> => {
   const budget = input.budget !== null ? input.budget.toString() : null;
+<<<<<<< HEAD
+=======
+  console.log(budget);
+>>>>>>> 9e10e27 (Use BudgetInput on CategoryFormModal)
   await invoke("update_category", { id, ...input, budget });
 };
 
