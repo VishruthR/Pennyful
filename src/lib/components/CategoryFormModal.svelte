@@ -31,7 +31,6 @@
   let hex = $derived(category?.color ?? null);
   let submitting = $state(false);
   let error = $state<string | null>(null);
-
   const title = $derived(mode === "edit" ? "Edit Category" : "Add Category");
   const submitLabel = $derived(mode === "edit" ? "Save" : "Add Category");
 

@@ -28,10 +28,10 @@
 </script>
 
 <span class="arrows-container">
-  {#if showAsc}
+  {#if showDesc}
     <Icon icon="bxs:up-arrow" width={10} height={10} class="arrow arrow-up" />
   {/if}
-  {#if showDesc}
+  {#if showAsc}
     <Icon icon="bxs:up-arrow" width={10} height={10} class="arrow arrow-down" />
   {/if}
 </span>

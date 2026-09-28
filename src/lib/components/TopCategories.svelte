@@ -15,32 +15,42 @@
 
   interface SpendingCategory {
     name: string;
-    icon: string;
-    spending: number;
-    budget?: number;
+    icon?: string;
+    spent: number;
+    budget: number | null;
   }
 
   interface Props {
     categories: SpendingCategory[];
     title?: string;
-    onSeeAll?: () => void;
   }
 
-  let { categories, title = "Top categories", onSeeAll }: Props = $props();
+  let { categories, title = "Top categories" }: Props = $props();
 
-  function formatAmount(amount: number): string {
+  const getCategoriesToDisplay = (cat: SpendingCategory[]) => {
+    return cat
+      .sort((a, b) => {
+        return b.spent - a.spent;
+      })
+      .slice(0, 10);
+  };
+
+  function formatAmount(amount: number | null): string {
+    if (amount === null) {
+      return "--";
+    }
     return `$${amount.toLocaleString()}`;
   }
 
   function getProgress(category: SpendingCategory): number {
-    if (!category.budget) return 100;
-    return Math.min((category.spending / category.budget) * 100, 100);
+    if (category.spent === 0) return 0;
+    return Math.min((category.spent / (category.budget ?? 0.1)) * 100, 100);
   }
 
   function getProgressColor(category: SpendingCategory): string {
     const progress = getProgress(category);
     if (progress < 35) return "var(--profit-green)";
-    if (progress <= 70) return "#F7B500";
+    if (progress <= 70) return "var(--warning-yellow)";
     return "var(--loss-red)";
   }
 </script>
@@ -48,29 +58,29 @@
 <div class="top-categories">
   <header class="header">
     <h2 class="title h3">{title}</h2>
-    <button class="see-all" onclick={onSeeAll}>
+    <a class="see-all" href="categories">
       see all categories <Icon
         icon="stash:chevron-right"
         width={16}
         height={16}
       />
-    </button>
+    </a>
   </header>
 
   <div class="category-grid">
-    <div class="column-labels">
-      {#each categories as category (category.name)}
+    {#each getCategoriesToDisplay(categories) as category (category.name)}
+      <div class="column-labels">
         <div class="category-label">
           <div class="category-icon">
-            <Icon icon={category.icon} width={20} height={20} />
+            {#if category.icon}
+              <Icon icon={category.icon} width={20} height={20} />
+            {/if}
           </div>
           <span class="category-name paragraph">{category.name}</span>
         </div>
-      {/each}
-    </div>
+      </div>
 
-    <div class="column-progress">
-      {#each categories as category (category.name)}
+      <div class="column-progress">
         <div class="progress-bar-container">
           <div class="progress-bar">
             <div
@@ -80,20 +90,18 @@
             ></div>
           </div>
         </div>
-      {/each}
-    </div>
+      </div>
 
-    <div class="column-amounts">
-      {#each categories as category (category.name)}
+      <div class="column-amounts">
         <span class="category-amount paragraph">
           {#if category.budget}
-            {formatAmount(category.spending)} / {formatAmount(category.budget)}
+            {formatAmount(category.spent)} / {formatAmount(category.budget)}
           {:else}
-            {formatAmount(category.spending)}
+            {formatAmount(category.spent)}
           {/if}
         </span>
-      {/each}
-    </div>
+      </div>
+    {/each}
   </div>
 </div>
 
@@ -128,6 +136,7 @@
     cursor: pointer;
     padding: 0;
     font-family: inherit;
+    text-decoration: none;
   }
 
   .see-all:hover {

@@ -17,8 +17,12 @@ const getCategoryById = async (id: number): Promise<Category | undefined> => {
   return Object.values(categories).find((category) => category.id === id);
 };
 
-const getCategoryOverviews = async (): Promise<CategoryOverview[]> => {
-  return (await invoke("get_category_overviews")) as CategoryOverview[];
+const getCategoryOverviews = async (
+  excludedCategories?: string[],
+): Promise<CategoryOverview[]> => {
+  return (await invoke("get_category_overviews", {
+    excludedCategories,
+  })) as CategoryOverview[];
 };
 
 const setCategoryBudget = async (
