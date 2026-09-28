@@ -16,11 +16,7 @@ Commits on blur or Enter; Escape cancels.
     maxWidth?: string;
   }
 
-<<<<<<< HEAD
   let { id, budget = null, onCommit, slim = false, maxWidth }: Props = $props();
-=======
-  let { id, budget = null, onCommit, slim = false }: Props = $props();
->>>>>>> 9e10e27 (Use BudgetInput on CategoryFormModal)
 
   let value = $derived<number | null>(budget);
 
@@ -58,11 +54,7 @@ Commits on blur or Enter; Escape cancels.
 </script>
 
 <input
-<<<<<<< HEAD
   {id}
-=======
-  id={id}
->>>>>>> 9e10e27 (Use BudgetInput on CategoryFormModal)
   class="budget-input paragraph"
   inputmode="decimal"
   placeholder="--"

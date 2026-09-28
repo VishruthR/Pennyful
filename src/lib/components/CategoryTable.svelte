@@ -56,7 +56,7 @@
       <tr>
         <th class="col-category">Category</th>
         <th class="col-budget">Budget</th>
-        <th class="col-spent">Amount Spent</th>
+        <th class="col-spent">Amount</th>
         <th class="col-actions">Actions</th>
       </tr>
     </thead>

@@ -17,8 +17,12 @@ const getCategoryById = async (id: number): Promise<Category | undefined> => {
   return Object.values(categories).find((category) => category.id === id);
 };
 
-const getCategoryOverviews = async (): Promise<CategoryOverview[]> => {
-  return (await invoke("get_category_overviews")) as CategoryOverview[];
+const getCategoryOverviews = async (
+  excludedCategories?: string[],
+): Promise<CategoryOverview[]> => {
+  return (await invoke("get_category_overviews", {
+    excludedCategories,
+  })) as CategoryOverview[];
 };
 
 const setCategoryBudget = async (
@@ -52,10 +56,6 @@ const updateCategory = async (
   input: CategoryInput,
 ): Promise<void> => {
   const budget = input.budget !== null ? input.budget.toString() : null;
-<<<<<<< HEAD
-=======
-  console.log(budget);
->>>>>>> 9e10e27 (Use BudgetInput on CategoryFormModal)
   await invoke("update_category", { id, ...input, budget });
 };
 

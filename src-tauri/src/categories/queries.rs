@@ -11,8 +11,9 @@ pub async fn get_all_categories(pool: &Pool<Sqlite>) -> Result<Vec<Category>, sq
 
 pub async fn get_category_overviews(
     pool: &Pool<Sqlite>,
+    excluded_categories: Option<Vec<String>>
 ) -> Result<Vec<CategoryOverview>, sqlx::Error> {
-    let query = r#"
+    let raw_query = r#"
         SELECT
             c.id AS id,
             c.name AS name,
@@ -28,10 +29,12 @@ pub async fn get_category_overviews(
             ), 0) AS spent_cents
         FROM category c
         LEFT JOIN budget b ON b.category_id = c.id
+        WHERE c.name NOT IN ({excluded_categories})
         ORDER BY c.id
     "#;
+    let query = raw_query.replace("{excluded_categories}", &excluded_categories.unwrap_or(vec![]).into_iter().map(|cat| format!("'{}'", cat)).collect::<Vec<String>>().join(", "));
 
-    let res: Vec<CategoryOverview> = sqlx::query_as(query).fetch_all(pool).await?;
+    let res: Vec<CategoryOverview> = sqlx::query_as(&query).fetch_all(pool).await?;
 
     Ok(res)
 }
@@ -221,7 +224,7 @@ mod tests {
     async fn test_overviews_include_all_categories_with_null_budget(
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let overviews = get_category_overviews(&pool).await?;
+        let overviews = get_category_overviews(&pool, None).await?;
 
         // Every seeded category is present, including Uncategorized (id 1).
         assert_eq!(overviews.len(), get_expected_categories().len());
@@ -231,6 +234,18 @@ mod tests {
         let uncategorized = overview_for(&overviews, 1);
         assert_eq!(uncategorized.budget, None);
         assert_eq!(uncategorized.spent, Cents::from_i32_or_throw(0),);
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn test_overviews_excludes_multiple(
+        pool: Pool<Sqlite>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let excluded_categories = vec!["Income".to_string(), "Uncategorized".to_string()];
+        let overviews = get_category_overviews(&pool, Some(excluded_categories.clone())).await?;
+
+        let expected = get_expected_categories().into_iter().filter(|cat| !excluded_categories.contains(cat)).collect::<Vec<String>>();
+        assert_eq!(overviews.into_iter().map(|cat| cat.name).collect::<Vec<String>>(), expected);
         Ok(())
     }
 
@@ -247,7 +262,7 @@ mod tests {
         // A prior-month transaction is excluded from the current-month total.
         insert_txn(&pool, 3, -5000, "2020-01-15").await?;
 
-        let overviews = get_category_overviews(&pool).await?;
+        let overviews = get_category_overviews(&pool, None).await?;
         assert_eq!(
             overview_for(&overviews, 3).spent,
             Cents::from_i32_or_throw(7),
@@ -261,13 +276,13 @@ mod tests {
     ) -> Result<(), Box<dyn std::error::Error>> {
         upsert_budget(&pool, 3, Cents::from_i32_or_throw(500)).await?;
         assert_eq!(
-            overview_for(&get_category_overviews(&pool).await?, 3).budget,
+            overview_for(&get_category_overviews(&pool, None).await?, 3).budget,
             Cents::from_i32(500)
         );
 
         upsert_budget(&pool, 3, Cents::from_i32_or_throw(125)).await?;
         assert_eq!(
-            overview_for(&get_category_overviews(&pool).await?, 3).budget,
+            overview_for(&get_category_overviews(&pool, None).await?, 3).budget,
             Cents::from_i32(125)
         );
         Ok(())
@@ -280,7 +295,7 @@ mod tests {
             .expect("Couldn't upsert budget");
         assert_eq!(
             overview_for(
-                &get_category_overviews(&pool)
+                &get_category_overviews(&pool, None)
                     .await
                     .expect("Couldn't get category overview"),
                 3
@@ -297,7 +312,7 @@ mod tests {
         );
         assert_eq!(
             overview_for(
-                &get_category_overviews(&pool)
+                &get_category_overviews(&pool, None)
                     .await
                     .expect("Coudln't get category overview"),
                 3
@@ -322,7 +337,7 @@ mod tests {
         )
         .await?;
 
-        let overviews = get_category_overviews(&pool).await?;
+        let overviews = get_category_overviews(&pool, None).await?;
         let created = overview_for(&overviews, id);
         assert_eq!(created.name, "Coffee");
         assert_eq!(created.color, "#6F4E37");
@@ -346,7 +361,7 @@ mod tests {
         )
         .await?;
 
-        let overviews = get_category_overviews(&pool).await?;
+        let overviews = get_category_overviews(&pool, None).await?;
         let updated = overview_for(&overviews, 3);
         assert_eq!(updated.name, "Home");
         assert_eq!(updated.color, "#000000");
@@ -367,7 +382,7 @@ mod tests {
         delete_category(&pool, 3).await?;
 
         // The category is gone.
-        let overviews = get_category_overviews(&pool).await?;
+        let overviews = get_category_overviews(&pool, None).await?;
         assert!(overviews.iter().all(|o| o.id != 3));
 
         // Its transaction now belongs to Uncategorized (id 1); none remain on category 3.

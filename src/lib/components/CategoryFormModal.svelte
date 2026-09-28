@@ -93,12 +93,6 @@
         slim={false}
         maxWidth="110px"
       />
-      <!-- <TextInput -->
-      <!--   id="category-budget" -->
-      <!--   bind:value={budgetText} -->
-      <!--   inputmode="decimal" -->
-      <!--   placeholder="$0.00" -->
-      <!-- /> -->
     </div>
 
     <div class="pickers">

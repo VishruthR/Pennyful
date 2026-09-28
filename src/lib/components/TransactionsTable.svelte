@@ -24,9 +24,10 @@
 
   interface Props {
     height?: string;
+    onTransactionsLoad?: () => void;
   }
 
-  let { height }: Props = $props();
+  let { height, onTransactionsLoad }: Props = $props();
 
   let sortColumn: string = $state("date");
   let sortDirection: SortDirection = $state("Desc");
@@ -51,7 +52,38 @@
       console.error(e);
     }
   };
-  onMount(loadCategories);
+
+  let requestId = 0;
+  const loadTransactions = async () => {
+    const currentRequest = ++requestId;
+    try {
+      const response = await transactionsApi.getPaginatedSortedTransactions(
+        page,
+        pageSize,
+        sortColumn,
+        sortDirection,
+      );
+      // If a user flips between pages rapidly this could cause multiple requests
+      // to be in flight. To maintain a consistent state we must ignore older requests
+      if (currentRequest !== requestId) {
+        console.log("[WARN] Outdated request getting dropped", response);
+        return;
+      }
+      paginatedResponse = response;
+
+      if (onTransactionsLoad) {
+        onTransactionsLoad();
+      }
+    } catch (e) {
+      let error = e as string;
+      console.error(error);
+    }
+  };
+
+  onMount(() => {
+    loadTransactions();
+    loadCategories();
+  });
 
   async function handleCategoryChange(
     txn: TransactionWithAccount,
@@ -70,22 +102,7 @@
         categoryId,
       );
       await loadUncategorizedCount();
-      // Optimistically reflect the change in the row without a refetch. Since
-      // paginatedResponse is $state.raw we reassign a fresh object.
-      paginatedResponse = {
-        ...paginatedResponse,
-        transactions: paginatedResponse.transactions.map((t) =>
-          t.transaction.id === txn.transaction.id
-            ? {
-                ...t,
-                category_name: category.name,
-                category_color: category.color,
-                category_icon: category.icon ?? null,
-                transaction: { ...t.transaction, category_id: category.id },
-              }
-            : t,
-        ),
-      };
+      await loadTransactions();
     } catch (e) {
       console.error(e);
     }
@@ -108,49 +125,20 @@
       sortDirection = "Desc";
     }
     page = 1;
+    loadTransactions();
   }
 
   const handleNextPage = () => {
     if (paginatedResponse === null || page >= paginatedResponse.num_pages)
       return;
     page++;
+    loadTransactions();
   };
   const handlePrevPage = () => {
     if (page <= 1) return;
     page--;
+    loadTransactions();
   };
-
-  let requestId = 0;
-  $effect(() => {
-    const currPage = page;
-    const currPageSize = pageSize;
-    const currSortColumn = sortColumn;
-    const currSortDirection = sortDirection;
-
-    const fetchTransactions = async () => {
-      const currentRequest = ++requestId;
-      try {
-        const response = await transactionsApi.getPaginatedSortedTransactions(
-          currPage,
-          currPageSize,
-          currSortColumn,
-          currSortDirection,
-        );
-        // If a user flips between pages rapidly this could cause multiple requests
-        // to be in flight. To maintain a consistent state we must ignore older requests
-        if (currentRequest !== requestId) {
-          console.log("[WARN] Outdated request getting dropped", response);
-          return;
-        }
-        paginatedResponse = response;
-      } catch (e) {
-        let error = e as string;
-        console.error(error);
-      }
-    };
-
-    fetchTransactions();
-  });
 
   const getShowingRange = () => {
     if (paginatedResponse === null) {

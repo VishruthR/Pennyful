@@ -26,8 +26,9 @@ pub async fn get_category_details(
 #[tauri::command]
 pub async fn get_category_overviews(
     state: tauri::State<'_, AppState>,
+    excluded_categories: Option<Vec<String>>,
 ) -> Result<Vec<CategoryOverview>, String> {
-    queries::get_category_overviews(&state.db.0)
+    queries::get_category_overviews(&state.db.0, excluded_categories)
         .await
         .map_err(|e| e.to_string())
 }

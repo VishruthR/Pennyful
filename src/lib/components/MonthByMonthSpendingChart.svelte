@@ -178,7 +178,7 @@
 <style>
   .container {
     position: relative;
-    width: 700px;
+    width: 100%;
     border: 2px solid var(--grey-500);
     border-radius: 8px;
     padding: 0px 10px 10px 10px;
