@@ -11,7 +11,7 @@ pub async fn get_all_categories(pool: &Pool<Sqlite>) -> Result<Vec<Category>, sq
 
 pub async fn get_category_overviews(
     pool: &Pool<Sqlite>,
-    excluded_categories: Option<Vec<String>>
+    excluded_categories: Option<Vec<String>>,
 ) -> Result<Vec<CategoryOverview>, sqlx::Error> {
     let raw_query = r#"
         SELECT
@@ -32,7 +32,15 @@ pub async fn get_category_overviews(
         WHERE c.name NOT IN ({excluded_categories})
         ORDER BY c.id
     "#;
-    let query = raw_query.replace("{excluded_categories}", &excluded_categories.unwrap_or(vec![]).into_iter().map(|cat| format!("'{}'", cat)).collect::<Vec<String>>().join(", "));
+    let query = raw_query.replace(
+        "{excluded_categories}",
+        &excluded_categories
+            .unwrap_or(vec![])
+            .into_iter()
+            .map(|cat| format!("'{}'", cat))
+            .collect::<Vec<String>>()
+            .join(", "),
+    );
 
     let res: Vec<CategoryOverview> = sqlx::query_as(&query).fetch_all(pool).await?;
 
@@ -244,8 +252,17 @@ mod tests {
         let excluded_categories = vec!["Income".to_string(), "Uncategorized".to_string()];
         let overviews = get_category_overviews(&pool, Some(excluded_categories.clone())).await?;
 
-        let expected = get_expected_categories().into_iter().filter(|cat| !excluded_categories.contains(cat)).collect::<Vec<String>>();
-        assert_eq!(overviews.into_iter().map(|cat| cat.name).collect::<Vec<String>>(), expected);
+        let expected = get_expected_categories()
+            .into_iter()
+            .filter(|cat| !excluded_categories.contains(cat))
+            .collect::<Vec<String>>();
+        assert_eq!(
+            overviews
+                .into_iter()
+                .map(|cat| cat.name)
+                .collect::<Vec<String>>(),
+            expected
+        );
         Ok(())
     }
 
