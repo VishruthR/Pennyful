@@ -1,9 +1,11 @@
 use chrono::NaiveDate;
 
+use crate::transactions::cents::Cents;
+use crate::transactions::transaction_with_account::TransactionWithAccount;
 use crate::transactions::queries::{
     get_total_income_by_date_range, get_total_spending_by_date_range,
 };
-use crate::types::{Cents, SortDir, TransactionWithAccount};
+use crate::query::sort_dir::SortDir;
 use crate::{categories, transactions, AppState};
 
 #[derive(serde::Serialize)]

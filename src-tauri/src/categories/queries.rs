@@ -1,4 +1,5 @@
-use crate::types::{Category, CategoryOverview, Cents};
+use crate::categories::{category::Category, category_overview::CategoryOverview};
+use crate::transactions::cents::Cents;
 use sqlx::{Pool, Sqlite};
 
 pub async fn get_all_categories(pool: &Pool<Sqlite>) -> Result<Vec<Category>, sqlx::Error> {

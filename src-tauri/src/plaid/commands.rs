@@ -3,9 +3,9 @@ use crate::banks;
 use crate::categories;
 use crate::credentials;
 use crate::plaid;
-use crate::plaid::types::PlaidTransaction;
+use crate::plaid::plaid_transaction::PlaidTransaction;
 use crate::transactions;
-use crate::types::Cents;
+use crate::transactions::cents::Cents;
 use crate::AppState;
 use ::plaid::{
     model::{

@@ -1,6 +1,7 @@
 use crate::categories::queries;
 use crate::categories::queries::get_all_categories;
-use crate::types::{Category, CategoryOverview, Cents};
+use crate::transactions::cents::Cents;
+use crate::categories::{category::Category, category_overview::CategoryOverview};
 use crate::AppState;
 use std::collections::HashMap;
 

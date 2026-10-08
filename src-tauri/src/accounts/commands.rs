@@ -1,5 +1,6 @@
 use crate::accounts::queries;
-use crate::types::{Account, FullAccount};
+use crate::accounts::account::Account;
+use crate::accounts::full_account::FullAccount;
 use crate::AppState;
 
 #[tauri::command]
@@ -33,7 +34,8 @@ pub async fn get_accounts_of_item(
 mod tests {
     use super::*;
     use crate::db::DatabaseState;
-    use crate::types::{AccountType, Cents};
+    use crate::transactions::cents::Cents;
+    use crate::accounts::account_type::AccountType;
     use rust_decimal::dec;
     use sqlx::{Pool, Sqlite};
     use tauri::async_runtime::Mutex;

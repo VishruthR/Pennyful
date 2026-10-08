@@ -1,5 +1,6 @@
-use crate::types::{Cents, TransactionWithAccount};
-use crate::{plaid::types::PlaidTransaction, types::SortDir};
+use crate::transactions::{cents::Cents, transaction_with_account::TransactionWithAccount};
+use crate::plaid::plaid_transaction::PlaidTransaction;
+use crate::query::sort_dir::SortDir;
 use ::plaid::model::RemovedTransaction;
 use chrono::NaiveDate;
 use sqlx::{Pool, QueryBuilder, Sqlite, SqliteConnection};

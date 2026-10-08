@@ -1,4 +1,4 @@
-use crate::types::PlaidItem;
+use crate::plaid::plaid_item::PlaidItem;
 use sqlx::{Pool, Sqlite, SqliteConnection};
 
 pub async fn get_plaid_item(

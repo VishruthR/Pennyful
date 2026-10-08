@@ -1,13 +1,13 @@
-use crate::types::{self};
-use crate::types::{Account, Bank, FullAccount};
-use plaid::model::{AccountBase, AccountSubtype, AccountType};
+use crate::transactions::cents::Cents;
+use crate::banks::bank::Bank;
+use crate::accounts::{account::Account, full_account::FullAccount, account_type::AccountType};
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 
 pub async fn insert_new_plaid_accounts(
     pool: &Pool<Sqlite>,
     bank: Bank,
-    accounts: Vec<AccountBase>,
+    accounts: Vec<plaid::model::AccountBase>,
 ) -> Result<u32, String> {
     let query = r#"
         INSERT INTO account (
@@ -28,29 +28,29 @@ pub async fn insert_new_plaid_accounts(
 
     for account in accounts {
         let account_type = match account.type_ {
-            AccountType::Depository => {
+            plaid::model::AccountType::Depository => {
                 match account
                     .subtype
                     .ok_or(format!("Account subtype doesn't exist"))?
                 {
-                    AccountSubtype::Savings => Ok(types::AccountType::Savings),
-                    AccountSubtype::Checking => Ok(types::AccountType::Checkings),
+                    plaid::model::AccountSubtype::Savings => Ok(AccountType::Savings),
+                    plaid::model::AccountSubtype::Checking => Ok(AccountType::Checkings),
                     _ => Err("Invalid account subtype"),
                 }
             }
-            AccountType::Credit => Ok(types::AccountType::Credit),
+            plaid::model::AccountType::Credit => Ok(AccountType::Credit),
             _ => return Err("Invalid account type".to_string()),
         }?;
 
         let current_balance = account
             .balances
             .current
-            .and_then(types::Cents::from_dollars_f64)
+            .and_then(Cents::from_dollars_f64)
             .unwrap_or_default();
         let available_balance = account
             .balances
             .available
-            .and_then(types::Cents::from_dollars_f64)
+            .and_then(Cents::from_dollars_f64)
             .unwrap_or_default();
 
         let res = sqlx::query(query)
@@ -141,11 +141,12 @@ pub async fn get_full_accounts(pool: &Pool<Sqlite>) -> Result<Vec<FullAccount>, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{AccountType, Cents};
+    use crate::transactions::cents::Cents;
+    use crate::accounts::account_type::AccountType;
     use rust_decimal::dec;
     use serde_json::json;
 
-    fn plaid_account(account_id: &str, type_: &str, subtype: Option<&str>) -> AccountBase {
+    fn plaid_account(account_id: &str, type_: &str, subtype: Option<&str>) -> plaid::model::AccountBase {
         serde_json::from_value(json!({
             "account_id": account_id,
             "balances": { "available": 100.0, "current": 150.0 },

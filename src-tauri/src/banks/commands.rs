@@ -1,5 +1,5 @@
 use crate::banks::queries as bank_queries;
-use crate::types::LinkedInstitution;
+use crate::banks::linked_institution::LinkedInstitution;
 use crate::AppState;
 
 #[tauri::command]
