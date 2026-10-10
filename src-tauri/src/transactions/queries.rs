@@ -363,9 +363,7 @@ mod tests {
     use crate::types::Dollars;
     use chrono::NaiveDate;
 
-    async fn all_transactions(
-        pool: &Pool<Sqlite>,
-    ) -> Result<Vec<FullTransaction>, sqlx::Error> {
+    async fn all_transactions(pool: &Pool<Sqlite>) -> Result<Vec<FullTransaction>, sqlx::Error> {
         get_paginated_sorted_transactions(
             pool,
             &1,

@@ -21,9 +21,9 @@ mod plaid {
 mod transactions {
     pub(crate) mod commands;
     pub(crate) mod dollars;
+    pub(crate) mod full_transaction;
     pub(crate) mod queries;
     pub(crate) mod transaction;
-    pub(crate) mod full_transaction;
 }
 mod accounts {
     pub(crate) mod account;
