@@ -3,7 +3,7 @@
 -->
 
 <script lang="ts">
-  import SpendingPieChart from "./SpendingPieChart.svelte";
+  import SpendingPieChart from "$lib/components/SpendingPieChart.svelte";
   import { categoriesApi } from "$lib/api/categories";
 
   export interface SpendingCategory {

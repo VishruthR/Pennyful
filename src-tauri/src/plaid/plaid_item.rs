@@ -8,6 +8,7 @@ pub struct PlaidItem {
 }
 
 impl PlaidItem {
+    #[allow(dead_code)]
     pub fn item_id(&self) -> &String {
         &self.item_id
     }
@@ -20,6 +21,7 @@ impl PlaidItem {
         &self.cursor
     }
 
+    #[allow(dead_code)]
     pub fn new(item_id: String, access_token: String, cursor: Option<String>) -> Self {
         PlaidItem {
             item_id,

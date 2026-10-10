@@ -9,6 +9,7 @@ pub struct Bank {
 }
 
 impl Bank {
+    #[allow(dead_code)]
     pub fn new(
         id: i64,
         plaid_item_id: Option<String>,
@@ -27,6 +28,7 @@ impl Bank {
         self.id
     }
 
+    #[allow(dead_code)]
     pub fn plaid_item_id(&self) -> &Option<String> {
         &self.plaid_item_id
     }

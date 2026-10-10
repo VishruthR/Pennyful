@@ -11,7 +11,7 @@
   import { Select } from "bits-ui";
   import Icon from "@iconify/svelte";
   import type { Snippet } from "svelte";
-  import type { DropdownOption } from "$lib/types";
+  import type { DropdownOption } from "$lib/types/dropdown_option";
 
   interface Props {
     options: DropdownOption[];

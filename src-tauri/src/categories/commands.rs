@@ -1,6 +1,6 @@
 use crate::categories::queries;
 use crate::categories::queries::get_all_categories;
-use crate::categories::{category::Category, category_overview::CategoryOverview};
+use crate::categories::{category::Category, category_overview::FullCategory};
 use crate::transactions::dollars::Dollars;
 use crate::AppState;
 use std::collections::HashMap;
@@ -28,7 +28,7 @@ pub async fn get_category_details(
 pub async fn get_category_overviews(
     state: tauri::State<'_, AppState>,
     excluded_categories: Option<Vec<String>>,
-) -> Result<Vec<CategoryOverview>, String> {
+) -> Result<Vec<FullCategory>, String> {
     queries::get_category_overviews(&state.db.0, excluded_categories)
         .await
         .map_err(|e| e.to_string())

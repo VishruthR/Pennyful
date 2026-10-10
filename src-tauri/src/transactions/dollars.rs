@@ -61,10 +61,12 @@ impl Dollars {
         Decimal::from_f64(dollars).map(|d| Dollars(d.round_dp(2)))
     }
 
+    #[allow(dead_code)]
     pub fn from_i32(dollars: i32) -> Option<Self> {
         Decimal::from_i32(dollars).map(|d| Dollars(d))
     }
 
+    #[allow(dead_code)]
     pub fn from_i32_or_throw(dollars: i32) -> Self {
         Self::from_i32(dollars).expect("Coudln't convert i32 value to Dollars")
     }

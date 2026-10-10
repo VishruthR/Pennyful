@@ -35,14 +35,14 @@
 -->
 
 <script lang="ts">
-  import type { TransactionWithAccount } from "$lib/types";
+  import type { FullTransaction } from "$lib/types/full_transaction";
   import type { Snippet } from "svelte";
 
   interface Props {
-    transactions: TransactionWithAccount[];
+    transactions: FullTransaction[];
     index: number;
     isAnimating: boolean;
-    card: Snippet<[TransactionWithAccount]>;
+    card: Snippet<[FullTransaction]>;
     nextButton: Snippet<[]>;
     backButton: Snippet<[]>;
   }
@@ -57,8 +57,8 @@
   }: Props = $props();
 
   interface Animation {
-    card: Snippet<[TransactionWithAccount]>;
-    transaction: TransactionWithAccount | null;
+    card: Snippet<[FullTransaction]>;
+    transaction: FullTransaction | null;
     direction: "left" | "right";
     mode: "out" | "in";
   }
@@ -72,7 +72,7 @@
 
   // Get up to 3 cards to display
   let visibleCards = $derived.by(() => {
-    const cards: TransactionWithAccount[] = [];
+    const cards: FullTransaction[] = [];
     for (let i = 0; i < 3 && index + i < totalCards; i++) {
       cards.push(transactions[index + i]);
     }

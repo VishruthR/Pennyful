@@ -1,7 +1,8 @@
+#![allow(dead_code)]
 use crate::transactions::dollars::Dollars;
 
 #[derive(PartialEq, Debug)]
-struct Balances {
+pub struct Balances {
     available: Dollars,
     current: Dollars,
     limit: Dollars,

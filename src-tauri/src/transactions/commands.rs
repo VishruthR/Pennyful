@@ -5,12 +5,12 @@ use crate::transactions::dollars::Dollars;
 use crate::transactions::queries::{
     get_total_income_by_date_range, get_total_spending_by_date_range,
 };
-use crate::transactions::transaction_with_account::TransactionWithAccount;
+use crate::transactions::full_transaction::FullTransaction;
 use crate::{categories, transactions, AppState};
 
 #[derive(serde::Serialize)]
 pub struct PaginatedSortedTransactionsResponse {
-    pub transactions: Vec<TransactionWithAccount>,
+    pub transactions: Vec<FullTransaction>,
     pub curr_page: i64,
     pub next_page: Option<i64>,
     pub prev_page: Option<i64>,
@@ -101,7 +101,7 @@ pub async fn update_transaction_category(
 pub async fn get_transactions_by_category(
     state: tauri::State<'_, AppState>,
     category_name: String,
-) -> Result<Vec<TransactionWithAccount>, String> {
+) -> Result<Vec<FullTransaction>, String> {
     transactions::queries::get_transactions_by_category(&state.db.0, &category_name)
         .await
         .map_err(|e| format!("Error fetching transactions: {e}"))

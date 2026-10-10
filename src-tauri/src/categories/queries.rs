@@ -1,4 +1,4 @@
-use crate::categories::{category::Category, category_overview::CategoryOverview};
+use crate::categories::{category::Category, category_overview::FullCategory};
 use crate::transactions::dollars::Dollars;
 use sqlx::{Pool, Sqlite};
 
@@ -13,7 +13,7 @@ pub async fn get_all_categories(pool: &Pool<Sqlite>) -> Result<Vec<Category>, sq
 pub async fn get_category_overviews(
     pool: &Pool<Sqlite>,
     excluded_categories: Option<Vec<String>>,
-) -> Result<Vec<CategoryOverview>, sqlx::Error> {
+) -> Result<Vec<FullCategory>, sqlx::Error> {
     let raw_query = r#"
         SELECT
             c.id AS id,
@@ -43,7 +43,7 @@ pub async fn get_category_overviews(
             .join(", "),
     );
 
-    let res: Vec<CategoryOverview> = sqlx::query_as(&query).fetch_all(pool).await?;
+    let res: Vec<FullCategory> = sqlx::query_as(&query).fetch_all(pool).await?;
 
     Ok(res)
 }
@@ -220,7 +220,7 @@ mod tests {
         Ok(())
     }
 
-    fn overview_for<'a>(overviews: &'a [CategoryOverview], id: i64) -> &'a CategoryOverview {
+    fn overview_for<'a>(overviews: &'a [FullCategory], id: i64) -> &'a FullCategory {
         overviews
             .iter()
             .find(|o| o.id == id)

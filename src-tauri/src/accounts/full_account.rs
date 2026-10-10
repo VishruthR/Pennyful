@@ -20,6 +20,7 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for FullAccount {
 }
 
 impl FullAccount {
+    #[allow(dead_code)]
     pub fn new(
         id: i64,
         name: String,

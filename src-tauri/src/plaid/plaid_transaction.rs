@@ -20,6 +20,7 @@ impl PlaidTransaction {
         &self.plaid_account_id
     }
 
+    #[allow(dead_code)]
     pub fn category_id(&self) -> &Option<i64> {
         &self.category_id
     }

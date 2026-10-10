@@ -6,11 +6,11 @@
   import Modal from "$lib/components/Modal.svelte";
   import Button from "$lib/components/Button.svelte";
   import { categoriesApi } from "$lib/api/categories";
-  import type { CategoryOverview } from "$lib/types";
+  import type { FullCategory } from "$lib/types/category_overview";
 
   interface Props {
     open?: boolean;
-    category?: CategoryOverview;
+    category?: FullCategory;
     onSuccess: () => void;
   }
 

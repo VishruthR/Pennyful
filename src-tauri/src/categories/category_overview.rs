@@ -1,7 +1,7 @@
 use crate::transactions::dollars::Dollars;
 
 #[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
-pub struct CategoryOverview {
+pub struct FullCategory {
     pub id: i64,
     pub name: String,
     pub color: String,

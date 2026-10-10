@@ -8,7 +8,7 @@
 
 <script lang="ts">
   import Awesome from "svelte-awesome-color-picker";
-  import ColorPickerTrigger from "./ColorPickerTrigger.svelte";
+  import ColorPickerTrigger from "$lib/components/ColorPickerTrigger.svelte";
 
   interface Props {
     /** selected hex color, or null when nothing is chosen yet */

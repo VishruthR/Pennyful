@@ -18,6 +18,7 @@ pub struct Account {
 }
 
 impl Account {
+    #[allow(dead_code)]
     pub fn new(
         id: i64,
         plaid_account_id: Option<String>,

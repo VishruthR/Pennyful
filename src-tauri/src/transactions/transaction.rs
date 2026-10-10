@@ -18,22 +18,27 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    #[allow(dead_code)]
     pub fn id(&self) -> &i64 {
         &self.id
     }
 
+    #[allow(dead_code)]
     pub fn plaid_transaction_id(&self) -> &Option<String> {
         &self.plaid_transaction_id
     }
 
+    #[allow(dead_code)]
     pub fn account_id(&self) -> &i64 {
         &self.account_id
     }
 
+    #[allow(dead_code)]
     pub fn category_id(&self) -> &i64 {
         &self.category_id
     }
 
+    #[allow(dead_code)]
     pub fn new(
         id: i64,
         name: String,

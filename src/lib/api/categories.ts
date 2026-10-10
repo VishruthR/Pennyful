@@ -1,15 +1,10 @@
-import type { Category, CategoryDetails, CategoryOverview } from "$lib/types";
+import type { Category } from "$lib/types/category";
+import type { CategoryDetails } from "$lib/types/category_details";
+import type { FullCategory } from "$lib/types/category_overview";
 import { invoke } from "@tauri-apps/api/core";
 
 const getCategoryDetails = async (): Promise<CategoryDetails> => {
   return (await invoke("get_category_details")) as CategoryDetails;
-};
-
-const getCategoryByName = async (
-  name: string,
-): Promise<Category | undefined> => {
-  const categories = (await invoke("get_category_details")) as CategoryDetails;
-  return categories[name];
 };
 
 const getCategoryById = async (id: number): Promise<Category | undefined> => {
@@ -17,12 +12,12 @@ const getCategoryById = async (id: number): Promise<Category | undefined> => {
   return Object.values(categories).find((category) => category.id === id);
 };
 
-const getCategoryOverviews = async (
+const getFullCategories = async (
   excludedCategories?: string[],
-): Promise<CategoryOverview[]> => {
+): Promise<FullCategory[]> => {
   return (await invoke("get_category_overviews", {
     excludedCategories,
-  })) as CategoryOverview[];
+  })) as FullCategory[];
 };
 
 const setCategoryBudget = async (
@@ -65,9 +60,8 @@ const deleteCategory = async (id: number): Promise<void> => {
 
 export const categoriesApi = {
   getCategoryDetails,
-  getCategoryByName,
   getCategoryById,
-  getCategoryOverviews,
+  getFullCategories,
   setCategoryBudget,
   deleteCategoryBudget,
   createCategory,
