@@ -360,8 +360,6 @@ pub async fn remove_plaid_transactions(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::Dollars;
-    use chrono::NaiveDate;
 
     async fn all_transactions(pool: &Pool<Sqlite>) -> Result<Vec<FullTransaction>, sqlx::Error> {
         get_paginated_sorted_transactions(
