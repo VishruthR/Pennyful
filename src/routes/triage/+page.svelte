@@ -1,19 +1,20 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { categoriesApi } from "$lib/api/categories";
-  import type { CategoryOverview, TransactionWithAccount } from "$lib/types";
   import FlashcardDeck from "$lib/components/FlashcardDeck.svelte";
   import { transactionsApi } from "$lib/api/transactions";
   import UncategorizedFlashcard from "$lib/components/UncategorizedFlashcard.svelte";
   import Button from "$lib/components/Button.svelte";
   import { loadUncategorizedCount } from "$lib/stores/triage.svelte";
+  import type { FullTransaction } from "$lib/types/full_transaction";
+  import type { FullCategory } from "$lib/types/category_overview";
 
   let index = $state(0);
   let isAnimating = $state(false);
   let deck = $state<ReturnType<typeof FlashcardDeck>>();
   let isReviewComplete = $state(false);
 
-  let transactions = $state<TransactionWithAccount[]>([]);
+  let transactions = $state<FullTransaction[]>([]);
   async function loadTransactions() {
     transactions =
       await transactionsApi.getTransactionsByCategory("Uncategorized");
@@ -21,11 +22,11 @@
   }
   onMount(loadTransactions);
 
-  let categories = $state<CategoryOverview[]>([]);
+  let categories = $state<FullCategory[]>([]);
   let loadingCategories = $state<boolean>(false);
   async function loadCategories() {
     loadingCategories = true;
-    categories = await categoriesApi.getCategoryOverviews();
+    categories = await categoriesApi.getFullCategories();
     loadingCategories = false;
   }
   onMount(loadCategories);
@@ -82,7 +83,7 @@
   </Button>
 {/snippet}
 
-{#snippet card(transaction: TransactionWithAccount)}
+{#snippet card(transaction: FullTransaction)}
   {#if !loadingCategories}
     <UncategorizedFlashcard {transaction} {categories} {handleCategoryUpdate} />
   {/if}

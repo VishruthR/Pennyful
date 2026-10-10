@@ -1,9 +1,7 @@
-import type {
-  Account,
-  AccountsGetResponse,
-  LinkedInstitution,
-  PlaidAccount,
-} from "$lib/types";
+import type { Account } from "$lib/types/account";
+import type { AccountsGetResponse } from "$lib/types/accounts_get_response";
+import type { LinkedInstitution } from "$lib/types/linked_institution";
+import type { PlaidAccount } from "$lib/types/plaid_account";
 import { invoke } from "@tauri-apps/api/core";
 
 const savePlaidCredentials = async (

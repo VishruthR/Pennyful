@@ -1,4 +1,5 @@
-use crate::types::{Bank, LinkedInstitution};
+use crate::banks::bank::Bank;
+use crate::banks::linked_institution::LinkedInstitution;
 use serde_json::Value;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;

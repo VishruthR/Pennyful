@@ -13,14 +13,12 @@
   import { formatSignedCurrencyChange } from "$lib/utils/format";
   import { transactionsApi } from "$lib/api/transactions";
   import { categoriesApi } from "$lib/api/categories";
-  import type {
-    Category,
-    TransactionWithAccount,
-    PaginedSortedTransactionsResponse,
-  } from "$lib/types";
   import Icon from "@iconify/svelte";
   import { onMount } from "svelte";
   import { loadUncategorizedCount } from "$lib/stores/triage.svelte";
+  import type { FullTransaction } from "$lib/types/full_transaction";
+  import type { Category } from "$lib/types/category";
+  import type { PaginedSortedTransactionsResponse } from "$lib/types/paginated_sorted_transactions_response";
 
   interface Props {
     height?: string;
@@ -36,7 +34,7 @@
   let paginatedResponse: PaginedSortedTransactionsResponse | null =
     $state.raw(null);
 
-  let transactions: TransactionWithAccount[] = $derived.by(() => {
+  let transactions: FullTransaction[] = $derived.by(() => {
     if (paginatedResponse !== null) {
       return paginatedResponse.transactions;
     } else {
@@ -86,7 +84,7 @@
   });
 
   async function handleCategoryChange(
-    txn: TransactionWithAccount,
+    txn: FullTransaction,
     categoryId: number,
   ) {
     const category = categories.find((c) => c.id === categoryId);

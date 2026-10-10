@@ -18,8 +18,9 @@
 
 <script lang="ts">
   import Icon from "@iconify/svelte";
-  import type { Category, CategoryDetails } from "$lib/types.ts";
   import type { SpendingCategory } from "$lib/components/SpendingBreakdown.svelte";
+  import type { CategoryDetails } from "$lib/types/category_details";
+  import type { Category } from "$lib/types/category";
 
   interface Segment extends SpendingCategory {
     percentage: number;

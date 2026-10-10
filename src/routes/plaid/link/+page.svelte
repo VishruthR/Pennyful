@@ -2,17 +2,15 @@
   import Stepper from "$lib/components/Stepper.svelte";
   import AccountCard from "$lib/components/AccountCard.svelte";
   import InstitutionCard from "$lib/components/InstitutionCard.svelte";
-  import type {
-    AccountsGetResponse,
-    LinkedInstitution,
-    PlaidAccount,
-    PlaidItem,
-  } from "$lib/types";
   import { plaidApi } from "$lib/api/plaid";
   import Button from "$lib/components/Button.svelte";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { openUrl } from "@tauri-apps/plugin-opener";
+  import type { LinkedInstitution } from "$lib/types/linked_institution";
+  import type { AccountsGetResponse } from "$lib/types/accounts_get_response";
+  import type { PlaidItem } from "$lib/types/plaid_item";
+  import type { PlaidAccount } from "$lib/types/plaid_account";
 
   // TODO: Handle errors
 

@@ -1,5 +1,6 @@
+use crate::accounts::account::Account;
+use crate::accounts::full_account::FullAccount;
 use crate::accounts::queries;
-use crate::types::{Account, FullAccount};
 use crate::AppState;
 
 #[tauri::command]
@@ -32,8 +33,9 @@ pub async fn get_accounts_of_item(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::accounts::account_type::AccountType;
     use crate::db::DatabaseState;
-    use crate::types::{AccountType, Cents};
+    use crate::transactions::dollars::Dollars;
     use rust_decimal::dec;
     use sqlx::{Pool, Sqlite};
     use tauri::async_runtime::Mutex;
@@ -47,8 +49,8 @@ mod tests {
                 1,
                 "Bank of America".to_owned(),
                 AccountType::Checkings,
-                Cents(dec!(1000.00)),
-                Cents(dec!(1250.50)),
+                Dollars(dec!(1000.00)),
+                Dollars(dec!(1250.50)),
             ),
             FullAccount::new(
                 2,
@@ -56,8 +58,8 @@ mod tests {
                 1,
                 "Bank of America".to_owned(),
                 AccountType::Savings,
-                Cents(dec!(5000.00)),
-                Cents(dec!(5200.00)),
+                Dollars(dec!(5000.00)),
+                Dollars(dec!(5200.00)),
             ),
             FullAccount::new(
                 3,
@@ -65,8 +67,8 @@ mod tests {
                 2,
                 "Wells Fargo".to_owned(),
                 AccountType::Checkings,
-                Cents(dec!(2500.00)),
-                Cents(dec!(2480.75)),
+                Dollars(dec!(2500.00)),
+                Dollars(dec!(2480.75)),
             ),
         ]
     }

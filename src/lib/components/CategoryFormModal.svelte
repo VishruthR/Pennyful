@@ -13,13 +13,13 @@
   import ColorPicker from "$lib/components/ColorPicker.svelte";
   import Button from "$lib/components/Button.svelte";
   import { categoriesApi } from "$lib/api/categories";
-  import type { CategoryOverview } from "$lib/types";
-  import BudgetInput from "./BudgetInput.svelte";
+  import BudgetInput from "$lib/components/BudgetInput.svelte";
+  import type { FullCategory } from "$lib/types/category_overview";
 
   interface Props {
     open?: boolean;
     mode: "add" | "edit";
-    category?: CategoryOverview;
+    category?: FullCategory;
     onSuccess: () => void;
   }
 

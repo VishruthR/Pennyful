@@ -1,4 +1,3 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::{async_runtime::Mutex, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_store::StoreExt;
@@ -14,27 +13,41 @@ mod credentials {
 }
 mod plaid {
     pub(crate) mod commands;
+    pub(crate) mod plaid_account;
+    pub(crate) mod plaid_item;
+    pub(crate) mod plaid_transaction;
     pub(crate) mod queries;
-    pub(crate) mod types;
 }
 mod transactions {
     pub(crate) mod commands;
+    pub(crate) mod dollars;
+    pub(crate) mod full_transaction;
     pub(crate) mod queries;
+    pub(crate) mod transaction;
 }
 mod accounts {
+    pub(crate) mod account;
+    pub(crate) mod account_type;
     pub(crate) mod commands;
+    pub(crate) mod full_account;
     pub(crate) mod queries;
 }
 mod categories {
+    pub(crate) mod category;
+    pub(crate) mod category_overview;
     pub(crate) mod commands;
     pub(crate) mod queries;
 }
 mod banks {
+    pub(crate) mod bank;
     pub(crate) mod commands;
+    pub(crate) mod linked_institution;
     pub(crate) mod queries;
 }
+mod query {
+    pub(crate) mod sort_dir;
+}
 mod db;
-mod types;
 
 struct AppState {
     db: db::DatabaseState,

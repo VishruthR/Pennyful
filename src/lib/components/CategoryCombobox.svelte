@@ -6,7 +6,8 @@
 <script lang="ts">
   import Combobox from "$lib/components/Combobox.svelte";
   import CategoryPill from "$lib/components/CategoryPill.svelte";
-  import type { Category, DropdownOption } from "$lib/types";
+  import type { Category } from "$lib/types/category";
+  import type { DropdownOption } from "$lib/types/dropdown_option";
 
   interface Props {
     categories: Category[];

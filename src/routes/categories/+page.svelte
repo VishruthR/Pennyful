@@ -6,19 +6,19 @@
   import CategoryFormModal from "$lib/components/CategoryFormModal.svelte";
   import DeleteCategoryModal from "$lib/components/DeleteCategoryModal.svelte";
   import { categoriesApi } from "$lib/api/categories";
-  import type { CategoryOverview } from "$lib/types";
+  import type { FullCategory } from "$lib/types/category_overview";
 
-  let categories = $state<CategoryOverview[]>([]);
+  let categories = $state<FullCategory[]>([]);
 
   let formOpen = $state(false);
   let formMode = $state<"add" | "edit">("add");
-  let activeCategory = $state<CategoryOverview | undefined>(undefined);
+  let activeCategory = $state<FullCategory | undefined>(undefined);
 
   let deleteOpen = $state(false);
-  let categoryToDelete = $state<CategoryOverview | undefined>(undefined);
+  let categoryToDelete = $state<FullCategory | undefined>(undefined);
 
   async function loadCategories() {
-    categories = await categoriesApi.getCategoryOverviews();
+    categories = await categoriesApi.getFullCategories();
   }
   onMount(loadCategories);
 
@@ -38,13 +38,13 @@
     formOpen = true;
   }
 
-  function handleEdit(category: CategoryOverview) {
+  function handleEdit(category: FullCategory) {
     formMode = "edit";
     activeCategory = category;
     formOpen = true;
   }
 
-  function handleDelete(category: CategoryOverview) {
+  function handleDelete(category: FullCategory) {
     categoryToDelete = category;
     deleteOpen = true;
   }

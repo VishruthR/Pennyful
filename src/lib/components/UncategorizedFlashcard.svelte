@@ -15,13 +15,14 @@
 
 <script lang="ts">
   import Icon from "@iconify/svelte";
-  import type { Category, TransactionWithAccount } from "$lib/types";
   import { formatDate, formatSignedCurrencyChange } from "$lib/utils/format";
   import { getInstitutionIcon } from "$lib/utils/institutionLogos";
   import CategoryCombobox from "$lib/components/CategoryCombobox.svelte";
+  import type { FullTransaction } from "$lib/types/full_transaction";
+  import type { Category } from "$lib/types/category";
 
   interface Props {
-    transaction: TransactionWithAccount;
+    transaction: FullTransaction;
     categories: Category[];
     handleCategoryUpdate: (transactionId: number, categoryId: number) => void;
   }

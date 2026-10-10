@@ -1,4 +1,4 @@
-use crate::types::PlaidItem;
+use crate::plaid::plaid_item::PlaidItem;
 use sqlx::{Pool, Sqlite, SqliteConnection};
 
 pub async fn get_plaid_item(
@@ -17,20 +17,6 @@ pub async fn get_plaid_item(
     let plaid_item: PlaidItem = sqlx::query_as(query).bind(item_id).fetch_one(pool).await?;
 
     Ok(plaid_item)
-}
-
-pub async fn get_all_plaid_items(pool: &Pool<Sqlite>) -> Result<Vec<PlaidItem>, sqlx::Error> {
-    let query = r#"
-        SELECT
-            pi.item_id,
-            pi.access_token,
-            pir.cursor
-        FROM plaid_item pi
-    "#;
-
-    let plaid_items: Vec<PlaidItem> = sqlx::query_as(query).fetch_all(pool).await?;
-
-    Ok(plaid_items)
 }
 
 pub async fn update_plaid_item_cursor(

@@ -1,5 +1,6 @@
-use crate::types::{Cents, TransactionWithAccount};
-use crate::{plaid::types::PlaidTransaction, types::SortDir};
+use crate::plaid::plaid_transaction::PlaidTransaction;
+use crate::query::sort_dir::SortDir;
+use crate::transactions::{dollars::Dollars, full_transaction::FullTransaction};
 use ::plaid::model::RemovedTransaction;
 use chrono::NaiveDate;
 use sqlx::{Pool, QueryBuilder, Sqlite, SqliteConnection};
@@ -9,7 +10,7 @@ pub async fn get_total_income_by_date_range(
     pool: &Pool<Sqlite>,
     start_date: NaiveDate,
     end_date: NaiveDate,
-) -> Result<Cents, sqlx::Error> {
+) -> Result<Dollars, sqlx::Error> {
     let query = r#"
         SELECT
             SUM(t.amount_cents) AS amount
@@ -20,7 +21,7 @@ pub async fn get_total_income_by_date_range(
             AND date(t.date) <= date($2)
     "#;
 
-    let res: Cents = sqlx::query_scalar(query)
+    let res: Dollars = sqlx::query_scalar(query)
         .bind(start_date)
         .bind(end_date)
         .fetch_one(pool)
@@ -33,7 +34,7 @@ pub async fn get_total_spending_by_date_range(
     pool: &Pool<Sqlite>,
     start_date: NaiveDate,
     end_date: NaiveDate,
-) -> Result<Cents, sqlx::Error> {
+) -> Result<Dollars, sqlx::Error> {
     let query = r#"
         SELECT
             SUM(t.amount_cents) AS amount
@@ -44,7 +45,7 @@ pub async fn get_total_spending_by_date_range(
             AND date(t.date) <= date($2)
     "#;
 
-    let res: Cents = sqlx::query_scalar(query)
+    let res: Dollars = sqlx::query_scalar(query)
         .bind(start_date)
         .bind(end_date)
         .fetch_one(pool)
@@ -56,7 +57,7 @@ pub async fn get_total_spending_by_date_range(
 pub async fn get_transactions_by_category(
     pool: &Pool<Sqlite>,
     category_name: &String,
-) -> Result<Vec<TransactionWithAccount>, sqlx::Error> {
+) -> Result<Vec<FullTransaction>, sqlx::Error> {
     let query = r#"
         SELECT
             t.id,
@@ -81,7 +82,7 @@ pub async fn get_transactions_by_category(
         WHERE t.deleted_at IS NULL AND c.name = ?
     "#;
 
-    let res: Vec<TransactionWithAccount> = sqlx::query_as(query)
+    let res: Vec<FullTransaction> = sqlx::query_as(query)
         .bind(category_name)
         .fetch_all(pool)
         .await?;
@@ -123,7 +124,7 @@ pub async fn get_paginated_sorted_transactions(
     page_size: &i64,
     sort_col: &Option<String>,
     sort_dir: &Option<SortDir>,
-) -> Result<Vec<TransactionWithAccount>, sqlx::Error> {
+) -> Result<Vec<FullTransaction>, sqlx::Error> {
     let offset = std::cmp::max(page - 1, 0) * page_size;
 
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
@@ -180,8 +181,8 @@ pub async fn get_paginated_sorted_transactions(
     query_builder.push(" OFFSET ");
     query_builder.push_bind(offset);
 
-    let transactions: Vec<TransactionWithAccount> = query_builder
-        .build_query_as::<TransactionWithAccount>()
+    let transactions: Vec<FullTransaction> = query_builder
+        .build_query_as::<FullTransaction>()
         .fetch_all(pool)
         .await?;
 
@@ -359,12 +360,8 @@ pub async fn remove_plaid_transactions(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::Cents;
-    use chrono::NaiveDate;
 
-    async fn all_transactions(
-        pool: &Pool<Sqlite>,
-    ) -> Result<Vec<TransactionWithAccount>, sqlx::Error> {
+    async fn all_transactions(pool: &Pool<Sqlite>) -> Result<Vec<FullTransaction>, sqlx::Error> {
         get_paginated_sorted_transactions(
             pool,
             &1,
@@ -385,7 +382,7 @@ mod tests {
             Some(plaid_id.to_owned()),
             Some(name.to_owned()),
             None,
-            Cents::from_dollars_f64(amount_dollars).unwrap(),
+            Dollars::from_dollars_f64(amount_dollars).unwrap(),
             NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
             pending,
             "plaid-acct-1".to_owned(),
@@ -402,11 +399,11 @@ mod tests {
         let start_date = NaiveDate::parse_from_str("2025-12-01", "%Y-%m-%d")?;
         let end_date = NaiveDate::parse_from_str("2025-12-31", "%Y-%m-%d")?;
         let income = get_total_income_by_date_range(&pool, start_date, end_date).await?;
-        assert_eq!(income, Cents::from_dollars_f64(0_f64).unwrap());
+        assert_eq!(income, Dollars::from_dollars_f64(0_f64).unwrap());
 
         update_transaction_category(&pool, 1, 2, 1).await?;
         let income = get_total_income_by_date_range(&pool, start_date, end_date).await?;
-        assert_eq!(income, Cents::from_dollars_f64(-5.77_f64).unwrap());
+        assert_eq!(income, Dollars::from_dollars_f64(-5.77_f64).unwrap());
 
         Ok(())
     }
@@ -419,12 +416,12 @@ mod tests {
         let start_date = NaiveDate::parse_from_str("2026-12-01", "%Y-%m-%d")?;
         let end_date = NaiveDate::parse_from_str("2026-12-31", "%Y-%m-%d")?;
         let income = get_total_spending_by_date_range(&pool, start_date, end_date).await?;
-        assert_eq!(income, Cents::from_dollars_f64(0_f64).unwrap());
+        assert_eq!(income, Dollars::from_dollars_f64(0_f64).unwrap());
 
         let start_date = NaiveDate::parse_from_str("2025-12-01", "%Y-%m-%d")?;
         let end_date = NaiveDate::parse_from_str("2025-12-31", "%Y-%m-%d")?;
         let income = get_total_spending_by_date_range(&pool, start_date, end_date).await?;
-        assert_eq!(income, Cents::from_dollars_f64(-19.27_f64).unwrap());
+        assert_eq!(income, Dollars::from_dollars_f64(-19.27_f64).unwrap());
 
         Ok(())
     }
@@ -460,7 +457,7 @@ mod tests {
             .find(|t| t.plaid_transaction_id().as_deref() == Some("txn-1"))
             .expect("added transaction should be queryable");
         assert_eq!(coffee.name, "Coffee");
-        assert_eq!(coffee.amount, Cents::from_dollars_f64(-4.50).unwrap());
+        assert_eq!(coffee.amount, Dollars::from_dollars_f64(-4.50).unwrap());
         Ok(())
     }
 
@@ -529,7 +526,7 @@ mod tests {
             .find(|t| t.plaid_transaction_id().as_deref() == Some("txn-1"))
             .expect("transaction should exist");
         assert_eq!(txn.name, "Posted Coffee");
-        assert_eq!(txn.amount, Cents::from_dollars_f64(-5.25).unwrap());
+        assert_eq!(txn.amount, Dollars::from_dollars_f64(-5.25).unwrap());
         assert_eq!(txn.date, NaiveDate::from_ymd_opt(2026, 1, 20).unwrap());
         assert!(!txn.pending, "pending should flip to posted");
         Ok(())
@@ -578,7 +575,7 @@ mod tests {
         Ok(())
     }
 
-    fn ids(transactions: &[TransactionWithAccount]) -> Vec<i64> {
+    fn ids(transactions: &[FullTransaction]) -> Vec<i64> {
         transactions.iter().map(|t| *t.id()).collect()
     }
 
@@ -679,7 +676,7 @@ mod tests {
         Ok(())
     }
 
-    fn category_of(transactions: &[TransactionWithAccount], id: i64) -> &str {
+    fn category_of(transactions: &[FullTransaction], id: i64) -> &str {
         transactions
             .iter()
             .find(|t| *t.id() == id)

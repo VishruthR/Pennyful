@@ -8,18 +8,18 @@
 -->
 
 <script lang="ts">
-  import type { CategoryOverview } from "$lib/types";
   import Icon from "@iconify/svelte";
   import CategoryPill from "$lib/components/CategoryPill.svelte";
   import BudgetInput from "$lib/components/BudgetInput.svelte";
   import { formatDollars } from "$lib/utils/format";
   import { SPECIAL_CATEGORIES } from "$lib/utils/constants";
+  import type { FullCategory } from "$lib/types/category_overview";
 
   interface Props {
-    categories: CategoryOverview[];
+    categories: FullCategory[];
     onBudgetChange: (categoryId: number, amount: number | null) => void;
-    onEdit: (category: CategoryOverview) => void;
-    onDelete: (category: CategoryOverview) => void;
+    onEdit: (category: FullCategory) => void;
+    onDelete: (category: FullCategory) => void;
     height?: string;
   }
 
@@ -28,11 +28,11 @@
 
   let tableHeight = $derived(height ? height : "100%");
 
-  function hasBudget(category: CategoryOverview): boolean {
+  function hasBudget(category: FullCategory): boolean {
     return category.budget !== null && category.budget > 0;
   }
 
-  function spentDisplay(category: CategoryOverview): string {
+  function spentDisplay(category: FullCategory): string {
     const spent = formatDollars(category.spent);
     if (hasBudget(category)) {
       const percent = Math.round((category.spent / category.budget!) * 100);
@@ -41,7 +41,7 @@
     return spent;
   }
 
-  function spentClass(category: CategoryOverview): string {
+  function spentClass(category: FullCategory): string {
     if (!hasBudget(category)) return "spent-neutral";
     const ratio = category.spent / category.budget!;
     if (ratio >= 1) return "spent-over";

@@ -1,6 +1,7 @@
 use crate::categories::queries;
 use crate::categories::queries::get_all_categories;
-use crate::types::{Category, CategoryOverview, Cents};
+use crate::categories::{category::Category, category_overview::FullCategory};
+use crate::transactions::dollars::Dollars;
 use crate::AppState;
 use std::collections::HashMap;
 
@@ -27,7 +28,7 @@ pub async fn get_category_details(
 pub async fn get_category_overviews(
     state: tauri::State<'_, AppState>,
     excluded_categories: Option<Vec<String>>,
-) -> Result<Vec<CategoryOverview>, String> {
+) -> Result<Vec<FullCategory>, String> {
     queries::get_category_overviews(&state.db.0, excluded_categories)
         .await
         .map_err(|e| e.to_string())
@@ -37,7 +38,7 @@ pub async fn get_category_overviews(
 pub async fn set_category_budget(
     state: tauri::State<'_, AppState>,
     category_id: i64,
-    amount: Cents,
+    amount: Dollars,
 ) -> Result<(), String> {
     queries::upsert_budget(&state.db.0, category_id, amount)
         .await
@@ -62,7 +63,7 @@ pub async fn create_category(
     name: String,
     color: String,
     icon: Option<String>,
-    budget: Option<Cents>,
+    budget: Option<Dollars>,
 ) -> Result<i64, String> {
     queries::create_category(&state.db.0, &name, &color, &icon, budget)
         .await
@@ -76,7 +77,7 @@ pub async fn update_category(
     name: String,
     color: String,
     icon: Option<String>,
-    budget: Option<Cents>,
+    budget: Option<Dollars>,
 ) -> Result<(), String> {
     queries::update_category(&state.db.0, id, &name, &color, &icon, budget)
         .await

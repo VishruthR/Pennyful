@@ -5,6 +5,6 @@ export const load: PageLoad = async ({ depends }) => {
   depends("home:transactions-table");
 
   return {
-    categories: await categoriesApi.getCategoryOverviews(["Income"]),
+    categories: await categoriesApi.getFullCategories(["Income"]),
   };
 };

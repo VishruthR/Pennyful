@@ -1,14 +1,16 @@
 use chrono::NaiveDate;
 
+use crate::query::sort_dir::SortDir;
+use crate::transactions::dollars::Dollars;
+use crate::transactions::full_transaction::FullTransaction;
 use crate::transactions::queries::{
     get_total_income_by_date_range, get_total_spending_by_date_range,
 };
-use crate::types::{Cents, SortDir, TransactionWithAccount};
 use crate::{categories, transactions, AppState};
 
 #[derive(serde::Serialize)]
 pub struct PaginatedSortedTransactionsResponse {
-    pub transactions: Vec<TransactionWithAccount>,
+    pub transactions: Vec<FullTransaction>,
     pub curr_page: i64,
     pub next_page: Option<i64>,
     pub prev_page: Option<i64>,
@@ -61,7 +63,7 @@ pub async fn get_spending_and_income_by_date_range(
     state: tauri::State<'_, AppState>,
     start_date: NaiveDate,
     end_date: NaiveDate,
-) -> Result<(Cents, Cents), String> {
+) -> Result<(Dollars, Dollars), String> {
     let db = &state.db;
 
     let income = get_total_income_by_date_range(&db.0, start_date, end_date)
@@ -99,7 +101,7 @@ pub async fn update_transaction_category(
 pub async fn get_transactions_by_category(
     state: tauri::State<'_, AppState>,
     category_name: String,
-) -> Result<Vec<TransactionWithAccount>, String> {
+) -> Result<Vec<FullTransaction>, String> {
     transactions::queries::get_transactions_by_category(&state.db.0, &category_name)
         .await
         .map_err(|e| format!("Error fetching transactions: {e}"))
