@@ -36,7 +36,7 @@ pub async fn get_category_overviews(
     let query = raw_query.replace(
         "{excluded_categories}",
         &excluded_categories
-            .unwrap_or(vec![])
+            .unwrap_or_default()
             .into_iter()
             .map(|cat| format!("'{}'", cat))
             .collect::<Vec<String>>()

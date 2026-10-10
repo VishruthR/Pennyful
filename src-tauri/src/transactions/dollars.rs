@@ -63,7 +63,7 @@ impl Dollars {
 
     #[allow(dead_code)]
     pub fn from_i32(dollars: i32) -> Option<Self> {
-        Decimal::from_i32(dollars).map(|d| Dollars(d))
+        Decimal::from_i32(dollars).map(Dollars)
     }
 
     #[allow(dead_code)]

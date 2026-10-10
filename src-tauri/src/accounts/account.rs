@@ -18,7 +18,7 @@ pub struct Account {
 }
 
 impl Account {
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::too_many_arguments)]
     pub fn new(
         id: i64,
         plaid_account_id: Option<String>,

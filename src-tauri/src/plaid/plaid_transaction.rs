@@ -29,6 +29,7 @@ impl PlaidTransaction {
         &self.account_id
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         plaid_transaction_id: Option<String>,
         name: Option<String>,
