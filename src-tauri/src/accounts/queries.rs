@@ -31,7 +31,7 @@ pub async fn insert_new_plaid_accounts(
             plaid::model::AccountType::Depository => {
                 match account
                     .subtype
-                    .ok_or(format!("Account subtype doesn't exist"))?
+                    .ok_or("Account subtype doesn't exist".to_string())?
                 {
                     plaid::model::AccountSubtype::Savings => Ok(AccountType::Savings),
                     plaid::model::AccountSubtype::Checking => Ok(AccountType::Checkings),
