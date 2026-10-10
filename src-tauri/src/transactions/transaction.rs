@@ -1,6 +1,6 @@
+use crate::transactions::dollars::Dollars;
 use chrono::NaiveDate;
 use std::fmt;
-use crate::transactions::cents::Cents;
 
 #[derive(sqlx::FromRow, PartialEq, Debug, serde::Serialize)]
 pub struct Transaction {
@@ -9,7 +9,7 @@ pub struct Transaction {
     pub name: String,
     merchant_entity_id: Option<String>,
     #[sqlx(rename = "amount_cents")]
-    pub amount: Cents,
+    pub amount: Dollars,
     pub date: NaiveDate,
     pub pending: bool,
     pub deleted_at: Option<NaiveDate>,
@@ -37,7 +37,7 @@ impl Transaction {
     pub fn new(
         id: i64,
         name: String,
-        amount: Cents,
+        amount: Dollars,
         date: NaiveDate,
         account_id: i64,
         category_id: i64,

@@ -1,13 +1,13 @@
 use chrono::NaiveDate;
 
-use crate::transactions::cents::Cents;
+use crate::transactions::dollars::Dollars;
 
 #[derive(PartialEq, Debug)]
 pub struct PlaidTransaction {
     pub plaid_transaction_id: Option<String>,
     pub name: Option<String>,
     pub merchant_entity_id: Option<String>,
-    pub amount: Cents,
+    pub amount: Dollars,
     pub date: NaiveDate,
     pub pending: bool,
     plaid_account_id: String,
@@ -32,7 +32,7 @@ impl PlaidTransaction {
         plaid_transaction_id: Option<String>,
         name: Option<String>,
         merchant_entity_id: Option<String>,
-        amount: Cents,
+        amount: Dollars,
         date: NaiveDate,
         pending: bool,
         plaid_account_id: String,

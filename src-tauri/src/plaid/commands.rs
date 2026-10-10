@@ -5,7 +5,7 @@ use crate::credentials;
 use crate::plaid;
 use crate::plaid::plaid_transaction::PlaidTransaction;
 use crate::transactions;
-use crate::transactions::cents::Cents;
+use crate::transactions::dollars::Dollars;
 use crate::AppState;
 use ::plaid::{
     model::{
@@ -138,7 +138,7 @@ fn plaid_transaction_to_new_transaction(
     plaid_transaction: Transaction,
 ) -> Result<PlaidTransaction, String> {
     let plaid_transaction_id = plaid_transaction.transaction_id.clone();
-    let amount = Cents::from_dollars_f64(plaid_transaction.amount).ok_or(format!(
+    let amount = Dollars::from_dollars_f64(plaid_transaction.amount).ok_or(format!(
         "transaction {plaid_transaction_id} does not have a valid amount"
     ))?;
     // The name field of Transaction is non-nullable so using a default value here is fine

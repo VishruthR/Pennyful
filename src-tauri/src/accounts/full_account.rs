@@ -1,5 +1,5 @@
 use crate::accounts::{account::Account, account_type::AccountType};
-use crate::transactions::cents::Cents;
+use crate::transactions::dollars::Dollars;
 
 // Account with bank information joined from the bank table
 #[derive(PartialEq, Debug, Clone, serde::Serialize)]
@@ -26,8 +26,8 @@ impl FullAccount {
         bank_id: i64,
         bank_name: String,
         account_type: AccountType,
-        initial_balance: Cents,
-        current_balance: Cents,
+        initial_balance: Dollars,
+        current_balance: Dollars,
     ) -> Self {
         FullAccount {
             account: Account::new(

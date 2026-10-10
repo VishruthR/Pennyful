@@ -1,6 +1,6 @@
-use crate::transactions::cents::Cents;
+use crate::accounts::{account::Account, account_type::AccountType, full_account::FullAccount};
 use crate::banks::bank::Bank;
-use crate::accounts::{account::Account, full_account::FullAccount, account_type::AccountType};
+use crate::transactions::dollars::Dollars;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 
@@ -45,12 +45,12 @@ pub async fn insert_new_plaid_accounts(
         let current_balance = account
             .balances
             .current
-            .and_then(Cents::from_dollars_f64)
+            .and_then(Dollars::from_dollars_f64)
             .unwrap_or_default();
         let available_balance = account
             .balances
             .available
-            .and_then(Cents::from_dollars_f64)
+            .and_then(Dollars::from_dollars_f64)
             .unwrap_or_default();
 
         let res = sqlx::query(query)
@@ -141,12 +141,16 @@ pub async fn get_full_accounts(pool: &Pool<Sqlite>) -> Result<Vec<FullAccount>, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transactions::cents::Cents;
     use crate::accounts::account_type::AccountType;
+    use crate::transactions::dollars::Dollars;
     use rust_decimal::dec;
     use serde_json::json;
 
-    fn plaid_account(account_id: &str, type_: &str, subtype: Option<&str>) -> plaid::model::AccountBase {
+    fn plaid_account(
+        account_id: &str,
+        type_: &str,
+        subtype: Option<&str>,
+    ) -> plaid::model::AccountBase {
         serde_json::from_value(json!({
             "account_id": account_id,
             "balances": { "available": 100.0, "current": 150.0 },
@@ -165,8 +169,8 @@ mod tests {
                 1,
                 "Bank of America".to_owned(),
                 AccountType::Checkings,
-                Cents(dec!(1000.00)),
-                Cents(dec!(1250.50)),
+                Dollars(dec!(1000.00)),
+                Dollars(dec!(1250.50)),
             ),
             FullAccount::new(
                 2,
@@ -174,8 +178,8 @@ mod tests {
                 1,
                 "Bank of America".to_owned(),
                 AccountType::Savings,
-                Cents(dec!(5000.00)),
-                Cents(dec!(5200.00)),
+                Dollars(dec!(5000.00)),
+                Dollars(dec!(5200.00)),
             ),
             FullAccount::new(
                 3,
@@ -183,8 +187,8 @@ mod tests {
                 2,
                 "Wells Fargo".to_owned(),
                 AccountType::Checkings,
-                Cents(dec!(2500.00)),
-                Cents(dec!(2480.75)),
+                Dollars(dec!(2500.00)),
+                Dollars(dec!(2480.75)),
             ),
         ]
     }

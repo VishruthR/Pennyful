@@ -1,10 +1,10 @@
-use crate::transactions::cents::Cents;
+use crate::transactions::dollars::Dollars;
 
 #[derive(PartialEq, Debug)]
 struct Balances {
-    available: Cents,
-    current: Cents,
-    limit: Cents,
+    available: Dollars,
+    current: Dollars,
+    limit: Dollars,
 }
 
 #[derive(PartialEq, Debug)]

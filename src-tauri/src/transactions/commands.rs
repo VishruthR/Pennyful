@@ -1,11 +1,11 @@
 use chrono::NaiveDate;
 
-use crate::transactions::cents::Cents;
-use crate::transactions::transaction_with_account::TransactionWithAccount;
+use crate::query::sort_dir::SortDir;
+use crate::transactions::dollars::Dollars;
 use crate::transactions::queries::{
     get_total_income_by_date_range, get_total_spending_by_date_range,
 };
-use crate::query::sort_dir::SortDir;
+use crate::transactions::transaction_with_account::TransactionWithAccount;
 use crate::{categories, transactions, AppState};
 
 #[derive(serde::Serialize)]
@@ -63,7 +63,7 @@ pub async fn get_spending_and_income_by_date_range(
     state: tauri::State<'_, AppState>,
     start_date: NaiveDate,
     end_date: NaiveDate,
-) -> Result<(Cents, Cents), String> {
+) -> Result<(Dollars, Dollars), String> {
     let db = &state.db;
 
     let income = get_total_income_by_date_range(&db.0, start_date, end_date)

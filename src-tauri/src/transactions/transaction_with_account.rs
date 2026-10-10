@@ -1,5 +1,5 @@
-use std::ops::Deref;
 use crate::transactions::transaction::Transaction;
+use std::ops::Deref;
 
 #[derive(sqlx::FromRow, PartialEq, Debug, serde::Serialize)]
 pub struct TransactionWithAccount {

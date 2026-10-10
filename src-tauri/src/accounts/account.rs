@@ -1,5 +1,5 @@
-use crate::transactions::cents::Cents;
 use crate::accounts::account_type::AccountType;
+use crate::transactions::dollars::Dollars;
 
 #[derive(sqlx::FromRow, PartialEq, Debug, Clone, serde::Serialize)]
 pub struct Account {
@@ -10,11 +10,11 @@ pub struct Account {
     pub bank_id: i64,
     pub account_type: AccountType,
     #[sqlx(rename = "initial_balance_cents")]
-    pub initial_balance: Cents,
+    pub initial_balance: Dollars,
     #[sqlx(rename = "available_balance_cents")]
-    pub available_balance: Cents,
+    pub available_balance: Dollars,
     #[sqlx(rename = "current_balance_cents")]
-    pub current_balance: Cents,
+    pub current_balance: Dollars,
 }
 
 impl Account {
@@ -25,9 +25,9 @@ impl Account {
         official_name: Option<String>,
         bank_id: i64,
         account_type: AccountType,
-        initial_balance: Cents,
-        available_balance: Cents,
-        current_balance: Cents,
+        initial_balance: Dollars,
+        available_balance: Dollars,
+        current_balance: Dollars,
     ) -> Self {
         Account {
             id,
@@ -42,4 +42,3 @@ impl Account {
         }
     }
 }
-

@@ -12,24 +12,24 @@ mod credentials {
     pub(crate) mod commands;
 }
 mod plaid {
-    pub(crate) mod plaid_transaction;
+    pub(crate) mod commands;
     pub(crate) mod plaid_account;
     pub(crate) mod plaid_item;
-    pub(crate) mod commands;
+    pub(crate) mod plaid_transaction;
     pub(crate) mod queries;
 }
 mod transactions {
-    pub(crate) mod cents;
-    pub(crate) mod transaction;
-    pub(crate) mod transaction_with_account;
+    pub(crate) mod dollars;
     pub(crate) mod commands;
     pub(crate) mod queries;
+    pub(crate) mod transaction;
+    pub(crate) mod transaction_with_account;
 }
 mod accounts {
     pub(crate) mod account;
     pub(crate) mod account_type;
-    pub(crate) mod full_account;
     pub(crate) mod commands;
+    pub(crate) mod full_account;
     pub(crate) mod queries;
 }
 mod categories {
@@ -40,8 +40,8 @@ mod categories {
 }
 mod banks {
     pub(crate) mod bank;
-    pub(crate) mod linked_institution;
     pub(crate) mod commands;
+    pub(crate) mod linked_institution;
     pub(crate) mod queries;
 }
 mod query {
