@@ -14,7 +14,7 @@
 
 <main class="container">
   <div class="stats-section">
-    <MonthByMonthSpendingChart />
+    <MonthByMonthSpendingChart monthlyStats={data.monthlyStats} />
     <TopCategories categories={data.categories} />
   </div>
   <TransactionsTable onTransactionsLoad={handleTransactionsLoad} />
