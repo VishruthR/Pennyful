@@ -160,6 +160,7 @@ pub async fn delete_category(pool: &Pool<Sqlite>, id: i64) -> Result<(), sqlx::E
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dollars;
 
     fn get_expected_categories() -> Vec<String> {
         // Only test default categories
@@ -178,17 +179,6 @@ mod tests {
             "Hobbies".to_string(),
             "Miscellaneous".to_string(),
         ];
-    }
-
-    async fn test_get_all_transactions(
-        pool: Pool<Sqlite>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let categories = get_all_categories(&pool).await?;
-
-        let category_names: Vec<String> = categories.iter().map(|c| c.name.clone()).collect();
-
-        assert_eq!(category_names, get_expected_categories());
-        Ok(())
     }
 
     async fn seed_account(pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
@@ -240,7 +230,7 @@ mod tests {
         // With no budget row and no transactions, budget is null and spend is 0.
         let uncategorized = overview_for(&overviews, 1);
         assert_eq!(uncategorized.budget, None);
-        assert_eq!(uncategorized.spent, Dollars::from_i32_or_throw(0),);
+        assert_eq!(uncategorized.spent, dollars!(0));
         Ok(())
     }
 
@@ -273,16 +263,13 @@ mod tests {
         let today = chrono::Local::now().format("%Y-%m-%d").to_string();
 
         // Category 3 (Housing): a spend and a refund this month net to $7 spent.
-        insert_txn(&pool, 3, Dollars::from_i32_or_throw(-10), &today).await?;
-        insert_txn(&pool, 3, Dollars::from_i32_or_throw(3), &today).await?;
+        insert_txn(&pool, 3, dollars!(-10), &today).await?;
+        insert_txn(&pool, 3, dollars!(3), &today).await?;
         // A prior-month transaction is excluded from the current-month total.
-        insert_txn(&pool, 3, Dollars::from_i32_or_throw(-50), "2020-01-15").await?;
+        insert_txn(&pool, 3, dollars!(-50), "2020-01-15").await?;
 
         let overviews = get_category_overviews(&pool, None).await?;
-        assert_eq!(
-            overview_for(&overviews, 3).spent,
-            Dollars::from_i32_or_throw(7),
-        );
+        assert_eq!(overview_for(&overviews, 3).spent, dollars!(7),);
         Ok(())
     }
 
@@ -290,23 +277,23 @@ mod tests {
     async fn test_upsert_budget_inserts_then_updates(
         pool: Pool<Sqlite>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        upsert_budget(&pool, 3, Dollars::from_i32_or_throw(500)).await?;
+        upsert_budget(&pool, 3, dollars!(500)).await?;
         assert_eq!(
             overview_for(&get_category_overviews(&pool, None).await?, 3).budget,
-            Dollars::from_i32(500)
+            Some(dollars!(500))
         );
 
-        upsert_budget(&pool, 3, Dollars::from_i32_or_throw(125)).await?;
+        upsert_budget(&pool, 3, dollars!(125)).await?;
         assert_eq!(
             overview_for(&get_category_overviews(&pool, None).await?, 3).budget,
-            Dollars::from_i32(125)
+            Some(dollars!(125))
         );
         Ok(())
     }
 
     #[sqlx::test]
     async fn test_delete_budget(pool: Pool<Sqlite>) -> Result<(), Box<dyn std::error::Error>> {
-        upsert_budget(&pool, 3, Dollars::from_i32_or_throw(50))
+        upsert_budget(&pool, 3, dollars!(50))
             .await
             .expect("Couldn't upsert budget");
         assert_eq!(
@@ -317,7 +304,7 @@ mod tests {
                 3
             )
             .budget,
-            Dollars::from_i32(50)
+            Some(dollars!(50))
         );
 
         assert_eq!(
@@ -349,7 +336,7 @@ mod tests {
             &"Coffee".to_string(),
             &"#6F4E37".to_string(),
             &Some("mdi:coffee".to_string()),
-            Some(Dollars::from_i32_or_throw(20)),
+            Some(dollars!(20)),
         )
         .await?;
 
@@ -358,7 +345,7 @@ mod tests {
         assert_eq!(created.name, "Coffee");
         assert_eq!(created.color, "#6F4E37");
         assert_eq!(created.icon.as_deref(), Some("mdi:coffee"));
-        assert_eq!(created.budget, Dollars::from_i32(20));
+        assert_eq!(created.budget, Some(dollars!(20)));
         Ok(())
     }
 
@@ -373,7 +360,7 @@ mod tests {
             &"Home".to_string(),
             &"#000000".to_string(),
             &Some("mdi:home".to_string()),
-            Dollars::from_i32(30),
+            Some(dollars!(30)),
         )
         .await?;
 
@@ -382,7 +369,7 @@ mod tests {
         assert_eq!(updated.name, "Home");
         assert_eq!(updated.color, "#000000");
         assert_eq!(updated.icon.as_deref(), Some("mdi:home"));
-        assert_eq!(updated.budget, Dollars::from_i32(30));
+        assert_eq!(updated.budget, Some(dollars!(30)));
         Ok(())
     }
 
@@ -392,8 +379,8 @@ mod tests {
     ) -> Result<(), Box<dyn std::error::Error>> {
         seed_account(&pool).await?;
         // A transaction in category 3 (Housing), plus a budget for it.
-        insert_txn(&pool, 3, Dollars::from_i32_or_throw(-10), "2020-01-15").await?;
-        upsert_budget(&pool, 3, Dollars::from_i32_or_throw(500)).await?;
+        insert_txn(&pool, 3, dollars!(-10), "2020-01-15").await?;
+        upsert_budget(&pool, 3, dollars!(500)).await?;
 
         delete_category(&pool, 3).await?;
 

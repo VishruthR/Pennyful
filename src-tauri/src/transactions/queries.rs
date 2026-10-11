@@ -360,6 +360,7 @@ pub async fn remove_plaid_transactions(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dollars;
 
     async fn all_transactions(pool: &Pool<Sqlite>) -> Result<Vec<FullTransaction>, sqlx::Error> {
         get_paginated_sorted_transactions(
@@ -372,17 +373,12 @@ mod tests {
         .await
     }
 
-    fn plaid_txn(
-        plaid_id: &str,
-        name: &str,
-        amount_dollars: f64,
-        pending: bool,
-    ) -> PlaidTransaction {
+    fn plaid_txn(plaid_id: &str, name: &str, amount: Dollars, pending: bool) -> PlaidTransaction {
         PlaidTransaction::new(
             Some(plaid_id.to_owned()),
             Some(name.to_owned()),
             None,
-            Dollars::from_dollars_f64(amount_dollars).unwrap(),
+            amount,
             NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
             pending,
             "plaid-acct-1".to_owned(),
@@ -399,11 +395,11 @@ mod tests {
         let start_date = NaiveDate::parse_from_str("2025-12-01", "%Y-%m-%d")?;
         let end_date = NaiveDate::parse_from_str("2025-12-31", "%Y-%m-%d")?;
         let income = get_total_income_by_date_range(&pool, start_date, end_date).await?;
-        assert_eq!(income, Dollars::from_dollars_f64(0_f64).unwrap());
+        assert_eq!(income, dollars!(0));
 
         update_transaction_category(&pool, 1, 2, 1).await?;
         let income = get_total_income_by_date_range(&pool, start_date, end_date).await?;
-        assert_eq!(income, Dollars::from_dollars_f64(-5.77_f64).unwrap());
+        assert_eq!(income, dollars!(-5.77));
 
         Ok(())
     }
@@ -416,12 +412,12 @@ mod tests {
         let start_date = NaiveDate::parse_from_str("2026-12-01", "%Y-%m-%d")?;
         let end_date = NaiveDate::parse_from_str("2026-12-31", "%Y-%m-%d")?;
         let income = get_total_spending_by_date_range(&pool, start_date, end_date).await?;
-        assert_eq!(income, Dollars::from_dollars_f64(0_f64).unwrap());
+        assert_eq!(income, dollars!(0));
 
         let start_date = NaiveDate::parse_from_str("2025-12-01", "%Y-%m-%d")?;
         let end_date = NaiveDate::parse_from_str("2025-12-31", "%Y-%m-%d")?;
         let income = get_total_spending_by_date_range(&pool, start_date, end_date).await?;
-        assert_eq!(income, Dollars::from_dollars_f64(-19.27_f64).unwrap());
+        assert_eq!(income, dollars!(-19.27));
 
         Ok(())
     }
@@ -434,8 +430,8 @@ mod tests {
         let skipped = add_plaid_transactions(
             &mut conn,
             vec![
-                plaid_txn("txn-1", "Coffee", -4.50, false),
-                plaid_txn("txn-2", "Books", -20.00, false),
+                plaid_txn("txn-1", "Coffee", dollars!(-4.50), false),
+                plaid_txn("txn-2", "Books", dollars!(-20.00), false),
             ],
             1,
             &HashMap::new(),
@@ -457,7 +453,7 @@ mod tests {
             .find(|t| t.plaid_transaction_id().as_deref() == Some("txn-1"))
             .expect("added transaction should be queryable");
         assert_eq!(coffee.name, "Coffee");
-        assert_eq!(coffee.amount, Dollars::from_dollars_f64(-4.50).unwrap());
+        assert_eq!(coffee.amount, dollars!(-4.50));
         Ok(())
     }
 
@@ -468,7 +464,7 @@ mod tests {
         let mut conn = pool.acquire().await?;
         let first = add_plaid_transactions(
             &mut conn,
-            vec![plaid_txn("txn-1", "Coffee", -4.50, false)],
+            vec![plaid_txn("txn-1", "Coffee", dollars!(-4.50), false)],
             1,
             &HashMap::new(),
         )
@@ -479,7 +475,7 @@ mod tests {
         // the whole batch is reported as skipped.
         let second = add_plaid_transactions(
             &mut conn,
-            vec![plaid_txn("txn-1", "Coffee CHANGED", -9.99, false)],
+            vec![plaid_txn("txn-1", "Coffee CHANGED", dollars!(-9.99), false)],
             1,
             &HashMap::new(),
         )
@@ -510,13 +506,13 @@ mod tests {
         let mut conn = pool.acquire().await?;
         add_plaid_transactions(
             &mut conn,
-            vec![plaid_txn("txn-1", "Pending Coffee", -4.50, true)],
+            vec![plaid_txn("txn-1", "Pending Coffee", dollars!(-4.50), true)],
             1,
             &HashMap::new(),
         )
         .await?;
 
-        let mut posted = plaid_txn("txn-1", "Posted Coffee", -5.25, false);
+        let mut posted = plaid_txn("txn-1", "Posted Coffee", dollars!(-5.25), false);
         posted.date = NaiveDate::from_ymd_opt(2026, 1, 20).unwrap();
         modify_plaid_transactions(&mut conn, vec![posted]).await?;
 
@@ -526,7 +522,7 @@ mod tests {
             .find(|t| t.plaid_transaction_id().as_deref() == Some("txn-1"))
             .expect("transaction should exist");
         assert_eq!(txn.name, "Posted Coffee");
-        assert_eq!(txn.amount, Dollars::from_dollars_f64(-5.25).unwrap());
+        assert_eq!(txn.amount, dollars!(-5.25));
         assert_eq!(txn.date, NaiveDate::from_ymd_opt(2026, 1, 20).unwrap());
         assert!(!txn.pending, "pending should flip to posted");
         Ok(())
@@ -539,7 +535,7 @@ mod tests {
         let mut conn = pool.acquire().await?;
         add_plaid_transactions(
             &mut conn,
-            vec![plaid_txn("txn-1", "Coffee", -4.50, false)],
+            vec![plaid_txn("txn-1", "Coffee", dollars!(-4.50), false)],
             1,
             &HashMap::new(),
         )
@@ -789,8 +785,8 @@ mod tests {
         add_plaid_transactions(
             &mut conn,
             vec![
-                plaid_txn("txn-known", "Coffee", -4.50, false),
-                plaid_txn("txn-unknown", "Mystery Shop", -20.00, false),
+                plaid_txn("txn-known", "Coffee", dollars!(-4.50), false),
+                plaid_txn("txn-unknown", "Mystery Shop", dollars!(-20.00), false),
             ],
             1,
             &rules,

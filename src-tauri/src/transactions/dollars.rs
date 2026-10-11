@@ -60,14 +60,11 @@ impl Dollars {
     pub fn from_dollars_f64(dollars: f64) -> Option<Self> {
         Decimal::from_f64(dollars).map(|d| Dollars(d.round_dp(2)))
     }
+}
 
-    #[allow(dead_code)]
-    pub fn from_i32(dollars: i32) -> Option<Self> {
-        Decimal::from_i32(dollars).map(Dollars)
-    }
-
-    #[allow(dead_code)]
-    pub fn from_i32_or_throw(dollars: i32) -> Self {
-        Self::from_i32(dollars).expect("Coudln't convert i32 value to Dollars")
-    }
+#[macro_export]
+macro_rules! dollars {
+    ( $( $tokens:tt )* ) => {
+        Dollars(rust_decimal::dec!($($tokens)*))
+    };
 }
