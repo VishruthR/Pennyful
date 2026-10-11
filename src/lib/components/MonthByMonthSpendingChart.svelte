@@ -25,9 +25,7 @@
     monthlyStats: MonthlyStat[];
   }
 
-  let { monthlyStats }: MonthByMonthSpendingChartProps  = $props();
-
-  $inspect(monthlyStats);
+  let { monthlyStats }: MonthByMonthSpendingChartProps = $props();
 
   // This array enables us to render the same tooltip for the income and spending lines
   const tooltipAnchors = $derived.by(() => {
