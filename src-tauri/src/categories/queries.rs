@@ -269,10 +269,7 @@ mod tests {
         insert_txn(&pool, 3, dollars!(-50), "2020-01-15").await?;
 
         let overviews = get_category_overviews(&pool, None).await?;
-        assert_eq!(
-            overview_for(&overviews, 3).spent,
-            dollars!(7),
-        );
+        assert_eq!(overview_for(&overviews, 3).spent, dollars!(7),);
         Ok(())
     }
 

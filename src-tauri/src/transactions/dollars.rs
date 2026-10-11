@@ -56,7 +56,6 @@ impl<'r> Decode<'r, Sqlite> for Dollars {
     }
 }
 
-
 impl Dollars {
     pub fn from_dollars_f64(dollars: f64) -> Option<Self> {
         Decimal::from_f64(dollars).map(|d| Dollars(d.round_dp(2)))

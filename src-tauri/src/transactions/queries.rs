@@ -373,12 +373,7 @@ mod tests {
         .await
     }
 
-    fn plaid_txn(
-        plaid_id: &str,
-        name: &str,
-        amount: Dollars,
-        pending: bool,
-    ) -> PlaidTransaction {
+    fn plaid_txn(plaid_id: &str, name: &str, amount: Dollars, pending: bool) -> PlaidTransaction {
         PlaidTransaction::new(
             Some(plaid_id.to_owned()),
             Some(name.to_owned()),
